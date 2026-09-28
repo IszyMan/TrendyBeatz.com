@@ -1,0 +1,286 @@
+
+.pagination a {
+  color: black;
+  float: left;
+  padding: 8px 16px;
+  text-decoration: none;
+  transition: background-color .3s;
+}
+
+.pagination a.active {
+  background-color: dodgerblue;
+  color: white;
+}
+
+.pagination a:hover:not(.active) {background-color: #ddd;}
+
+
+.form input[type=text], select {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type=submit] {
+  width: 100%;
+  background-color: #2db300;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover {
+  background-color: #45a049;
+}
+.pagination {
+    display: -ms-flexbox;
+    flex-wrap: wrap;
+    padding-left: 0px;
+    display: flex;
+    list-style: none;
+    border-radius: 0.25rem;
+    justify-content: center;
+   
+}
+.form {
+  border-radius: 5px;
+  background-color: #f2f2f2;
+  padding: 20px;
+}
+.sticky {
+ position: fixed;
+ top: 0;
+ left: 0;
+ width: 100%;
+ background: #f6f6f6;
+ z-index: 999;
+ overflow: hidden;
+ -webkit-transition: height 0.3s;
+ -moz-transition: height 0.3s;
+ transition: height 0.3s;
+}
+
+.sticky + .content {
+  padding-top: 120px;
+}
+
+body {
+ background-color: #1a1a1a;
+ margin: 0;
+}
+
+#advert{
+  z-index: -1;
+}
+
+.slidder_container {
+  position: relative;
+  text-align: center;
+  color: red;
+}
+
+.bottom-left {
+  position: absolute;
+  bottom: 8px;
+  left: 16px;
+}
+
+.top-left {
+  position: absolute;
+  top: 8px;
+  left: 16px;
+}
+
+.top-right {
+  position: absolute;
+  top: 8px;
+  right: 16px;
+}
+
+.bottom-right {
+  position: absolute;
+  bottom: 8px;
+  right: 16px;
+}
+
+.centered {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+
+
+
+.myBtn {
+  background-color: #4CAF50;
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 30px;
+  z-index: 99;
+  font-size: 18px;
+  border: none;
+  outline: none;
+  background-color: red;
+  color: white;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 50px;
+}
+
+.myBtn:hover {
+  background-color: #555;
+}
+
+
+.scriptBox>a
+  {
+display:block;
+text-decoration:none;
+text-align:center
+}
+.scriptBoxTitle
+{
+position:relative;
+overflow:hidden;
+height:50px;
+margin-bottom:10px;
+font-size:18px;
+line-height:1.4;
+color:#494646;
+font-weight:600;
+text-transform:capitalize
+}
+.scriptBox>a:hover 
+.scriptBoxTitle
+{
+color:#fc801c
+}
+.scriptBoxTitle span
+{
+  position:absolute;
+  bottom:0;
+  left:0;width:100%
+  }
+  .scriptBoxImage
+  {
+  overflow:hidden;
+  height:200px;border:1px solid #d6d4d4
+  }
+  .scriptBoxImage img
+  {
+  width:100%;
+  height:100%
+  }
+  .scriptBox>a:hover 
+  .scriptBoxImage
+  {
+  border-color:#fc801c
+  }
+  .scriptBox>a:hover 
+  .scriptBoxImage img{
+    transform:scale(1.1)
+  }
+
+
+
+
+.roundimages {
+  border-radius: 50%;
+}
+
+/* Testing */ 
+.comment-box {
+  width: 300px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #fff;
+}
+
+.comment-box button {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  margin-top: 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.search-container2 {
+  position: relative;
+}
+
+.search-dialog {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 200px;
+  background-color: #fff;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+}
+
+.search-dialog input {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  outline: none;
+}
+
+.search-dialog button {
+  display: block;
+  width: 100%;
+  padding: 5px;
+  margin-top: 5px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+#search-button2 {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+
+/*
+     FILE ARCHIVED ON 09:04:36 Jul 07, 2026 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 19:44:53 Sep 27, 2026.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  captures_list: 0.719
+  exclusion.robots: 0.072
+  exclusion.robots.policy: 0.057
+  esindex: 0.011
+  cdx.remote: 125.576
+  LoadShardBlock: 1240.564 (3)
+  PetaboxLoader3.datanode: 1206.867 (4)
+  PetaboxLoader3.resolve: 93.349 (3)
+  load_resource: 92.552
+*/

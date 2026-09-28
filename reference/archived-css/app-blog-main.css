@@ -1,0 +1,1067 @@
+/*===========================================*/
+/*THIS IS THE START OF BLOG SECTION CSS*/
+/*===========================================*/
+
+
+/* SITE HOMEPAGE BLOG/NEWS section css*/
+
+.tb-blog-wrapper {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(3, 1fr); /* 3 per row on desktop */
+    margin-bottom: 20px;
+}
+
+/* Blog Post Card */
+.tb-blog-post {
+    display: flex;
+    flex-direction: column; /* default: vertical for desktop grid */
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.25s ease;
+}
+
+.tb-blog-post:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+}
+
+/* Thumbnail */
+.tb-blog-thumb img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.tb-blog-thumb img:hover {
+    transform: scale(1.05);
+}
+
+/* Info */
+.tb-blog-info {
+    padding: 12px 15px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* Category Badge */
+.tb-blog-category {
+    display: inline-block;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    width: fit-content;
+}
+
+/* Blog Title */
+.tb-blog-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    line-height: 1.4;
+    color: #111827;
+    word-break: break-word;
+    
+    
+}
+
+/* Blog Intro */
+.tb-blog-intro {
+    font-size: 13px;
+    font-family: "DM Sans", "Inter", system-ui, sans-serif;
+    color: #6b7280;
+    margin: 0 0 10px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Meta */
+.tb-blog-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.tb-blog-read {
+    font-weight: 600;
+    color: #2563eb;
+}
+
+.tb-blog-category {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+/* Category-specific colors for home page blog */
+.tb-cat-celebrity-news { background: #ec4899; }  /* pink */
+.tb-cat-articles       { background: #7c3aed; }  /* purple */
+.tb-cat-news          { background: #0a0068; }  /* Yellow */
+.tb-cat-net-worth       { background: #f59e0b; }  /* amber */
+.tb-cat-education      { background: #107936; }  /* cyan */
+.tb-cat-hot-gists      { background: #ef4444; }  /* red */
+.tb-cat-music-reviews   { background: #7fa70b; }  /* green */
+.tb-cat-sports-news     { background: #0ea5e9; }  /* blue */
+.tb-cat-world-news      { background: #7c3aed; }  /* purple */
+
+
+@media (max-width: 767px) {
+    .tb-blog-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .tb-blog-post {
+        flex-direction: row; 
+        align-items: flex-start;
+    }
+
+    .tb-blog-thumb {
+        width: 35%; 
+        flex-shrink: 0;
+    }
+
+    .tb-blog-thumb img {
+        width: 100%;
+        height: 50%;
+        object-fit: cover;
+        border-radius: 10px 0 0 10px; 
+    }
+
+    .tb-blog-info {
+        width: 60%; /* info takes 60% */
+        padding: 10px 12px;
+    }
+}
+
+/* END OF SITE HOMEPAGE BLOG/NEWS CSS */
+
+
+/*  blog index nav css is on blog index */
+
+/* START OF BLOG INDEX BODY CSS*/
+
+.celeb-blog-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    max-width: 1150px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.celeb-blog-post {
+    display: flex;
+    flex-direction: row; /* horizontal layout */
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.07);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    min-height: 160px; /* ensure card always shows */
+}
+
+/* Image */
+.celeb-blog-thumb {
+    flex: 0 0 250px; /* desktop width */
+    height: 160px;
+    overflow: hidden;
+}
+
+.celeb-blog-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.celeb-blog-thumb img:hover {
+    transform: scale(1.05);
+}
+
+/* Content */
+.celeb-blog-info {
+    flex: 1; /* fill remaining space */
+    padding: 15px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Category badge for blog index page*/
+.celeb-blog-category {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    width: fit-content;
+    color: #fff;
+}
+
+/* CATEGORY COLORS */
+.celeb-blog-category-celebrity-news{ background:#ec4899; }
+.celeb-blog-category-articles  { background: #7c3aed; }  
+.celeb-blog-category-news  { background: #0a0068; }
+.celeb-blog-category-hot-gists{ background:#ef4444; }
+.celeb-blog-category-education{ background:#107936; } 
+.celeb-blog-category-music-reviews{ background:#7fa70b; }
+.celeb-blog-category-net-worth{ background:#f59e0b; }
+.celeb-blog-category-sports-news{ background:#0ea5e9; }
+.celeb-blog-category-world-news{ background:#7c3aed; }
+
+
+/* Title */
+.celeb-blog-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 10px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Tags */
+.celeb-tags {
+    margin-top: 5px;
+}
+.celeb-tag {
+    font-size: 11px;
+    background: #f3f4f6;
+    color: #374151;
+    padding: 3px 6px;
+    border-radius: 5px;
+    margin-right: 5px;
+}
+
+/* Meta */
+.celeb-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    color: blue;
+    align-items: center;
+    flex-wrap: nowrap; 
+    
+}
+
+.celeb-read {
+    display: block; /* on next line */
+    color: #2563eb;
+    font-weight: 600;
+    margin-top: 18px;
+    
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+
+    .celeb-blog-post {
+        flex-direction: row; 
+        gap: 12px;
+        min-height: 120px;
+    }
+
+    .celeb-blog-thumb {
+        flex: 0 0 120px;
+        height: 120px;
+        margin-top: 20px;
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    /* Title wraps fully on mobile */
+    .celeb-blog-title {
+        display: block;  
+        -webkit-line-clamp: unset;
+        -webkit-box-orient: unset;
+        overflow: visible;
+        font-size: 16px;
+        margin-bottom: 6px;
+    }
+
+    /* Meta: date + author on same line */
+    .celeb-meta {
+        display: flex;
+        flex-wrap: nowrap;  
+        gap: 6px;
+        font-size: 12px;
+        color: #6b7280;
+        align-items: center;
+        white-space: nowrap; 
+    }
+
+    /* Continue Reading under meta */
+    .celeb-read {
+        display: block;
+        font-size: 13px;
+        color: #2563eb;
+        margin-top: 4px;
+    }
+}
+
+/* END OF BLOG INDEX BODY CSS*/
+
+
+
+
+
+
+/* HEADER WRAPPER - NO USE */
+
+/* HEADER */
+.tb-blog-header {
+    padding:40px 20px 0;
+    max-width:1200px;
+    margin:auto;
+    text-align:center;
+}
+
+/* TITLE */
+.tb-blog-title h1 {
+    font-size:36px;
+    font-weight:700;
+    margin-bottom:5px;
+    color:#111;
+}
+.tb-blog-title p {
+    color:#666;
+    margin-bottom:25px;
+}
+
+/* SEARCH */
+.tb-blog-search {
+    display:flex;
+    justify-content:center;
+    margin-bottom:25px;
+}
+.tb-search-box {
+    display:flex;
+    align-items:center;
+    background:#f8f8f8;
+    border-radius:30px;
+    padding:10px 18px;
+    width:320px;
+    border:1px solid #e6e6e6;
+}
+.tb-search-box input {
+    border:none;
+    background:none;
+    outline:none;
+    flex:1;
+    font-size:14px;
+    padding:6px 8px;
+}
+.tb-search-box button {
+    background:#0b6b3a;
+    color:#fff;
+    border:none;
+    padding:6px 16px;
+    border-radius:20px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all .2s ease;
+}
+.tb-search-box button:hover {
+    background:#084f2a;
+}
+
+
+/* End of blog nav css */
+
+
+
+
+
+/* START OF BLOG DETAILS CSS */
+
+/*START OF BREAD CRUMB FOR BLOG DETAILS*/
+
+.tb-bc{
+    font-size:13px;
+    color:#6b7280;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px;
+    margin-bottom:14px;
+}
+
+.tb-bc a{
+    text-decoration:none;
+    color:#6b7280;
+    transition:.2s ease;
+}
+
+.tb-bc a:hover{
+    color:#16a34a;
+}
+
+.tb-bc-sep{
+    color:#9ca3af;
+}
+
+.tb-bc-sep1{
+    color:#9ca3af;
+}
+
+.tb-bc-current{
+    color:#111827;
+    font-weight:500;
+}
+
+@media (max-width:600px){
+    .tb-bc-current{
+        display:none;
+    }
+    .tb-bc-sep1{
+        display:none;
+    }
+}
+/* END OF BREAD CRUMB*/
+
+
+/* start Category bar for blog index page* - Index nav has another css inside it not this one */
+
+.tb-catbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-family: 'Inter', sans-serif; /* modern font */
+    font-size: 14px;
+    margin: 20px 0;
+}
+
+.tb-catbar-label {
+    font-weight: 600;
+    color: #333;
+}
+
+.tb-catbar-links {
+    display: flex;
+    flex: 1;
+    justify-content: space-between; /* spread links evenly */
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.tb-catlink {
+    flex: 1; /* equal width for all categories */
+    text-align: center;
+    padding: 8px 12px;
+    text-decoration: none;
+    font-weight: 500;
+    color: #444;
+    border-radius: 20px;
+    border: 1px solid #e6e6e6;
+    transition: all 0.25s ease;
+    background: #f8f8f8;
+}
+
+.tb-catlink.current,
+.tb-catlink:hover {
+    background: #16a34a; /* your theme green */
+    color: #fff;
+    border-color: #16a34a;
+}
+
+/* Responsive: wrap categories nicely */
+@media (max-width: 767px) {
+    .tb-catbar-links {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .tb-catlink {
+        flex: auto; /* shrink on mobile */
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
+/* End of Categories bar for blog details */
+
+
+
+/* start of article meta*/
+.tb-article-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 18px;
+}
+
+/* Category badge */
+.tb-article-cat {
+    background: #16a34a;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Other items aligned next to category */
+.tb-article-meta-items {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: 12px;
+    flex-wrap: wrap;
+}
+
+/* Individual item styling */
+.tb-article-meta-items .tb-article-item {
+    color: #6b7280;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+
+
+/* MOBILE LAYOUT */
+@media (max-width: 767px) {
+    .tb-article-meta {
+        flex-wrap: wrap;
+        font-size: 12px; /* smaller font */
+        gap: 6px;
+    }
+
+    /* First row: category, date, author */
+    .tb-article-meta-items {
+        display: flex;
+        flex-wrap: wrap;
+        margin-left: 12px;
+        gap: 6px;
+    }
+
+    /* Force Comments and Min Read to start on new line under Date & Author */
+    .tb-article-meta-items .tb-article-item:nth-last-child(2),
+    .tb-article-meta-items .tb-article-item:last-child {
+        flex-basis: 100%;
+        margin-top: 4px;
+    }
+}
+/* End of article meta*/
+
+
+/* start of blog page  body css */
+
+/* MAIN GRID */
+.tb-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:22px;
+    margin-top:25px;
+}
+
+/* POST CARDS (BASE STYLE)
+Used by both tb-card and tb-feat on mobile */
+
+.tb-card,
+.tb-feat{
+    display:flex;
+    align-items:flex-start;
+    gap:16px;
+    background:#fff;
+    padding:14px;
+    border-radius:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.08);
+    text-decoration:none;
+    color:inherit;
+    transition:all .25s ease;
+}
+
+.tb-card:hover,
+.tb-feat:hover{
+    transform:translateY(-3px);
+    box-shadow:0 16px 40px rgba(0,0,0,0.12);
+}
+
+
+/*IMAGE*/
+
+.tb-card-img-wrap,
+.tb-feat-img-wrap{
+    flex:0 0 130px;
+}
+
+.tb-card-img,
+.tb-feat-img{
+    width:120px;
+    height:120px;
+    object-fit:cover;
+    border-radius:8px;
+}
+
+
+/* BODY */
+
+.tb-card-body,
+.tb-feat-body{
+    flex:1;
+    padding:0;
+}
+
+
+/* TITLE */
+
+.tb-card-title,
+.tb-feat-title{
+    font-size:16px;
+    line-height:1.4;
+    font-weight:600;
+    margin:0 0 4px;
+}
+
+
+/* META */
+
+.tb-card-meta,
+.tb-feat-meta{
+    font-size:12px;
+    color:#9ca3af;
+}
+
+
+/* CATEGORY BADGE FOR RELATED POST*/
+
+.tb-cat-badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:20px;
+    margin-bottom:6px;
+    letter-spacing:.3px;
+    text-transform:uppercase;
+    pointer-events:none;
+    color:#fff;
+}
+
+
+/* CATEGORY COLORS */
+
+.tb-cat-celebrity-news{ background:#ec4899; }
+.tb-cat-hot-topics{ background:#ef4444; }
+.tb-cat-category-articles  { background: #7c3aed; }  
+.tb-cat-category-news  { background: #0a0068; }
+.tb-cat-education  { background: #107936; } 
+.tb-cat-music-reviews{ background: #7fa70b; }
+.tb-cat-net-worth{ background:#f59e0b; }
+.tb-cat-sports-news{ background:#0ea5e9; }
+.tb-cat-world-news{ background:#7c3aed; }
+
+
+
+/* DESKTOP FEATURED POST */
+
+@media (min-width:768px){
+
+    .tb-feat{
+        display:grid;
+        grid-template-columns:1.4fr 1fr;
+        gap:20px;
+        padding:0;
+        border-radius:14px;
+        overflow:hidden;
+        box-shadow:0 10px 35px rgba(0,0,0,0.08);
+    }
+
+    .tb-feat-img-wrap{
+        flex:none;
+    }
+
+    .tb-feat-img{
+        width:100%;
+        height:100%;
+        border-radius:0;
+    }
+
+    .tb-feat-body{
+        padding:24px;
+    }
+
+    .tb-feat-title{
+        font-size:28px;
+        font-weight:800;
+        letter-spacing:-0.3px;
+    }
+
+    .tb-feat-body p{
+        display:block;
+        font-size:15px;
+        color:#6b7280;
+        margin-bottom:14px;
+    }
+
+    .tb-feat-meta{
+        display:flex;
+        justify-content:space-between;
+        font-size:13px;
+    }
+
+    .tb-feat-read{
+        font-weight:600;
+        color:#2563eb;
+    }
+
+}
+/* BODY */
+.tb-card-body{
+    flex:1;
+}
+
+.tb-card-body h3{
+    font-size:16px;
+    line-height:1.4;
+    font-weight:600;
+    margin:0 0 4px;
+}
+
+.tb-card-body h3 a{
+    color:#111;
+    text-decoration:none;
+}
+
+.tb-card-body h3 a:hover{
+    color:#0f766e;
+}
+
+/* hide intro for cleaner blog style */
+.tb-card-intro{
+    display:none;
+}
+
+/* meta */
+.tb-meta{
+    font-size:12px;
+    color:#6b7280;
+}
+
+.tb-meta1{
+    margin-top:8px;
+}
+
+.tb-read{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12.5px;
+    font-weight:600;
+    color:#1d4ed8;
+    letter-spacing:.3px;
+    transition:all .25s ease;
+    border-bottom:1px solid transparent;
+}
+
+.tb-card:hover .tb-read{
+    color:#b45309;
+    transform:translateX(4px);
+}
+
+.tb-arrow{
+    transition:transform .25s ease;
+}
+
+.tb-card:hover .tb-arrow{
+    transform:translateX(4px);
+}
+
+/* make entire card clickable */
+.tb-card-link{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    background:#fff;
+    padding:14px;
+    border-radius:10px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.08);
+    text-decoration:none;
+    color:inherit;
+    transition:all .25s ease;
+}
+
+.tb-card-link:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 24px rgba(0,0,0,0.12);
+}
+
+.tb-card-link h3{
+    margin:0 0 4px;
+    font-weight:600;
+    font-size:16px;
+}
+
+/* optional: prevent underline on hover */
+.tb-card-link h3:hover{
+    text-decoration:none;
+}
+
+
+/* DESKTOP: 2 POSTS PER ROW */
+@media(min-width:768px){
+
+    .tb-grid{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .tb-feat{
+        grid-column:1 / -1;
+    }
+
+}
+
+
+/* MOBILE FIX FOR FEATURED POST */
+@media(max-width:767px){
+
+    .tb-feat{
+        grid-template-columns:1fr;
+    }
+
+    .tb-feat-img{
+        height:230px;
+    }
+
+}
+
+
+/* View all button on blog details css*/
+
+.tb-view-all-card{
+    display:flex;
+    align-items:center;
+    padding:10px 18px;
+    max-width:300px;
+    margin:0 auto;
+    border-radius:10px;
+    background:#fff;
+    border:2px solid #16a34a;
+    box-shadow:0 3px 12px rgba(0,0,0,0.05);
+    text-decoration:none;
+    color:#16a34a;
+    transition:.25s ease;
+}
+
+.tb-view-texts{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+}
+
+.tb-view-main{
+    font-size:14px;
+    font-weight:600;
+    margin:0;
+}
+
+.tb-view-sub{
+    font-size:12px;
+    font-weight:400;
+    opacity:.7;
+    margin:0;
+}
+
+.tb-view-arrow{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    background:#16a34a;
+    color:#fff;
+    font-size:14px;
+}
+
+.tb-view-all-card:hover{
+    background:#16a34a;
+    color:#fff;
+}
+
+.tb-view-all-card:hover .tb-view-arrow{
+    background:#fff;
+    color:#16a34a;
+}
+
+
+
+/* responsive */
+@media (max-width:767px){
+    .tb-view-all-card{
+        max-width:260px;
+        padding:10px 14px;
+    }
+}
+
+/* End of view all button css*/
+
+
+
+/* END OF BLOG PAGE BODY CSS*/
+
+.tb-pag .pagination {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.tb-pag .page-item .page-link {
+    color: #2563eb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: .85rem;
+    text-decoration: none;
+    transition: all .2s ease;
+}
+
+.tb-pag .page-item.active .page-link {
+    background-color: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+}
+
+.tb-pag .page-item .page-link:hover:not(.disabled) {
+    background-color: #f3f4f6;
+    border-color: #2563eb;
+}
+
+.tb-pag .page-item.disabled .page-link {
+    color: #9ca3af;
+    cursor: default;
+}
+
+
+/*Share blog section css*/
+
+.tb-share {
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-top:20px;
+    font-size:14px;
+}
+
+.tb-share-buttons {
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.sh-btn {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 16px;
+    border-radius:24px;
+    background:#f0f0f0;
+    color:#111;
+    font-weight:600;
+    text-decoration:none;
+    border:none;
+    cursor:pointer;
+    transition:all .2s ease;
+}
+
+.sh-btn svg {
+    display:block;
+}
+
+.sh-btn:hover {
+    background:#e0e0e0;
+}
+
+/* Brand colors */
+.sh-fb { color:#1877f2; }
+.sh-tw { color:#1da1f2; }
+.sh-wa { color:#25d366; }
+.sh-copy { color:#6b7280; }
+
+/* Hover highlights */
+.sh-fb:hover { background:#e7f0ff; }
+.sh-tw:hover { background:#e7f7ff; }
+.sh-wa:hover { background:#e7fef4; }
+.sh-copy:hover { background:#f3f4f6; }
+
+/* Responsive: 2 up 2 down for small screens */
+@media(max-width:640px) {
+    .tb-share-buttons {
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+    }
+}
+/* End of share blog css*/
+
+
+@media (max-width:767px){
+
+    .tb-feat-img{
+        width:120px;
+        height:80px !important;
+        object-fit:cover;
+    }
+    
+    .tb-song-thumb img{
+    width:300px;
+    height:150px;
+    object-fit:cover;
+    border-radius:8px;
+    }
+
+}
+/*
+     FILE ARCHIVED ON 09:04:51 Jul 07, 2026 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 19:44:52 Sep 27, 2026.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  captures_list: 0.397
+  exclusion.robots: 0.036
+  exclusion.robots.policy: 0.027
+  esindex: 0.006
+  cdx.remote: 70.202
+  LoadShardBlock: 79.85 (3)
+  PetaboxLoader3.datanode: 37.481 (4)
+  PetaboxLoader3.resolve: 55.751 (2)
+  load_resource: 53.075
+*/
