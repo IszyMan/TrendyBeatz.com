@@ -5,7 +5,7 @@
         @forelse ($items as $song)
             <a
                 class="tb-home-song"
-                href="{{ route('songs.show', [$song->id, $song->slug]) }}"
+                href="{{ \App\Support\MusicUrl::detail($song) }}"
             >
                 @php
                     $cover = trim((string) $song->cover_url);

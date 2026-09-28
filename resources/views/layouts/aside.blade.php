@@ -116,7 +116,7 @@
     @forelse ($featuredSongs as $song)
         <a
             class="aside-song aside-media-card"
-            href="{{ route('songs.show', [$song->id, $song->slug]) }}"
+            href="{{ route('music_details', [$song->id, $song->slug]) }}"
         >
             <span class="aside-image-placeholder" aria-hidden="true">
                 <span>TB</span>

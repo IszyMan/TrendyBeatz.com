@@ -8,28 +8,33 @@ Route::get('/', [HomeController::class, 'index'])
     ->name('home');
 
 
-Route::get('/song-of-the-day', [PageController::class, 'songOfTheDay'])->name('songs.day');     
+Route::get('/song-of-the-day', [PageController::class, 'songOfTheDay'])->name('songs.day');   
 
-Route::get('/music-download', [PageController::class, 'allMusic'])
-    ->name('music.download');
+
+Route::get('/legal-download/{id}/{slug}', [PageController::class, 'musicDetails'])->whereNumber('id')
+    ->name('music_details');
+
+Route::get('/songs-posted-by/{slug}', [PageController::class, 'songsPostedBy'])->name('songs.posted_by');    
+
+Route::get('/music-download', [PageController::class, 'musicDownload'])->name('music.download');
+
+Route::get('/musics/gospel',[PageController::class, 'gospelSongs'])->name('music.gospel');
+
+Route::get('/musics/highlife',[PageController::class, 'highlifeSongs'])->name('music.highlife');
 
 Route::get('/musics', [PageController::class, 'allMusic'])
     ->name('music.all');
 
-Route::get('/musics/naija', [PageController::class, 'naija'])
+Route::get('/musics/naija', [PageController::class, 'countrySongs'])->defaults('country', 'naija')
     ->name('music.naija');
 
-Route::get('/musics/ghana', [PageController::class, 'ghana'])
+Route::get('/musics/ghana', [PageController::class, 'countrySongs'])->defaults('country', 'ghana')
     ->name('music.ghana');
 
-Route::get('/musics/african', [PageController::class, 'african'])
+Route::get('/musics/african', [PageController::class, 'countrySongs'])->defaults('country', 'african')
     ->name('music.african');
 
-Route::get('/musics/gospel', [PageController::class, 'gospel'])
-    ->name('music.gospel');
-
-Route::get('/musics/highlife', [PageController::class, 'highlife'])
-    ->name('music.highlife');
+    
 
 Route::get('/artist-albums', [PageController::class, 'albums'])
     ->name('albums.archived');
@@ -63,10 +68,6 @@ Route::get('/music/{category}', [PageController::class, 'music'])
         'highlife',
     ])
     ->name('music.index');
-
-Route::get('/songs/{id}/{slug}', [PageController::class, 'song'])
-    ->whereNumber('id')
-    ->name('songs.show');
 
   
 

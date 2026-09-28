@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <@php
+    @php
         $metaTitle = trim($__env->yieldContent(
             'title',
             ($title ?? 'Discover Latest Naija Music and Entertainment')
@@ -66,6 +66,7 @@
     @endif
     <link rel="stylesheet" href="{{ asset('css/trendybeatz.css') }}">
     <link rel="stylesheet" href="{{ asset('css/trendybeatz-nav.css') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/faviconn.png') }}">
 
 <style>
 
@@ -309,8 +310,9 @@
 .home-date {
     margin: 5px 0 35px;
     color: #333;
-    font-size: 12px;
+    font-size: 13px;
     text-align: center;
+    font-weight: 600;
 }
 
 .sub-section-heading {
@@ -1250,6 +1252,630 @@
 }
 
 
+
+/* =========================================
+   MUSIC DETAILS PAGE
+   ========================================= */
+
+.tb-music-detail {
+    width: 100%;
+    max-width: 880px;
+    min-width: 0;
+    margin: 18px auto 35px;
+    padding: 30px 16px 36px;
+    border: 1px solid #dedede;
+    border-radius: 9px;
+    background: #fff;
+    color: #111;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    box-sizing: border-box;
+}
+
+/* Separate the download panel from the discovery panel */
+
+.tb-music-detail-primary {
+    margin-bottom: 0;
+}
+
+.tb-music-detail-related {
+    margin-top: 32px;
+}
+
+.tb-music-detail-related .tb-music-detail-discovery:first-child {
+    margin-top: 0;
+}
+
+/* Title, cover and posting details */
+
+.tb-music-detail-header {
+    text-align: center;
+}
+
+.tb-music-detail-header h1 {
+    display: inline-block;
+    max-width: 100%;
+    margin: 0 auto 32px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #19b954;
+    color: #111;
+    font-family: Arial, sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.tb-music-detail-cover {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: min(100%, 336px);
+    aspect-ratio: 1 / 1;
+    margin: 0 auto 17px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #ededed;
+    box-shadow: 0 9px 20px rgba(0, 0, 0, 0.13);
+}
+
+.tb-music-detail-cover img {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tb-music-detail-placeholder {
+    position: absolute;
+    color: #777;
+    font-family: Arial, sans-serif;
+    font-size: 64px;
+    font-weight: 900;
+}
+
+.tb-music-detail-posted {
+    margin: 0 0 27px;
+    color: #444;
+    font-family: Georgia, serif;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.tb-music-detail-posted strong {
+    color: #0000ee;
+}
+
+.tb-music-detail-posted span {
+    margin: 0 5px;
+}
+
+.tb-music-detail-posted time {
+    color: #111;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.tb-music-detail-ad-label {
+    margin: 26px 0 20px;
+    color: #888;
+    font-family: Georgia, serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* Section headings */
+
+.tb-music-detail-section,
+.tb-music-detail-discovery {
+    margin: 0 0 28px;
+}
+
+.tb-music-detail-heading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    margin: 0 0 12px;
+    padding: 3px 10px;
+    border-left: 6px solid #22c55e;
+    border-bottom: 2px solid #e9e9e9;
+    color: #111;
+    background: transparent;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.4;
+    text-align: center;
+}
+
+/* Track details */
+
+.tb-music-detail-facts {
+    padding: 0;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.tb-music-detail-facts p {
+    margin: 0 0 12px;
+    line-height: 1.35;
+}
+
+.tb-music-detail-facts strong {
+    color: #111;
+}
+
+.tb-music-detail-blue {
+    color: #0000ee;
+}
+
+.tb-music-detail-red {
+    color: #f00;
+}
+
+/* About This Song */
+
+.tb-music-detail-description {
+    max-width: 580px;
+    margin: 20px auto 36px;
+    font-family: Georgia, Garamond, serif;
+}
+
+.tb-music-detail-introduction {
+    margin: 0 0 35px;
+    color: #006600;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.tb-music-detail-description p:not(.tb-music-detail-introduction) {
+    margin: 0 0 17px;
+    color: #111;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.6;
+}
+
+/* YouTube, Audiomack, audio and download */
+
+.tb-music-detail-listening {
+    max-width: 620px;
+    margin: 42px auto 0;
+    text-align: center;
+}
+
+.tb-music-detail-listening h2 {
+    margin: 0 0 20px;
+    color: green;
+    font-family: Georgia, serif;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.tb-music-detail-youtube {
+    width: 100%;
+    margin: 0 auto 18px;
+    aspect-ratio: 16 / 9;
+    background: #000;
+}
+
+.tb-music-detail-audiomack {
+    width: 100%;
+    height: 252px;
+    margin: 0 auto 18px;
+}
+
+.tb-music-detail-youtube iframe,
+.tb-music-detail-audiomack iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.tb-music-detail-audio {
+    margin: 20px 0;
+}
+
+.tb-music-detail-audio audio {
+    display: block;
+    width: 100%;
+    margin: 0 auto 17px;
+}
+
+.tb-music-detail-download,
+.tb-music-detail-store {
+    display: inline-block;
+    max-width: 100%;
+    margin: 5px auto;
+    padding: 10px 16px;
+    border-radius: 4px;
+    color: #fff;
+    background: #11a83e;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.tb-music-detail-download:hover,
+.tb-music-detail-store:hover {
+    color: #fff;
+    background: #07852e;
+}
+
+.tb-music-detail-store {
+    display: table;
+    margin-top: 12px;
+}
+
+/* Discovery sections */
+
+.tb-music-detail-discovery {
+    margin-top: 24px;
+}
+
+.tb-music-detail-discovery-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.tb-music-detail-discovery-list a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 60px;
+    padding: 9px 11px;
+    border-radius: 10px;
+    color: inherit;
+    background: #fff;
+    text-decoration: none;
+    box-shadow: 0 2px 13px rgba(0, 0, 0, 0.07);
+    box-sizing: border-box;
+}
+
+.tb-music-detail-discovery-list a:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.13);
+}
+
+.tb-music-detail-icon {
+    display: flex;
+    flex: 0 0 34px;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    color: #655999;
+    background: #f2f2f4;
+    font-family: Arial, sans-serif;
+    font-size: 21px;
+    font-weight: 700;
+}
+
+.tb-music-detail-discovery-text {
+    display: block;
+    min-width: 0;
+}
+
+.tb-music-detail-discovery-text strong {
+    display: block;
+    color: #00a638;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.tb-music-detail-discovery-text small {
+    display: block;
+    margin-top: 2px;
+    color: #333;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.tb-music-detail-more {
+    margin: 25px 0 0;
+    text-align: center;
+}
+
+.tb-music-detail-more a {
+    color: #00a638;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+    .tb-music-detail {
+        margin: 10px auto 25px;
+        padding: 20px 12px 28px;
+    }
+
+    .tb-music-detail-primary {
+        margin-bottom: 0;
+    }
+
+    .tb-music-detail-related {
+        margin-top: 25px;
+    }
+
+    .tb-music-detail-header h1 {
+        margin-bottom: 23px;
+        font-size: 19px;
+    }
+
+    .tb-music-detail-cover {
+        width: min(100%, 300px);
+    }
+
+    .tb-music-detail-heading {
+        font-size: 16px;
+    }
+
+    .tb-music-detail-facts {
+        font-size: 14px;
+    }
+
+    .tb-music-detail-description {
+        padding: 0 12px;
+    }
+
+    .tb-music-detail-introduction {
+        font-size: 19px;
+    }
+
+    .tb-music-detail-description p:not(.tb-music-detail-introduction) {
+        font-size: 15px;
+    }
+
+    .tb-music-detail-discovery-text strong {
+        font-size: 13px;
+    }
+}
+
+/* Songs posted by a user */
+
+.tb-posted-songs-page {
+    min-width: 0;
+}
+
+.tb-posted-songs-heading {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin: 22px auto 8px;
+    text-align: center;
+}
+
+.tb-posted-songs-date {
+    margin: 0 0 22px;
+    color: #333;
+    font-size: 12px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .tb-posted-songs-heading {
+        font-size: 23px;
+        line-height: 1.35;
+    }
+}
+
+.tb-music-detail-posted .tb-music-detail-poster-link {
+    color: #0000ee;
+    text-decoration: none;
+}
+
+.tb-music-detail-posted .tb-music-detail-poster-link:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================
+   MUSIC DOWNLOAD PAGE
+   ========================================= */
+
+.tb-download-page {
+    min-width: 0;
+}
+
+.tb-download-quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 10px auto 18px;
+}
+
+.tb-download-quick-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 36px;
+    padding: 7px 19px;
+    border-right: 2px solid #00b844;
+    border-bottom: 2px solid #00b844;
+    border-radius: 24px;
+    color: #00a638;
+    background: #fff;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: center;
+    text-decoration: none;
+    box-shadow: 1px 2px 7px rgba(0, 0, 0, 0.12);
+    box-sizing: border-box;
+}
+
+.tb-download-quick-links a:hover {
+    color: #fff;
+    background: #00a638;
+}
+
+.tb-download-quick-links a span {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.tb-download-ad-label {
+    margin: 10px 0 22px;
+    color: #888;
+    font-family: Georgia, serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.tb-download-page .tb-home-section,
+.tb-download-albums {
+    margin-bottom: 36px;
+    scroll-margin-top: 75px;
+}
+
+/* Popular albums */
+
+.tb-download-album-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tb-download-album {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 9px;
+    border-radius: 9px;
+    color: #111;
+    background: #fff;
+    text-decoration: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+}
+
+.tb-download-album:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.tb-download-album-cover {
+    position: relative;
+    display: flex;
+    flex: 0 0 160px;
+    align-items: center;
+    justify-content: center;
+    width: 160px;
+    height: 110px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #eee;
+}
+
+.tb-download-album-cover img {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tb-download-album-placeholder {
+    position: absolute;
+    color: #777;
+    font-size: 30px;
+    font-weight: 900;
+}
+
+.tb-download-album-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    gap: 5px;
+}
+
+.tb-download-album-badge {
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: #fff;
+    background: #111;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.tb-download-album-artist {
+    color: #e83838;
+    font-size: 18px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.tb-download-album-title {
+    color: #111;
+    font-size: 15px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.tb-download-album-info small {
+    color: #555;
+    font-size: 12px;
+}
+
+.tb-download-section-more {
+    margin-top: 17px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .tb-download-quick-links {
+        gap: 7px;
+    }
+
+    .tb-download-quick-links a {
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+
+    .tb-download-album {
+        gap: 9px;
+    }
+
+    .tb-download-album-cover {
+        flex-basis: 42%;
+        width: 42%;
+        height: 95px;
+    }
+
+    .tb-download-album-artist {
+        font-size: 15px;
+    }
+
+    .tb-download-album-title {
+        font-size: 13px;
+    }
+}
 
 
 /* Main content and right sidebar */

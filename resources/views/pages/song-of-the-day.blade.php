@@ -84,7 +84,7 @@
 
                 <a
                     class="tb-home-song"
-                    href="{{ route('songs.show', [$song->id, $song->slug]) }}"
+                    href="{{ route('music_details', [$song->id, $song->slug]) }}"
                 >
                     <span class="tb-home-song-thumb">
                         <span class="tb-home-song-placeholder" aria-hidden="true">
