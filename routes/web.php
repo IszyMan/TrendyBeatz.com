@@ -8,7 +8,11 @@ Route::get('/', [HomeController::class, 'index'])
     ->name('home');
 
 
-Route::get('/song-of-the-day', [PageController::class, 'songOfTheDay'])->name('songs.day');   
+Route::get('/song-of-the-day', [PageController::class, 'songOfTheDay'])->name('songs.day');  
+
+
+Route::get('/legal-download/{year}/songs',[PageController::class, 'songsByYear'])
+    ->where('year', '(?:19|20)[0-9]{2}')->name('music.year');
 
 
 Route::get('/legal-download/{id}/{slug}', [PageController::class, 'musicDetails'])->whereNumber('id')

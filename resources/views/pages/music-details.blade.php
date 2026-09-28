@@ -148,9 +148,12 @@
             @if (trim((string) $song->YearOfRelease) !== '')
                 <p>
                     <strong>Recorded:</strong>
-                    <span class="tb-music-detail-blue">
+                    <a
+                        class="tb-music-detail-blue tb-music-detail-year-link"
+                        href="{{ route('music.year', $song->YearOfRelease) }}"
+                    >
                         {{ $song->YearOfRelease }} Music
-                    </span>
+                    </a>
                 </p>
             @endif
 

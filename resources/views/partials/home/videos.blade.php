@@ -30,7 +30,7 @@
             >
                 <span class="tb-home-song-thumb tb-home-video-thumb">
                     <span class="tb-home-song-placeholder" aria-hidden="true">
-                        TB
+                        TrendyViews
                     </span>
 
                     @if ($coverUrl)

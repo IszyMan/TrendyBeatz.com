@@ -37,14 +37,11 @@
 
             <a
                 class="tb-home-blog-post"
-                href="{{ route('blogs.show', [
-                    $blog->id,
-                    \Illuminate\Support\Str::slug($blog->title)
-                ]) }}"
+                href="{{ route('blogs.show', $blog->slug) }}"
             >
                 <div class="tb-home-blog-thumb">
                     <span class="tb-home-blog-placeholder" aria-hidden="true">
-                        TrendyBeatz
+                        TrendyNews
                     </span>
 
                     @if ($imageUrl)

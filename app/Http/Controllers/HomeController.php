@@ -180,6 +180,7 @@ class HomeController extends Controller
         return DB::table('blogs as blog')
             ->select(
                 'blog.id',
+                'blog.slug',
                 'blog.category_id',
                 'blog.title',
                 'blog.intro',
@@ -406,6 +407,7 @@ class HomeController extends Controller
         return DB::table('blogs as blog')
             ->select(
                 'blog.id',
+                'blog.slug',
                 'blog.category_id',
                 'blog.title',
                 'blog.intro',

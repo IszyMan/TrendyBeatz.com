@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Query\Builder;
 
 
+
 class PageController extends Controller
 {
     private function tracks(): \Illuminate\Database\Query\Builder
@@ -577,6 +578,44 @@ class PageController extends Controller
             'country' => $country,
             'page' => $pages[$country],
             'songs' => $songs,
+        ]);
+    }
+
+
+    public function songsByYear(int $year): \Illuminate\Contracts\View\View
+    {
+        $songs = \Illuminate\Support\Facades\DB::table('listing as song')
+            ->leftJoin(
+                'artists as artist',
+                'artist.Artists_Id',
+                '=',
+                'song.Artists_Id'
+            )
+            ->select(
+                'song.id',
+                'song.slug',
+                'song.TrackTitle as track_title',
+                'song.CoverUrl as cover_url',
+                'song.Featuring as featuring',
+                'song.created_at',
+                'song.YearOfRelease as released_year',
+                \Illuminate\Support\Facades\DB::raw("
+                    COALESCE(
+                        NULLIF(artist.Stage_Name, ''),
+                        NULLIF(artist.ArtistsName, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
+            )
+            ->where('song.YearOfRelease', (string) $year)
+            ->where('song.ListingType', 'Audio')
+            ->where('song.IsPublished', 'YES')
+            ->orderByDesc('song.id')
+            ->paginate(24);
+
+        return view('pages.songs-by-year', [
+            'songs' => $songs,
+            'year' => $year,
         ]);
     }
 
@@ -1372,74 +1411,134 @@ class PageController extends Controller
         ]);
     }
 
-    
-
-    public function search(Request $request): View
-    {
-        $term = trim((string) $request->query('search', ''));
-
-        if (mb_strlen($term) > 100) {
-            abort(422);
-        }
-
-        $escaped = addcslashes($term, '%_\\');
-
-        $items = $term === ''
-            ? collect()
-            : $this->tracks()
-                ->where(function ($query) use ($escaped) {
-                    $query
-                        ->where('l.track_title', 'like', '%' . $escaped . '%')
-                        ->orWhere('a.stage_name', 'like', '%' . $escaped . '%');
-                })
-                ->orderByDesc('l.id')
-                ->limit(60)
-                ->get();
-
-        return view('index', [
-            'title' => $term === ''
-                ? 'Search'
-                : 'Search results for ' . $term,
-            'items' => $items,
-            'type' => 'song',
-        ]);
-    }
-
-    public function mixes(): View
-    {
-        return view('index', [
-            'title' => 'Latest DJ Mix',
-            'items' => DB::table('dj_mixes as m')
-                ->leftJoin('djs as d', 'd.id', '=', 'm.dj_id')
-                ->select('m.*', 'd.dj_name')
-                ->where('m.is_published', 1)
-                ->orderByDesc('m.id')
-                ->limit(60)
-                ->get(),
-            'type' => 'mix',
-        ]);
-    }
 
   
-
-    public function musicNews(): View
+    private function blogListingQuery(): Builder
     {
-        $blogs = DB::table('blogs as blog')
+        return DB::table('blogs as blog')
+            ->leftJoin(
+                'blog_types as category',
+                'category.id',
+                '=',
+                'blog.category_id'
+            )
+            ->leftJoin(
+                'users as poster',
+                'poster.id',
+                '=',
+                'blog.posted_by'
+            )
             ->select(
                 'blog.id',
+                'blog.slug',
                 'blog.category_id',
                 'blog.title',
                 'blog.intro',
                 'blog.photo',
-                'blog.posted_by',
-                'blog.created_at'
+                'blog.created_at',
+                'blog.updated_at',
+                'category.name as category_name',
+                'category.slug as category_slug',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(poster.name, ''),
+                        CASE
+                            WHEN blog.posted_by REGEXP '^[0-9]+$'
+                                THEN NULL
+                            ELSE NULLIF(blog.posted_by, '')
+                        END
+                    ) as posted_by_name
+                ")
             )
-            ->where('blog.IsPublished', 'YES')
+            ->where('blog.IsPublished', 'YES');
+    }
+
+    public function blogs(): View
+    {
+        $categories = DB::table('blog_types')
+            ->select('id', 'name', 'slug')
+            ->whereNotNull('slug')
+            ->orderBy('name')
+            ->get();
+
+        $posts = $this->blogListingQuery()
             ->orderByDesc('blog.id')
             ->paginate(12);
 
-        return view('pages.music-news', [
-            'blogs' => $blogs,
+        return view('pages.blogs', [
+            'categories' => $categories,
+            'posts' => $posts,
+            'selectedCategory' => null,
         ]);
     }
+
+    public function blogCategory(string $category): View
+    {
+        $categories = DB::table('blog_types')
+            ->select('id', 'name', 'slug')
+            ->whereNotNull('slug')
+            ->orderBy('name')
+            ->get();
+
+        $selectedCategory = $categories->firstWhere('slug', $category);
+
+        abort_unless($selectedCategory, 404);
+
+        $posts = $this->blogListingQuery()
+            ->where('blog.category_id', $selectedCategory->id)
+            ->orderByDesc('blog.id')
+            ->paginate(12);
+
+        return view('pages.blogs', [
+            'categories' => $categories,
+            'posts' => $posts,
+            'selectedCategory' => $selectedCategory,
+        ]);
+    }
+    public function blogDetails(string $slug): View
+    {
+        $post = DB::table('blogs as blog')
+            ->leftJoin(
+                'blog_types as category',
+                'category.id',
+                '=',
+                'blog.category_id'
+            )
+            ->select(
+                'blog.*',
+                'category.name as category_name',
+                'category.slug as category_slug'
+            )
+            ->where('blog.slug', $slug)
+            ->where('blog.IsPublished', 'YES')
+            ->first();
+
+        abort_unless($post, 404);
+
+        $relatedPosts = DB::table('blogs as blog')
+            ->select(
+                'blog.id',
+                'blog.slug',
+                'blog.title',
+                'blog.photo'
+            )
+            ->where('blog.IsPublished', 'YES')
+            ->where('blog.id', '<>', $post->id)
+            ->when(
+                $post->category_id !== null,
+                fn ($query) => $query->where(
+                    'blog.category_id',
+                    $post->category_id
+                )
+            )
+            ->orderByDesc('blog.id')
+            ->limit(5)
+            ->get();
+
+        return view('pages.blog-details', [
+            'post' => $post,
+            'relatedPosts' => $relatedPosts,
+        ]);
+    }
+        
 }

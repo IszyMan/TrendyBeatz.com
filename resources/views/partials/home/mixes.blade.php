@@ -37,7 +37,7 @@
             >
                 <span class="tb-home-mix-thumb">
                     <span class="tb-home-mix-placeholder" aria-hidden="true">
-                        TrendyBeatz
+                        TrendyMix
                     </span>
 
                     @if ($coverUrl)
