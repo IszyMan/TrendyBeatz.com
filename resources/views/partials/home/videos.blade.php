@@ -25,7 +25,8 @@
 
             <a
                 class="tb-home-song tb-home-video"
-                href="{{ route('music_details', [$video->id, $video->slug]) }}"
+                href="{{ \App\Support\VideoUrl::detail($video) }}"
+                
             >
                 <span class="tb-home-song-thumb tb-home-video-thumb">
                     <span class="tb-home-song-placeholder" aria-hidden="true">

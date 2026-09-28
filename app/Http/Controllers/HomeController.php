@@ -60,7 +60,7 @@ class HomeController extends Controller
             ->whereNotNull('song.slug')
             ->where('song.slug', '<>', '')
             ->orderByRaw('CAST(featured.rate_no AS UNSIGNED) ASC')
-            ->limit(10)
+            ->limit(5)
             ->get();
     }
 
@@ -95,7 +95,7 @@ class HomeController extends Controller
             ->whereNotNull('song.slug')
             ->where('song.slug', '<>', '')
             ->orderByDesc('song.id')
-            ->limit(25)
+            ->limit(5)
             ->get();
     }
 
@@ -136,7 +136,7 @@ class HomeController extends Controller
             ->where('song.slug', '<>', '')
             ->orderByRaw('CAST(featured.rate_no AS UNSIGNED) ASC')
             ->orderBy('featured.id')
-            ->limit(10)
+            ->limit(5)
             ->get();
     }
 
@@ -171,7 +171,7 @@ class HomeController extends Controller
             ->whereNotNull('song.slug')
             ->where('song.slug', '<>', '')
             ->orderByDesc('song.id')
-            ->limit(25)
+            ->limit(5)
             ->get();
     }
 
@@ -192,7 +192,7 @@ class HomeController extends Controller
                     ->orWhereNull('blog.category_id');
             })
             ->orderByDesc('blog.id')
-            ->limit(9)
+            ->limit(6)
             ->get();
     }
 
@@ -228,7 +228,7 @@ class HomeController extends Controller
             ->whereNotNull('song.slug')
             ->where('song.slug', '<>', '')
             ->orderByDesc('song.id')
-            ->limit(25)
+            ->limit(5)
             ->get();
     }
 
@@ -265,7 +265,7 @@ class HomeController extends Controller
             )
             ->where('album.IsPublished', 'YES')
             ->orderByDesc('album.id')
-            ->limit(6)
+            ->limit(5)
             ->get();
     }
 
@@ -301,7 +301,7 @@ class HomeController extends Controller
             ->whereNotNull('song.slug')
             ->where('song.slug', '<>', '')
             ->orderByDesc('song.id')
-            ->limit(8)
+            ->limit(5)
             ->get();
     }
 
@@ -336,7 +336,7 @@ class HomeController extends Controller
             ->whereNotNull('song.slug')
             ->where('song.slug', '<>', '')
             ->orderByDesc('song.id')
-            ->limit(8)
+            ->limit(5)
             ->get();
     }
 

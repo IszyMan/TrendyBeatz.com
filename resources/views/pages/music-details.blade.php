@@ -7,7 +7,14 @@
      */
     $artistName = $song->artist_name ?: 'TrendyBeatz';
     $trackTitle = trim((string) $song->TrackTitle);
+    $featuring = trim((string) $song->Featuring);
     $fullTitle = $artistName . ' - ' . $trackTitle;
+    if (
+        $featuring !== ''
+        && !preg_match('/\b(?:ft|feat|featuring)\.?\s/i', $trackTitle)
+    ) {
+        $fullTitle .= ' feat. ' . $featuring;
+    }
     $pageTitle = $fullTitle . ' Music';
 
     $canonical = route('music_details', [

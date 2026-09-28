@@ -34,63 +34,58 @@ Route::get('/musics/ghana', [PageController::class, 'countrySongs'])->defaults('
 Route::get('/musics/african', [PageController::class, 'countrySongs'])->defaults('country', 'african')
     ->name('music.african');
 
-    
+Route::get('/download-latest-videos',[PageController::class, 'latestVideos'])->name('videos.index');
 
-Route::get('/artist-albums', [PageController::class, 'albums'])
-    ->name('albums.archived');
 
-Route::get('/latest-videos', [PageController::class, 'videos'])
-    ->name('videos.archived');
+Route::get('/download-video/{id}/{slug}', [PageController::class, 'videoDetails'])->whereNumber('id')
+    ->name('video_details');
 
-Route::get('/djmix', [PageController::class, 'mixes'])
-    ->name('mixes.archived');
+Route::get('/music-videos-posted-by/{slug}',[PageController::class, 'videosPostedBy'])->name('videos.posted_by');    
 
-Route::get('/artists', [PageController::class, 'artists'])
-    ->name('artists.index');
+Route::get('/artists', [PageController::class, 'artists'])->name('artists.index');
 
-Route::get('/blogs/{category}', [PageController::class, 'blogCategory'])
-    ->whereIn('category', [
-        'celebrity-news',
-        'hot-gists',
-        'music-reviews',
-    ])
-    ->name('blogs.category');
+Route::get('/artists/sections/{country}', [PageController::class, 'artistCountrySection'])
+    ->whereIn('country', ['naija', 'ghana', 'african'])->name('artists.section');
 
-Route::get('/search', [PageController::class, 'search'])
-    ->name('search');
+Route::get('/artists/{slug}', [PageController::class, 'artistDetails'])->name('artists.show');
 
-Route::get('/music/{category}', [PageController::class, 'music'])
-    ->whereIn('category', [
-        'naija',
-        'ghana',
-        'african',
-        'gospel',
-        'highlife',
-    ])
-    ->name('music.index');
+Route::get('/artist-albums', [PageController::class, 'albums'])->name('albums.index');
 
-  
+Route::get('/artist-albums/{id}/{slug}', [PageController::class, 'albumDetails'])
+    ->whereNumber('id')->name('albums.show');
 
-Route::get('/videos', [PageController::class, 'videos'])
-    ->name('videos.index');
+Route::get('/album-posted-by/{slug}',[PageController::class, 'albumPostedBy'])->name('albums.posted_by');  
 
-Route::get('/albums', [PageController::class, 'albums'])
-    ->name('albums.index');
+Route::get('/musics', [PageController::class, 'allMusic'])->name('music.all');
 
-Route::get('/albums/{id}/{slug}', [PageController::class, 'album'])
-    ->whereNumber('id')
-    ->name('albums.show');
 
-Route::get('/dj-mixes', [PageController::class, 'mixes'])
-    ->name('mixes.index');
+Route::get('/djmix', [PageController::class, 'djMixes'])->name('mixes.index');
 
-Route::get('/dj-mixes/{id}/{slug}', [PageController::class, 'mix'])
-    ->whereNumber('id')
-    ->name('mixes.show');
+Route::get('/djmix/posted-by/{slug}', [PageController::class, 'mixesPostedBy'])
+    ->name('mixes.posted_by');
+
+Route::get('/djmix/{id}/{slug}', [PageController::class, 'mixDetails'])
+    ->whereNumber('id')->name('mixes.show');
 
 Route::get('/blogs', [PageController::class, 'blogs'])
     ->name('blogs.index');
 
-Route::get('/blogs/{id}/{slug}', [PageController::class, 'blog'])
-    ->whereNumber('id')
+Route::get('/blogs/{category}', [PageController::class, 'blogCategory'])
+    ->whereIn('category', [
+        'music-reviews',
+        'hot-gists',
+        'celebrity-news',
+        'education',
+        'articles',
+        'networth',
+        'news',
+        'sport-news',
+    ])
+    ->name('blogs.category');
+
+Route::get('/blog/{slug}', [PageController::class, 'blogDetails'])
     ->name('blogs.show');
+
+Route::get('/search', [PageController::class, 'search'])
+    ->name('search');
+
