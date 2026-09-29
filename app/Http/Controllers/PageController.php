@@ -1495,7 +1495,7 @@ class PageController extends Controller
             'selectedCategory' => $selectedCategory,
         ]);
     }
-    public function blogDetails(string $slug): View
+    public function blogDetails(string $slug): \Illuminate\Contracts\View\View
     {
         $post = DB::table('blogs as blog')
             ->leftJoin(
@@ -1504,10 +1504,26 @@ class PageController extends Controller
                 '=',
                 'blog.category_id'
             )
+            ->leftJoin(
+                'users as poster',
+                'poster.id',
+                '=',
+                'blog.posted_by'
+            )
             ->select(
                 'blog.*',
                 'category.name as category_name',
-                'category.slug as category_slug'
+                'category.slug as category_slug',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(poster.name, ''),
+                        CASE
+                            WHEN blog.posted_by REGEXP '^[0-9]+$'
+                                THEN NULL
+                            ELSE NULLIF(blog.posted_by, '')
+                        END
+                    ) as posted_by_name
+                ")
             )
             ->where('blog.slug', $slug)
             ->where('blog.IsPublished', 'YES')
@@ -1515,29 +1531,94 @@ class PageController extends Controller
 
         abort_unless($post, 404);
 
+        $categories = DB::table('blog_types')
+            ->select('id', 'name', 'slug')
+            ->whereNotNull('slug')
+            ->orderBy('name')
+            ->get();
+
         $relatedPosts = DB::table('blogs as blog')
+            ->leftJoin(
+                'blog_types as category',
+                'category.id',
+                '=',
+                'blog.category_id'
+            )
+            ->leftJoin(
+                'users as poster',
+                'poster.id',
+                '=',
+                'blog.posted_by'
+            )
             ->select(
                 'blog.id',
                 'blog.slug',
                 'blog.title',
-                'blog.photo'
+                'blog.photo',
+                'blog.updated_at',
+                'category.name as category_name',
+                'category.slug as category_slug',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(poster.name, ''),
+                        CASE
+                            WHEN blog.posted_by REGEXP '^[0-9]+$'
+                                THEN NULL
+                            ELSE NULLIF(blog.posted_by, '')
+                        END
+                    ) as posted_by_name
+                ")
             )
             ->where('blog.IsPublished', 'YES')
             ->where('blog.id', '<>', $post->id)
-            ->when(
-                $post->category_id !== null,
-                fn ($query) => $query->where(
-                    'blog.category_id',
-                    $post->category_id
-                )
+            ->where('blog.category_id', $post->category_id)
+            ->orderByDesc('blog.id')
+            ->limit(5)
+            ->get();
+
+        $latestPosts = DB::table('blogs as blog')
+            ->leftJoin(
+                'blog_types as category',
+                'category.id',
+                '=',
+                'blog.category_id'
             )
+            ->leftJoin(
+                'users as poster',
+                'poster.id',
+                '=',
+                'blog.posted_by'
+            )
+            ->select(
+                'blog.id',
+                'blog.slug',
+                'blog.title',
+                'blog.photo',
+                'blog.updated_at',
+                'category.name as category_name',
+                'category.slug as category_slug',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(poster.name, ''),
+                        CASE
+                            WHEN blog.posted_by REGEXP '^[0-9]+$'
+                                THEN NULL
+                            ELSE NULLIF(blog.posted_by, '')
+                        END
+                    ) as posted_by_name
+                ")
+            )
+            ->where('blog.IsPublished', 'YES')
+            ->where('blog.id', '<>', $post->id)
             ->orderByDesc('blog.id')
             ->limit(5)
             ->get();
 
         return view('pages.blog-details', [
             'post' => $post,
+            'categories' => $categories,
             'relatedPosts' => $relatedPosts,
+            'latestPosts' => $latestPosts,
         ]);
     }
         

@@ -1,21 +1,22 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = $post->title . ' | TrendyBeatz';
-
-    $descriptionText = trim(preg_replace(
-        '/\s+/',
-        ' ',
-        strip_tags((string) ($post->intro ?: $post->description))
-    ));
+    $pageTitle = $post->title . ' — TrendyBeatz';
 
     $pageDescription = \Illuminate\Support\Str::limit(
-        $descriptionText !== ''
-            ? $descriptionText
-            : 'Read ' . $post->title . ' on TrendyBeatz.',
+        trim(preg_replace(
+            '/\s+/',
+            ' ',
+            strip_tags((string) $post->intro)
+        )),
         160,
-        ''
+        '...'
     );
+
+    if ($pageDescription === '') {
+        $pageDescription = 'Read ' . $post->title
+            . ' and more news on TrendyBeatz.';
+    }
 
     $canonicalUrl = route('blogs.show', $post->slug);
 
@@ -39,7 +40,7 @@
 @section('title', $pageTitle)
 @section('meta_description', $pageDescription)
 @section('canonical', $canonicalUrl)
-@section('social_title', $pageTitle)
+@section('social_title', $post->title)
 @section('social_description', $pageDescription)
 
 @if ($socialImage !== '')
@@ -48,14 +49,44 @@
 
 @section('content')
     @php
-        $postedAt = $post->created_at
-            ? \Illuminate\Support\Carbon::parse($post->created_at)
+        $postedAt = $post->updated_at
+            ? \Illuminate\Support\Carbon::parse($post->updated_at)
             : null;
 
-        /*
-         * These fields follow the order of the legacy blog table.
-         * Keep this mapping when adding the admin editor later.
-         */
+        $categoryClasses = [
+            'sport-news' => 'tb-blog-sport',
+            'celebrity-news' => 'tb-blog-celebrity',
+            'hot-gists' => 'tb-blog-gists',
+            'networth' => 'tb-blog-networth',
+            'music-reviews' => 'tb-blog-reviews',
+            'education' => 'tb-blog-education',
+            'articles' => 'tb-blog-articles',
+            'news' => 'tb-blog-news',
+        ];
+
+        $categoryClass = $categoryClasses[$post->category_slug]
+            ?? 'tb-blog-news';
+
+        $imageUrl = function ($value) {
+            $image = trim((string) $value);
+
+            if ($image === '') {
+                return null;
+            }
+
+            if (preg_match('~^https?://~i', $image)) {
+                return $image;
+            }
+
+            $path = ltrim($image, '/');
+
+            return asset(
+                str_starts_with($path, 'images/')
+                    ? $path
+                    : 'images/blog/' . basename($path)
+            );
+        };
+
         $contentBlocks = [
             ['text', $post->description],
             ['text', $post->desc2],
@@ -99,97 +130,287 @@
         ];
     @endphp
 
-    <article class="tb-blog-detail">
-        <header class="tb-blog-detail-header">
+    <div class="tb-article-page">
+        <nav class="tb-article-breadcrumbs" aria-label="Breadcrumb">
+            <a href="{{ route('home') }}">Home</a>
+            <span aria-hidden="true">→</span>
+
+            <a href="{{ route('blogs.index') }}">Blog</a>
+            <span aria-hidden="true">→</span>
+
             @if ($post->category_slug)
-                <a
-                    class="tb-blog-detail-category"
-                    href="{{ route('blogs.category', $post->category_slug) }}"
-                >
+                <a href="{{ route('blogs.category', $post->category_slug) }}">
                     {{ $post->category_name }}
                 </a>
+                <span aria-hidden="true">→</span>
             @endif
 
-            <h1>{{ $post->title }}</h1>
+            <span aria-current="page">
+                {{ $post->title }}
+            </span>
+        </nav>
 
-            <p class="tb-blog-detail-meta">
-                @if (filled($post->posted_by))
-                    <span>Posted by {{ $post->posted_by }}</span>
+        <nav class="tb-article-categories" aria-label="Blog categories">
+            <a
+                class="tb-article-category-link"
+                href="{{ route('blogs.index') }}"
+            >
+                All
+            </a>
+
+            @foreach ($categories as $category)
+                <a
+                    href="{{ route('blogs.category', $category->slug) }}"
+                    @class([
+                        'tb-article-category-link',
+                        'active' => $category->id === $post->category_id,
+                    ])
+                >
+                    {{ $category->name }}
+                </a>
+            @endforeach
+        </nav>
+
+        <article class="tb-article-main">
+            <div class="tb-article-cover">
+                <span class="tb-article-placeholder" aria-hidden="true">
+                    TrendyBlog
+                </span>
+
+                @if ($socialImage !== '')
+                    <img
+                        src="{{ $socialImage }}"
+                        alt="{{ $post->title }}"
+                        onerror="this.remove()"
+                    >
                 @endif
+            </div>
+
+            <div class="tb-article-meta">
+                <span class="tb-article-badge {{ $categoryClass }}">
+                    {{ $post->category_name ?: 'News' }}
+                </span>
 
                 @if ($postedAt)
                     <time datetime="{{ $postedAt->toDateString() }}">
-                        {{ $postedAt->format('M d, Y') }}
+                        🗓 {{ $postedAt->format('d M Y') }}
                     </time>
                 @endif
-            </p>
-        </header>
 
-        <div class="tb-blog-detail-cover">
-            <span aria-hidden="true">TrendyBeatz</span>
-
-            @if ($socialImage !== '')
-                <img
-                    src="{{ $socialImage }}"
-                    alt="{{ $post->title }} cover"
-                    onerror="this.remove()"
-                >
-            @endif
-        </div>
-
-        @if (filled($post->intro))
-            <p class="tb-blog-detail-intro">
-                {{ trim(strip_tags((string) $post->intro)) }}
-            </p>
-        @endif
-
-        <div class="tb-blog-detail-body">
-            @foreach ($contentBlocks as [$type, $value])
-                @if (filled($value))
-                    @if ($type === 'image')
-                        @php
-                            $image = trim((string) $value);
-
-                            if (preg_match('~^https?://~i', $image)) {
-                                $imageUrl = $image;
-                            } else {
-                                $imagePath = ltrim($image, '/');
-
-                                $imageUrl = asset(
-                                    str_starts_with($imagePath, 'images/')
-                                        ? $imagePath
-                                        : 'images/blog/' . basename($imagePath)
-                                );
-                            }
-                        @endphp
-
-                        <figure class="tb-blog-detail-inline-image">
-                            <img
-                                src="{{ $imageUrl }}"
-                                alt="{{ $post->title }}"
-                                loading="lazy"
-                                onerror="this.closest('figure').remove()"
-                            >
-                        </figure>
-                    @else
-                        <p>{{ trim(strip_tags((string) $value)) }}</p>
-                    @endif
+                @if (filled($post->posted_by_name))
+                    <span>
+                        ✍
+                        <strong>{{ $post->posted_by_name }}</strong>
+                    </span>
                 @endif
-            @endforeach
-        </div>
+            </div>
+
+            <h1>{{ $post->title }}</h1>
+
+            @if (filled($post->intro))
+                <p class="tb-article-intro">
+                    {{ trim(strip_tags((string) $post->intro)) }}
+                </p>
+            @endif
+
+            <div class="tb-article-body">
+                @foreach ($contentBlocks as [$type, $value])
+                    @if (filled($value))
+                        @if ($type === 'image')
+                            @php
+                                $inlineImage = $imageUrl($value);
+                            @endphp
+
+                            @if ($inlineImage)
+                                <figure class="tb-article-body-image">
+                                    <img
+                                        src="{{ $inlineImage }}"
+                                        alt="{{ $post->title }}"
+                                        loading="lazy"
+                                        onerror="this.closest('figure').remove()"
+                                    >
+                                </figure>
+                            @endif
+                        @else
+                            @php
+                                $paragraphs = preg_split(
+                                    '/\R\s*\R/',
+                                    trim(strip_tags((string) $value))
+                                );
+                            @endphp
+
+                            @foreach ($paragraphs as $paragraph)
+                                @if (trim($paragraph) !== '')
+                                    <p>{{ trim($paragraph) }}</p>
+                                @endif
+                            @endforeach
+                        @endif
+                    @endif
+                @endforeach
+
+
+            </div>
+
+            <p class="tb-article-source">
+                <strong>Source:</strong>
+                <a href="{{ route('home') }}">TrendyBeatz</a>
+            </p>
+        </article>
 
         @if ($relatedPosts->isNotEmpty())
-            <section class="tb-blog-detail-related">
-                <h2 class="sub-section-heading">
-                    More Stories
+            <section class="tb-article-panel">
+                <h2 class="tb-article-panel-heading">
+                    📌 Related Posts
                 </h2>
 
-                @foreach ($relatedPosts as $related)
-                    <a href="{{ route('blogs.show', $related->slug) }}">
-                        {{ $related->title }} →
+                <div class="tb-article-related-list">
+                    @foreach ($relatedPosts as $related)
+                        @php
+                            $relatedPhoto = $imageUrl($related->photo);
+
+                            $relatedDate = $related->updated_at
+                                ? \Illuminate\Support\Carbon::parse(
+                                    $related->updated_at
+                                )
+                                : null;
+
+                            $relatedCategoryClass = $categoryClasses[
+                                $related->category_slug
+                            ] ?? 'tb-blog-news';
+                        @endphp
+
+                        <a
+                            class="tb-article-related-card"
+                            href="{{ route('blogs.show', $related->slug) }}"
+                        >
+                            <span class="tb-article-related-image">
+                                <span aria-hidden="true">TrendyBlog</span>
+
+                                @if ($relatedPhoto)
+                                    <img
+                                        src="{{ $relatedPhoto }}"
+                                        alt="{{ $related->title }}"
+                                        loading="lazy"
+                                        onerror="this.remove()"
+                                    >
+                                @endif
+                            </span>
+
+                            <span class="tb-article-related-content">
+                                <span
+                                    class="tb-article-badge {{ $relatedCategoryClass }}"
+                                >
+                                    {{ $related->category_name ?: 'News' }}
+                                </span>
+
+                                <strong>{{ $related->title }}</strong>
+
+                                <small>
+                                    @if ($relatedDate)
+                                        {{ $relatedDate->format('d M Y') }}
+                                    @endif
+
+                                    @if (filled($related->posted_by_name))
+                                        ✍ {{ $related->posted_by_name }}
+                                    @endif
+                                </small>
+
+                                <span class="tb-article-related-read">
+                                    Continue Reading →
+                                </span>
+                            </span>
+                        </a>
+                    @endforeach
+                </div>
+
+                @if ($post->category_slug)
+                    <a
+                        class="tb-article-panel-more"
+                        href="{{ route('blogs.category', $post->category_slug) }}"
+                    >
+                        View All {{ $post->category_name }} Posts →
                     </a>
-                @endforeach
+                @endif
             </section>
         @endif
-    </article>
+
+        @if ($latestPosts->isNotEmpty())
+            <section class="tb-article-panel">
+                <h2 class="tb-article-panel-heading">
+                    📰 Latest Posts
+                </h2>
+
+                <div class="tb-article-related-list">
+                    @foreach ($latestPosts as $latest)
+                        @php
+                            $latestPhoto = $imageUrl($latest->photo);
+
+                            $latestCategoryClass = $categoryClasses[
+                                $latest->category_slug
+                            ] ?? 'tb-blog-news';
+                        @endphp
+
+                        <a
+                            class="tb-article-related-card"
+                            href="{{ route('blogs.show', $latest->slug) }}"
+                        >
+                            <span class="tb-article-related-image">
+                                <span aria-hidden="true">TrendyBlog</span>
+
+                                @if ($latestPhoto)
+                                    <img
+                                        src="{{ $latestPhoto }}"
+                                        alt="{{ $latest->title }}"
+                                        loading="lazy"
+                                        onerror="this.remove()"
+                                    >
+                                @endif
+                            </span>
+
+                            <span class="tb-article-related-content">
+                                <span
+                                    class="tb-article-badge {{ $latestCategoryClass }}"
+                                >
+                                    {{ $latest->category_name ?: 'News' }}
+                                </span>
+
+                                <strong>{{ $latest->title }}</strong>
+
+                                <span class="tb-article-related-read">
+                                    Continue Reading →
+                                </span>
+                            </span>
+                        </a>
+                    @endforeach
+                </div>
+
+                <a
+                    class="tb-article-panel-more"
+                    href="{{ route('blogs.index') }}"
+                >
+                    View More News &amp; Gists →
+                </a>
+            </section>
+        @endif
+
+        <section class="tb-article-panel">
+            <h2 class="tb-article-panel-heading">
+                📁 Browse Categories
+            </h2>
+
+            <div class="tb-article-category-footer">
+                @foreach ($categories as $category)
+                    <a href="{{ route('blogs.category', $category->slug) }}">
+                        {{ $category->name }} →
+                    </a>
+                @endforeach
+            </div>
+        </section>
+
+        <a class="tb-article-back" href="{{ route('blogs.index') }}">
+            <strong>More News &amp; Gists</strong>
+            <span>Catch up on all the latest entertainment</span>
+            <em>View All Posts →</em>
+        </a>
+    </div>
 @endsection

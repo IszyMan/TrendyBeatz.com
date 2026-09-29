@@ -93,3 +93,7 @@ Route::get('/blog/{slug}', [PageController::class, 'blogDetails'])
 Route::get('/search', [PageController::class, 'search'])
     ->name('search');
 
+
+
+require __DIR__ . '/admin.php';    
+

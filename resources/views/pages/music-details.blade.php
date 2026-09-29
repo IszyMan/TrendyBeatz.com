@@ -184,9 +184,9 @@
         </div>
     </section>
 
-    <div class="tb-music-detail-ad-label">
+    <!--<div class="tb-music-detail-ad-label">
         Advertisement
-    </div>
+    </div>-->
 
     @php
         $introduction = trim(strip_tags(
@@ -252,40 +252,8 @@
          */
         $embedSource = (string) $song->scriptUrl;
 
-        $youtubeEmbed = null;
-        $audiomackEmbed = null;
-
-        if (preg_match(
-            '~(?:youtube\.com/(?:watch\?v=|embed/)|youtu\.be/)([A-Za-z0-9_-]{11})~i',
-            $embedSource,
-            $youtubeMatch
-        )) {
-            $youtubeEmbed = 'https://www.youtube-nocookie.com/embed/'
-                . $youtubeMatch[1];
-        }
-
-        if (preg_match(
-            '~https?://(?:www\.)?audiomack\.com/(?:embed/)?[^\s"\'<>]+~i',
-            $embedSource,
-            $audiomackMatch
-        )) {
-            $audiomackPath = parse_url(
-                html_entity_decode(rtrim($audiomackMatch[0], ');,')),
-                PHP_URL_PATH
-            );
-
-            if ($audiomackPath) {
-                $audiomackEmbed = 'https://audiomack.com/embed/'
-                    . ltrim(
-                        preg_replace(
-                            '~^/embed/~',
-                            '/',
-                            $audiomackPath
-                        ),
-                        '/'
-                    );
-            }
-        }
+        $youtubeEmbed = trim((string) ($song->youtube_embed_url ?? ''));
+        $audiomackEmbed = trim((string) ($song->audiomack_embed_url ?? ''));
     @endphp
 
     @if ($youtubeEmbed || $audiomackEmbed || $trackUrl || $digitalStoreUrl)
