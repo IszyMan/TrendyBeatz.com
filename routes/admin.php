@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ArtistController;
 use App\Http\Controllers\Admin\AlbumController;
 use App\Http\Controllers\Admin\DjController;
 use App\Http\Controllers\Admin\DjMixController;
+use App\Http\Controllers\Admin\BlogController;
 
 
 
@@ -66,6 +67,15 @@ Route::prefix('admin')
                     ->names('djs'); 
                     
                 Route::resource('dj-mixes', DjMixController::class)->except('show')
-                    ->names('dj-mixes');    
+                    ->names('dj-mixes');   
+                    
+                   
             });
+
+            Route::middleware('admin.role:administrator,editor')
+                    ->group(function () {
+                        Route::resource('blogs', BlogController::class)
+                            ->except('show')
+                            ->names('blogs');
+                    }); 
     });

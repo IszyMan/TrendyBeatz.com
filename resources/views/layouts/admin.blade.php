@@ -379,7 +379,156 @@ a.tb-pagination-link:hover,
 }
 
 
+/*BLOG ADMIN CSS */
+
+
+.blog-page {
+    max-width: 1100px;
+}
+
+.blog-section {
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.blog-section-heading {
+    padding: 10px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #f5f5f5;
+    color: #333;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.blog-section-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+}
+
+.blog-two-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.blog-current-image {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.blog-current-image img {
+    width: 90px;
+    height: 68px;
+    border: 2px solid #16803d;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.blog-image-preview {
+    display: none;
+    max-width: 140px;
+    max-height: 100px;
+    margin-top: 10px;
+    border: 2px solid #16803d;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.blog-editor {
+    min-height: 400px;
+    background: #fff;
+    color: #111;
+    font: 15px Georgia, serif;
+}
+
+.blog-page .ql-toolbar.ql-snow {
+    background: #f5f5f5;
+    border-color: #ccc;
+}
+
+.blog-page .ql-container.ql-snow {
+    background: #fff;
+    border-color: #ccc;
+}
+
+.blog-page .ql-editor {
+    min-height: 400px;
+    color: #111;
+}
+
+.blog-page .ql-snow .ql-stroke {
+    stroke: #444;
+}
+
+.blog-page .ql-snow .ql-fill {
+    fill: #444;
+}
+
+.blog-page .ql-snow .ql-picker {
+    color: #444;
+}
+
+.blog-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.blog-publish {
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #f5f5f5;
+}
+
+.blog-publish label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.blog-publish input {
+    width: 16px;
+    height: 16px;
+}
+
+.blog-index-filters {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+}
+
+@media (max-width: 768px) {
+    .blog-two-columns,
+    .blog-index-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .blog-actions {
+        flex-wrap: wrap;
+    }
+}
+
+.login-logo {
+    display: block;
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 10px;
+    object-fit: contain;
+}
+
+ 
+
+
 </style> 
+
+@stack('styles')
 
 
 </head>
@@ -387,6 +536,11 @@ a.tb-pagination-link:hover,
 <div class="admin-shell">
     <aside class="admin-sidebar">
         <a class="admin-brand" href="{{ route('admin.dashboard') }}">
+            <img
+                class="login-logo"
+                src="{{ asset('images/faviconn.png') }}"
+                alt="TrendyBeatz"
+            >
             Trendy<span>Beatz</span>
         </a>
 
@@ -516,9 +670,22 @@ a.tb-pagination-link:hover,
             @endif
 
             @if ($canManageBlogs)
-                <details>
+                <details @if (request()->routeIs('admin.blogs.*')) open @endif>
                     <summary>Blogs</summary>
-                    <span class="admin-menu-link">Coming next</span>
+
+                    <a
+                        @class(['active' => request()->routeIs('admin.blogs.index')])
+                        href="{{ route('admin.blogs.index') }}"
+                    >
+                        All Blogs
+                    </a>
+
+                    <a
+                        @class(['active' => request()->routeIs('admin.blogs.create')])
+                        href="{{ route('admin.blogs.create') }}"
+                    >
+                        Add Blog
+                    </a>
                 </details>
             @endif
 
@@ -538,7 +705,7 @@ a.tb-pagination-link:hover,
     <main class="admin-main">
         <div class="admin-topbar">
             <strong>@yield('title', 'Dashboard')</strong>
-            <span>{{ auth()->user()->name }}</span>
+            <span>Hello, {{ auth()->user()->name }}</span>
         </div>
 
         @if (session('success'))
@@ -562,4 +729,6 @@ a.tb-pagination-link:hover,
     </main>
 </div>
 </body>
+
+@stack('scripts')
 </html>
