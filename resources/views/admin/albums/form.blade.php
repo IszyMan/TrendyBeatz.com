@@ -1,5 +1,10 @@
 @php
     $editing = $album !== null;
+
+    $selectedArtist = (string) old(
+        'artist_id',
+        $album->artist_id ?? ''
+    );
 @endphp
 
 <form
@@ -14,21 +19,35 @@
 
     @if ($editing)
         @method('PUT')
+
+        <p class="admin-field-wide">
+            <strong>Album ID:</strong> {{ $album->id }}
+        </p>
     @endif
 
+   <!-- <label class="admin-field admin-field-wide">
+        Search artists
+
+        <input
+            type="search"
+            id="album-artist-search"
+            placeholder="Search by artist name..."
+            autocomplete="off"
+        >
+    </label>-->
 
     <label class="admin-field admin-field-wide">
         Artist
+
         <select name="artist_id" id="album-artist" required>
             <option value="">Choose an existing artist</option>
 
             @foreach ($artists as $artist)
                 <option
-                    value="{{ $artist->Artists_Id }}"
-                    @selected(old('artist_id', $album->artist_id ?? '') === $artist->Artists_Id)
+                    value="{{ $artist->id }}"
+                    @selected($selectedArtist === (string) $artist->id)
                 >
-                    {{ $artist->Stage_Name ?: $artist->ArtistsName }}
-                   
+                    {{ $artist->stage_name ?: $artist->full_name }}
                 </option>
             @endforeach
         </select>
@@ -42,9 +61,11 @@
 
     <label class="admin-field admin-field-wide">
         Album title
+
         <input
             type="text"
             name="title"
+            maxlength="191"
             value="{{ old('title', $album->title ?? '') }}"
             required
         >
@@ -52,20 +73,24 @@
 
     <label class="admin-field">
         Featuring
+
         <input
             type="text"
             name="featuring"
+            maxlength="191"
             value="{{ old('featuring', $album->featuring ?? '') }}"
         >
     </label>
 
     <label class="admin-field">
         Release year
+
         <input
             type="number"
             name="released_year"
             min="1900"
             max="2099"
+            step="1"
             value="{{ old('released_year', $album->released_year ?? '') }}"
             required
         >
@@ -73,6 +98,7 @@
 
     <label class="admin-field">
         Release date
+
         <input
             type="date"
             name="released_date"
@@ -82,6 +108,7 @@
 
     <label class="admin-field admin-field-wide">
         Description
+
         <textarea
             name="description"
             rows="8"
@@ -90,14 +117,17 @@
 
     <label class="admin-field admin-field-wide">
         Album cover
+
         <input
             type="file"
             name="cover_image"
             accept="image/jpeg,image/png,image/webp,image/gif"
         >
 
-        @if ($editing && $album->cover_url)
-            <small>Current image: {{ $album->cover_url }}</small>
+        @if ($editing && filled($album->cover_url))
+            <small>
+                Current image: {{ $album->cover_url }}
+            </small>
         @endif
     </label>
 
@@ -109,8 +139,11 @@
                 type="checkbox"
                 name="IsPublished"
                 value="YES"
-                @checked(old('IsPublished', $album->IsPublished ?? 'NO') === 'YES')
+                @checked(
+                    old('IsPublished', $album->IsPublished ?? 'NO') === 'YES'
+                )
             >
+
             Published
         </label>
     </div>
@@ -131,11 +164,13 @@
         const search = document.getElementById('album-artist-search');
         const select = document.getElementById('album-artist');
 
-        if (!search || !select) return;
+        if (!search || !select) {
+            return;
+        }
 
         const allOptions = Array.from(select.options).map(option => ({
             value: option.value,
-            text: option.textContent,
+            text: option.textContent.trim()
         }));
 
         search.addEventListener('input', () => {
@@ -146,9 +181,9 @@
 
             for (const item of allOptions) {
                 if (
-                    item.value === '' ||
-                    item.value === selectedValue ||
-                    item.text.toLowerCase().includes(query)
+                    item.value === ''
+                    || item.value === selectedValue
+                    || item.text.toLowerCase().includes(query)
                 ) {
                     select.add(new Option(
                         item.text,
@@ -158,6 +193,8 @@
                     ));
                 }
             }
+
+            select.value = selectedValue;
         });
     });
 </script>

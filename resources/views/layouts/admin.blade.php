@@ -690,6 +690,54 @@ a.tb-pagination-link:hover,
             @endif
 
             @if ($isAdministrator)
+                <details
+                    @if (request()->routeIs('admin.featured-songs.*')) open @endif
+                >
+                    <summary>Featured Songs</summary>
+
+                    <a
+                        @class([
+                            'active' => request()->routeIs('admin.featured-songs.index'),
+                        ])
+                        href="{{ route('admin.featured-songs.index') }}"
+                    >
+                        All Featured Songs
+                    </a>
+
+                    <a
+                        @class([
+                            'active' => request()->routeIs('admin.featured-songs.create'),
+                        ])
+                        href="{{ route('admin.featured-songs.create') }}"
+                    >
+                        Add Featured Song
+                    </a>
+                </details>
+
+                <details
+                    @if (request()->routeIs('admin.featured-albums.*')) open @endif
+                >
+                    <summary>Featured Albums</summary>
+
+                    <a
+                        @class([
+                            'active' => request()->routeIs('admin.featured-albums.index'),
+                        ])
+                        href="{{ route('admin.featured-albums.index') }}"
+                    >
+                        All Featured Albums
+                    </a>
+
+                    <a
+                        @class([
+                            'active' => request()->routeIs('admin.featured-albums.create'),
+                        ])
+                        href="{{ route('admin.featured-albums.create') }}"
+                    >
+                        Add Featured Album
+                    </a>
+                </details>
+
                 <span class="admin-menu-link">Settings — coming next</span>
             @endif
         </nav>

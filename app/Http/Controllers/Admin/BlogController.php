@@ -17,10 +17,17 @@ class BlogController extends Controller
         $search = trim((string) $request->query('search', ''));
 
         $blogs = DB::table('blogs as b')
-            ->leftJoin('blog_types as c', 'c.id', '=', 'b.category_id')
+            ->leftJoin('blog_types as c', 'c.id', '=', 'b.blog_type')
             ->leftJoin('users as u', 'u.id', '=', 'b.posted_by')
             ->select(
                 'b.*',
+                'b.blog_type as category_id',
+                'b.script_url as scriptUrl',
+                DB::raw("
+                    CASE WHEN b.Is_published = 1
+                        THEN 'YES' ELSE 'NO'
+                    END AS IsPublished
+                "),
                 'c.name as category_name',
                 'u.name as public_author_name'
             )
@@ -111,7 +118,19 @@ class BlogController extends Controller
 
     public function edit(int $blog)
     {
-        $blog = DB::table('blogs')->where('id', $blog)->firstOrFail();
+        $blog = DB::table('blogs')
+            ->select(
+                'blogs.*',
+                'blog_type as category_id',
+                'script_url as scriptUrl',
+                DB::raw("
+                    CASE WHEN Is_published = 1
+                        THEN 'YES' ELSE 'NO'
+                    END AS IsPublished
+                ")
+            )
+            ->where('id', $blog)
+            ->firstOrFail();
 
         return view('admin.blogs.edit', [
             'blog' => $blog,
@@ -180,7 +199,7 @@ class BlogController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'category_id' => [
                 'required',
                 'integer',
@@ -198,6 +217,18 @@ class BlogController extends Controller
                 'max:4096',
             ],
         ]);
+
+        $data['blog_type'] = $data['category_id'];
+        $data['script_url'] = $data['scriptUrl'] ?? null;
+        $data['Is_published'] = $data['IsPublished'] === 'YES' ? 1 : 0;
+
+        unset(
+            $data['category_id'],
+            $data['scriptUrl'],
+            $data['IsPublished']
+        );
+
+        return $data;
     }
 
     private function saveImage(\Illuminate\Http\UploadedFile $image): string

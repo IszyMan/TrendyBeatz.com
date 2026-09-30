@@ -23,7 +23,7 @@ class AdminDashboardController extends Controller
 
         return view('admin.dashboard', [
             'listingCount' => $isAdministrator || $isStandard
-                ? DB::table('listing')->count()
+                ? DB::table('listings')->count()
                 : null,
 
             'mixCount' => $isAdministrator || $isStandard

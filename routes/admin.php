@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AlbumController;
 use App\Http\Controllers\Admin\DjController;
 use App\Http\Controllers\Admin\DjMixController;
 use App\Http\Controllers\Admin\BlogController;
+use App\Http\Controllers\Admin\FeaturedController;
 
 
 
@@ -78,4 +79,42 @@ Route::prefix('admin')
                             ->except('show')
                             ->names('blogs');
                     }); 
+    });
+
+
+    Route::middleware('auth')
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        foreach ([
+            'featured-songs' => 'song',
+            'featured-albums' => 'album',
+        ] as $path => $kind) {
+            Route::get($path, [FeaturedController::class, 'index'])
+                ->defaults('kind', $kind)
+                ->name($path . '.index');
+
+            Route::get($path . '/create', [FeaturedController::class, 'create'])
+                ->defaults('kind', $kind)
+                ->name($path . '.create');
+
+            Route::post($path, [FeaturedController::class, 'store'])
+                ->defaults('kind', $kind)
+                ->name($path . '.store');
+
+            Route::get($path . '/{id}/edit', [FeaturedController::class, 'edit'])
+                ->whereNumber('id')
+                ->defaults('kind', $kind)
+                ->name($path . '.edit');
+
+            Route::put($path . '/{id}', [FeaturedController::class, 'update'])
+                ->whereNumber('id')
+                ->defaults('kind', $kind)
+                ->name($path . '.update');
+
+            Route::delete($path . '/{id}', [FeaturedController::class, 'destroy'])
+                ->whereNumber('id')
+                ->defaults('kind', $kind)
+                ->name($path . '.destroy');
+        }
     });

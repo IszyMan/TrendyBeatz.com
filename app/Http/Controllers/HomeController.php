@@ -11,225 +11,93 @@ class HomeController extends Controller
     private function publishedTracks(): Builder
     {
         return DB::table('listings as song')
-            ->leftJoin('artists as artist', 'artist.id', '=', 'song.artist_id')
-            ->select('song.*', 'artist.stage_name as artist_name')
-            ->where('song.is_published', 1);
+            ->leftJoin(
+                'artists as artist',
+                'artist.id',
+                '=',
+                'song.artist_id'
+            )
+            ->select(
+                'song.id',
+                'song.slug',
+                'song.track_title',
+                'song.cover_url',
+                'song.featuring',
+                'song.track_url',
+                'song.created_at',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(artist.stage_name, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
+            )
+            ->where('song.is_published', 1)
+            ->whereNotNull('song.slug')
+            ->where('song.slug', '<>', '');
     }
 
     private function publishedAudio(): Builder
     {
         return $this->publishedTracks()
-            ->where('song.listing_type_id', 1);
+            ->where('song.listing_type', 1);
     }
 
-
-
-    private function songsOfTheDay()
+    private function featuredSongs(int $featureType)
     {
-        return DB::table('featured_rated as featured')
-            ->join(
-                'listing as song',
-                'song.id',
-                '=',
-                'featured.listing_id'
-            )
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.TrackUrl as track_url',
-                'featured.rate_no',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
-            ->whereNotNull('song.slug')
-            ->where('song.slug', '<>', '')
-            ->orderByRaw('CAST(featured.rate_no AS UNSIGNED) ASC')
-            ->limit(5)
-            ->get();
-    }
+        $features = DB::table('listing_features')
+            ->select('listing_id')
+            ->selectRaw('MAX(id) as latest_feature_id')
+            ->where('listing_feature_type', $featureType)
+            ->groupBy('listing_id');
 
-    private function latestNaijaSongs()
-    {
-        return DB::table('listing as song')
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
+        return $this->publishedAudio()
+            ->joinSub(
+                $features,
+                'featured',
+                'featured.listing_id',
                 '=',
-                'song.Artists_Id'
+                'song.id'
             )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.TrackUrl as track_url',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.country_id', 'naija')
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
-            ->whereNotNull('song.slug')
-            ->where('song.slug', '<>', '')
+            ->orderByDesc('featured.latest_feature_id')
             ->orderByDesc('song.id')
             ->limit(5)
             ->get();
     }
 
-    private function songsOfTheWeek()
+    private function countrySongs(int $countryId)
     {
-        return DB::table('song_of_the_week as featured')
-            ->join(
-                'listing as song',
-                'song.id',
-                '=',
-                'featured.listing_id'
-            )
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.TrackUrl as track_url',
-                'featured.rate_no',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
-            ->whereNotNull('song.slug')
-            ->where('song.slug', '<>', '')
-            ->orderByRaw('CAST(featured.rate_no AS UNSIGNED) ASC')
-            ->orderBy('featured.id')
-            ->limit(5)
-            ->get();
-    }
-
-    private function latestGhanaSongs()
-    {
-        return DB::table('listing as song')
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.TrackUrl as track_url',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.country_id', 'ghana')
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
-            ->whereNotNull('song.slug')
-            ->where('song.slug', '<>', '')
+        return $this->publishedAudio()
+            ->where('song.country_id', $countryId)
             ->orderByDesc('song.id')
             ->limit(5)
             ->get();
     }
 
-    private function latestNews()
+    private function latestGospelSongs()
     {
-        return DB::table('blogs as blog')
-            ->select(
-                'blog.id',
-                'blog.slug',
-                'blog.category_id',
-                'blog.title',
-                'blog.intro',
-                'blog.photo',
-                'blog.created_at'
-            )
-            ->where('blog.IsPublished', 'YES')
-            ->where(function (Builder $query) {
-                $query->where('blog.category_id', '<>', 8)
-                    ->orWhereNull('blog.category_id');
-            })
-            ->orderByDesc('blog.id')
-            ->limit(6)
+        return $this->publishedAudio()
+            ->where('song.is_gospel', 1)
+            ->orderByDesc('song.id')
+            ->limit(5)
             ->get();
     }
 
-
-    private function latestAfricanSongs()
+    private function latestHighlifeSongs()
     {
-        return DB::table('listing as song')
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.TrackUrl as track_url',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.country_id', 'african')
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
-            ->whereNotNull('song.slug')
-            ->where('song.slug', '<>', '')
+        return $this->publishedAudio()
+            ->where('song.is_high_life', 1)
             ->orderByDesc('song.id')
             ->limit(5)
+            ->get();
+    }
+
+    private function latestVideos()
+    {
+        return $this->publishedTracks()
+            ->where('song.listing_type', 2)
+            ->orderByDesc('song.id')
+            ->limit(4)
             ->get();
     }
 
@@ -238,7 +106,7 @@ class HomeController extends Controller
         return DB::table('albums as album')
             ->leftJoin(
                 'artists as artist',
-                'artist.Artists_Id',
+                'artist.id',
                 '=',
                 'album.artist_id'
             )
@@ -251,92 +119,21 @@ class HomeController extends Controller
                 'album.created_at',
                 DB::raw("
                     COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, '')
+                        NULLIF(artist.stage_name, ''),
+                        'TrendyBeatz'
                     ) as artist_name
                 ")
             )
             ->selectSub(
-                DB::table('listing as song')
+                DB::table('listings as song')
                     ->selectRaw('COUNT(*)')
                     ->whereColumn('song.album_id', 'album.id')
-                    ->where('song.IsPublished', 'YES')
-                    ->where('song.ListingType', 'Audio'),
+                    ->where('song.is_published', 1)
+                    ->where('song.listing_type', 1),
                 'track_count'
             )
-            ->where('album.IsPublished', 'YES')
+            ->where('album.is_published', 1)
             ->orderByDesc('album.id')
-            ->limit(5)
-            ->get();
-    }
-
-
-    private function latestGospelSongs()
-    {
-        return DB::table('listing as song')
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.TrackUrl as track_url',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.isgospel', 1)
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
-            ->whereNotNull('song.slug')
-            ->where('song.slug', '<>', '')
-            ->orderByDesc('song.id')
-            ->limit(5)
-            ->get();
-    }
-
-    private function latestHighlifeSongs()
-    {
-        return DB::table('listing as song')
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.TrackUrl as track_url',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.ishighlife', 1)
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
-            ->whereNotNull('song.slug')
-            ->where('song.slug', '<>', '')
-            ->orderByDesc('song.id')
             ->limit(5)
             ->get();
     }
@@ -344,78 +141,62 @@ class HomeController extends Controller
     private function latestDjMixes()
     {
         return DB::table('dj_mixs as mix')
-            ->leftJoin(
-                'dj as dj',
-                'dj.id',
-                '=',
-                'mix.dj_id'
-            )
+            ->leftJoin('djs as dj', 'dj.id', '=', 'mix.dj_id')
             ->select(
                 'mix.id',
-                'mix.mix_title',
+                'mix.title as mix_title',
                 'mix.cover_url',
                 'mix.track_url',
                 'mix.slug',
                 'mix.created_at',
-                DB::raw("COALESCE(NULLIF(dj.dj_name, ''), 'TrendyBeatz DJ') as dj_name")
+                DB::raw("
+                    COALESCE(
+                        NULLIF(dj.name, ''),
+                        'TrendyBeatz DJ'
+                    ) as dj_name
+                ")
             )
-            ->where('mix.IsPublished', 'YES')
-            ->whereNotNull('mix.mix_title')
-            ->where('mix.mix_title', '<>', '')
+            ->where('mix.is_published', 1)
+            ->whereNotNull('mix.title')
+            ->where('mix.title', '<>', '')
             ->orderByDesc('mix.id')
             ->limit(3)
             ->get();
     }
 
-    private function latestVideos()
-    {
-        return DB::table('listing as song')
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.TrackUrl as track_url',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.ListingType', 'video')
-            ->where('song.IsPublished', 'YES')
-            ->whereNotNull('song.slug')
-            ->where('song.slug', '<>', '')
-            ->orderByDesc('song.id')
-            ->limit(4)
-            ->get();
-    }
-
-
-    private function latestReviews()
+    private function publishedBlogs(): Builder
     {
         return DB::table('blogs as blog')
             ->select(
                 'blog.id',
                 'blog.slug',
-                'blog.category_id',
+                'blog.blog_type as category_id',
                 'blog.title',
                 'blog.intro',
                 'blog.photo',
                 'blog.created_at'
             )
-            ->where('blog.IsPublished', 'YES')
-            ->where('blog.category_id', 8)
+            ->where('blog.Is_published', 1)
+            ->whereNotNull('blog.slug')
+            ->whereRaw("TRIM(blog.slug) <> ''");
+    }
+
+    private function latestNews()
+    {
+        return $this->publishedBlogs()
+            ->where(function (Builder $query) {
+                $query->where('blog.blog_type', '<>', 5)
+                    ->orWhereNull('blog.blog_type');
+            })
+            ->orderByDesc('blog.id')
+            ->limit(6)
+            ->get();
+    }
+
+    private function latestReviews()
+    {
+        return $this->publishedBlogs()
+            ->where('blog.blog_type', 5)
             ->orderByDesc('blog.id')
             ->limit(6)
             ->get();
@@ -424,12 +205,12 @@ class HomeController extends Controller
     public function index(): View
     {
         return view('home', [
-            'day' => $this->songsOfTheDay(),
-            'naija' => $this->latestNaijaSongs(),
+            'day' => $this->featuredSongs(1),
+            'naija' => $this->countrySongs(1),
             'news' => $this->latestNews(),
-            'week' => $this->songsOfTheWeek(),
-            'ghana' => $this->latestGhanaSongs(),
-            'african' => $this->latestAfricanSongs(),
+            'week' => $this->featuredSongs(2),
+            'ghana' => $this->countrySongs(2),
+            'african' => $this->countrySongs(3),
             'albums' => $this->latestAlbums(),
             'gospel' => $this->latestGospelSongs(),
             'highlife' => $this->latestHighlifeSongs(),

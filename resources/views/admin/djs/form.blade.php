@@ -18,29 +18,37 @@
 
     <label class="admin-field">
         DJ name
+
         <input
             type="text"
             name="dj_name"
-            maxlength="50"
-            value="{{ old('dj_name', $dj->dj_name ?? '') }}"
+            maxlength="191"
+            value="{{ old('dj_name', $dj->name ?? '') }}"
             required
         >
     </label>
 
     <label class="admin-field">
         Full name
+
         <input
             type="text"
             name="fullname"
-            maxlength="50"
-            value="{{ old('fullname', $dj->fullname ?? '') }}"
+            maxlength="191"
+            value="{{ old('fullname', $dj->full_name ?? '') }}"
         >
     </label>
 
     <label class="admin-field">
         Country
+
         <select name="country_id">
-            <option value="">Choose country</option>
+            <option
+                value=""
+                @selected(old('country_id', $dj->country_key ?? '') === '')
+            >
+                Choose country
+            </option>
 
             @foreach ([
                 'naija' => 'Naija',
@@ -49,7 +57,9 @@
             ] as $value => $label)
                 <option
                     value="{{ $value }}"
-                    @selected(old('country_id', $dj->country_id ?? '') === $value)
+                    @selected(
+                        old('country_id', $dj->country_key ?? '') === $value
+                    )
                 >
                     {{ $label }}
                 </option>
@@ -59,6 +69,7 @@
 
     <label class="admin-field admin-field-wide">
         DJ biography
+
         <textarea
             name="place_of_birth"
             rows="10"
@@ -68,14 +79,17 @@
 
     <label class="admin-field admin-field-wide">
         DJ photo
+
         <input
             type="file"
             name="photo_upload"
             accept="image/jpeg,image/png,image/webp,image/gif"
         >
 
-        @if ($editing && $dj->photo)
-            <small>Current image: {{ $dj->photo }}</small>
+        @if ($editing && filled($dj->profile_img))
+            <small>
+                Current image: {{ $dj->profile_img }}
+            </small>
         @endif
     </label>
 
@@ -87,8 +101,11 @@
                 type="checkbox"
                 name="IsPublished"
                 value="YES"
-                @checked(old('IsPublished', $dj->IsPublished ?? 'NO') === 'YES')
+                @checked(
+                    old('IsPublished', $dj->IsPublished ?? 'NO') === 'YES'
+                )
             >
+
             Published
         </label>
     </div>

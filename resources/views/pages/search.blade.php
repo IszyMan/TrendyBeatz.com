@@ -315,7 +315,7 @@
             role="search"
         >
             <label class="tb-search-label" for="tb-search-query">
-                Search by artist, title or featured artist
+                Search TrendyBeatz..
             </label>
 
             <input

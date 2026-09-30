@@ -16,12 +16,10 @@
         'DJ Frenzy', 'Qing Madi', 'Peruzzi', 'Yung6ix',
     ];
 
-    
-    
     $popularAlbums = \Illuminate\Support\Facades\DB::table('albums as album')
         ->leftJoin(
             'artists as artist',
-            'artist.Artists_Id',
+            'artist.id',
             '=',
             'album.artist_id'
         )
@@ -29,67 +27,72 @@
             'album.*',
             \Illuminate\Support\Facades\DB::raw("
                 COALESCE(
-                    NULLIF(artist.Stage_Name, ''),
-                    NULLIF(artist.ArtistsName, ''),
+                    NULLIF(artist.stage_name, ''),
                     'TrendyBeatz'
                 ) as artist_name
             ")
         )
         ->selectSub(function ($query) {
             $query
-                ->from('album_of_the_day as popular')
+                ->from('album_populars as popular')
                 ->selectRaw('MAX(popular.rate_no)')
                 ->whereColumn('popular.album_id', 'album.id');
         }, 'popularity_rate')
         ->whereExists(function ($query) {
             $query
                 ->selectRaw('1')
-                ->from('album_of_the_day as popular')
+                ->from('album_populars as popular')
                 ->whereColumn('popular.album_id', 'album.id');
         })
-        ->where('album.IsPublished', 'YES')
+        ->where('album.is_published', 1)
         ->orderByDesc('popularity_rate')
         ->orderByDesc('album.id')
         ->limit(4)
         ->get();
 
-    $featuredSongs = \Illuminate\Support\Facades\DB::table('featured_rated as featured')
-        ->join(
-            'listing as song',
-            'song.id',
+    $dayFeatures = \Illuminate\Support\Facades\DB::table('listing_features')
+        ->select('listing_id')
+        ->selectRaw('MAX(id) as latest_feature_id')
+        ->where('listing_feature_type', 1)
+        ->groupBy('listing_id');
+
+    $featuredSongs = \Illuminate\Support\Facades\DB::table('listings as song')
+        ->joinSub(
+            $dayFeatures,
+            'featured',
+            'featured.listing_id',
             '=',
-            'featured.listing_id'
+            'song.id'
         )
         ->leftJoin(
             'artists as artist',
-            'artist.Artists_Id',
+            'artist.id',
             '=',
-            'song.Artists_Id'
+            'song.artist_id'
         )
         ->select(
             'song.id',
             'song.slug',
-            'song.TrackTitle as track_title',
-            'song.CoverUrl as cover_url',
-            'song.Featuring as featuring',
-            'song.TrackUrl as track_url',
-            'featured.rate_no',
+            'song.track_title',
+            'song.cover_url',
+            'song.featuring',
+            'song.track_url',
             \Illuminate\Support\Facades\DB::raw("
                 COALESCE(
-                    NULLIF(artist.Stage_Name, ''),
-                    NULLIF(artist.ArtistsName, ''),
+                    NULLIF(artist.stage_name, ''),
                     'TrendyBeatz'
                 ) as artist_name
             ")
         )
-        ->where('song.ListingType', 'Audio')
-        ->where('song.IsPublished', 'YES')
+        ->where('song.listing_type', 1)
+        ->where('song.is_published', 1)
         ->whereNotNull('song.slug')
-        ->where('song.slug', '<>', '')
-        ->orderByRaw('CAST(featured.rate_no AS UNSIGNED) ASC')
+        ->whereRaw("TRIM(song.slug) <> ''")
+        ->orderByDesc('featured.latest_feature_id')
+        ->orderByDesc('song.id')
         ->limit(5)
-        ->get();    
-    
+        ->get();
+
     $recentBlogs = \Illuminate\Support\Facades\DB::table('blogs as blog')
         ->select(
             'blog.id',
@@ -97,11 +100,12 @@
             'blog.title',
             'blog.intro'
         )
-        ->where('blog.IsPublished', 'YES')
+        ->where('blog.Is_published', 1)
+        ->whereNotNull('blog.slug')
+        ->whereRaw("TRIM(blog.slug) <> ''")
         ->orderByDesc('blog.id')
         ->limit(6)
         ->get();
-   
 @endphp
 
 <section class="aside-panel aside-top-pages">
@@ -132,7 +136,7 @@
     </a>
 
     <a class="aside-link" href="{{ route('page.promote') }}">
-        Promote Your Music<br >(For Artistes Only)
+        Promote Your Music<br>(For Artistes Only)
     </a>
 
     <a class="aside-link" href="{{ route('page.advertise') }}">
@@ -152,7 +156,7 @@
             <a
                 class="artist-pill"
                 href="{{ route('artists.show', [
-                    'slug' => \Illuminate\Support\Str::slug($name)
+                    'slug' => \Illuminate\Support\Str::slug($name),
                 ]) }}"
             >
                 {{ $name }}
@@ -167,7 +171,7 @@
             <a
                 class="artist-pill"
                 href="{{ route('artists.show', [
-                    'slug' => \Illuminate\Support\Str::slug($name)
+                    'slug' => \Illuminate\Support\Str::slug($name),
                 ]) }}"
             >
                 {{ $name }}
@@ -189,11 +193,11 @@
             </span>
 
             <span class="aside-media-details">
-                
-                    <strong class="album-name">
-                         {{ $album->artist_name }} 
-                    </strong>
-                    {{ $album->title }}
+                <strong class="album-name">
+                    {{ $album->artist_name }}
+                </strong>
+
+                {{ $album->title }}
 
                 @if ($album->released_year)
                     <span class="album-year">
@@ -247,12 +251,12 @@
 </section>
 
 <section class="aside-panel aside-albums">
-    <h2 class="aside-title">Latest Blog & News</h2>
+    <h2 class="aside-title">Latest Blog &amp; News</h2>
 
     @forelse ($recentBlogs as $blog)
         <a
             class="album-card aside-media-card"
-            href="{{ route('blogs.show', [$blog->id, $blog->slug]) }}"
+            href="{{ route('blogs.show', ['slug' => $blog->slug]) }}"
         >
             <span class="aside-image-placeholder" aria-hidden="true">
                 <span>TB</span>

@@ -14,8 +14,10 @@
 
     @if ($editing)
         @method('PUT')
+
         <p class="admin-field-wide">
-            <strong>Artist ID:</strong> {{ $artist->Artists_Id }}
+            <strong>Artist ID:</strong>
+            {{ $artist->artist_id }}
         </p>
     @endif
 
@@ -27,17 +29,20 @@
     ] as $field => $label)
         <label class="admin-field">
             {{ $label }}
+
             <input
                 type="text"
                 name="{{ $field }}"
+                maxlength="191"
                 value="{{ old($field, $artist->{$field} ?? '') }}"
-                @if ($field === 'Stage_Name') required @endif
+                @required($field === 'Stage_Name')
             >
         </label>
     @endforeach
 
     <label class="admin-field">
         Country
+
         <select name="country_id" required>
             @foreach ([
                 'naija' => 'Naija',
@@ -46,7 +51,10 @@
             ] as $value => $label)
                 <option
                     value="{{ $value }}"
-                    @selected(old('country_id', $artist->country_id ?? 'naija') === $value)
+                    @selected(
+                        old('country_id', $artist->country_key ?? 'naija')
+                            === $value
+                    )
                 >
                     {{ $label }}
                 </option>
@@ -56,30 +64,49 @@
 
     <label class="admin-field">
         Net worth ID
+
         <input
             type="number"
             name="networth_id"
             min="0"
+            max="2147483647"
             value="{{ old('networth_id', $artist->networth_id ?? '') }}"
         >
     </label>
 
     <label class="admin-field">
         Also comedian?
+
         <select name="Is_also_comedian" required>
             <option
                 value="0"
-                @selected((string) old('Is_also_comedian', $artist->Is_also_comedian ?? 0) === '0')
-            >No</option>
+                @selected(
+                    (string) old(
+                        'Is_also_comedian',
+                        $artist->Is_also_comedian ?? 0
+                    ) === '0'
+                )
+            >
+                No
+            </option>
+
             <option
                 value="1"
-                @selected((string) old('Is_also_comedian', $artist->Is_also_comedian ?? 0) === '1')
-            >Yes</option>
+                @selected(
+                    (string) old(
+                        'Is_also_comedian',
+                        $artist->Is_also_comedian ?? 0
+                    ) === '1'
+                )
+            >
+                Yes
+            </option>
         </select>
     </label>
 
     <label class="admin-field admin-field-wide">
         Artist biography
+
         <textarea
             name="Place_Birth"
             rows="10"
@@ -89,14 +116,15 @@
 
     <label class="admin-field admin-field-wide">
         Profile image
+
         <input
             type="file"
             name="profile_image"
             accept="image/jpeg,image/png,image/webp,image/gif"
         >
 
-        @if ($editing && $artist->ProfilePic)
-            <small>Current image: {{ $artist->ProfilePic }}</small>
+        @if ($editing && filled($artist->img))
+            <small>Current image: {{ $artist->img }}</small>
         @endif
     </label>
 
@@ -108,8 +136,11 @@
                 type="checkbox"
                 name="IsPublished"
                 value="YES"
-                @checked(old('IsPublished', $artist->IsPublished ?? 'NO') === 'YES')
+                @checked(
+                    old('IsPublished', $artist->IsPublished ?? 'NO') === 'YES'
+                )
             >
+
             Published
         </label>
     </div>

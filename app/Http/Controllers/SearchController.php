@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\MusicUrl;
+use App\Support\VideoUrl;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -22,16 +23,12 @@ class SearchController extends Controller
         ]);
 
         $query = trim((string) ($validated['q'] ?? ''));
-        $type = $validated['type'] ?? 'all';
-
-        if ($type === '') {
-            $type = 'all';
-        }
+        $type = ($validated['type'] ?? '') ?: 'all';
 
         $normalizedQuery = preg_replace(
             '/[^\p{L}\p{N}\s]+/u',
             ' ',
-            mb_strtolower($query)
+            mb_strtolower($query, 'UTF-8')
         );
 
         $normalizedQuery = trim(
@@ -63,22 +60,14 @@ class SearchController extends Controller
                     "
                     CONCAT_WS(
                         _utf8mb4' ' COLLATE utf8mb4_unicode_ci,
-
-                        CONVERT(results.artist_name USING utf8mb4)
-                            COLLATE utf8mb4_unicode_ci,
-
-                        CONVERT(results.title USING utf8mb4)
-                            COLLATE utf8mb4_unicode_ci,
-
-                        CONVERT(results.featuring USING utf8mb4)
-                            COLLATE utf8mb4_unicode_ci,
-
-                        CONVERT(results.search_extra USING utf8mb4)
-                            COLLATE utf8mb4_unicode_ci
+                        results.artist_name,
+                        results.title,
+                        results.featuring,
+                        results.search_extra
                     )
                     LIKE (
                         CONVERT(? USING utf8mb4)
-                            COLLATE utf8mb4_unicode_ci
+                        COLLATE utf8mb4_unicode_ci
                     )
                     ",
                     ['%' . $term . '%']
@@ -114,180 +103,155 @@ class SearchController extends Controller
             'normalizedQuery'
         ));
     }
+
     private function searchSources(): Builder
     {
-        /*
-         * These optional columns were not shown in your controller.
-         * Inspect them so missing featuring/timestamp fields do not
-         * cause SQL errors.
-         */
-        $columns = [];
-
-        foreach (['listing', 'dj_mixs', 'albums', 'blogs', 'artists', 'dj'] as $table) {
-            $columns[$table] = Schema::getColumnListing($table);
-        }
-
         $artistName = "
             COALESCE(
-                NULLIF(artist.Stage_Name, ''),
-                NULLIF(artist.ArtistsName, ''),
+                NULLIF(TRIM(artist.stage_name), ''),
                 'TrendyBeatz'
             )
         ";
 
-        $listings = DB::table('listing as listing')
+        // Audio = 1. Video = 2.
+        $listings = DB::table('listings as listing')
             ->leftJoin(
                 'artists as artist',
-                'artist.Artists_Id',
+                'artist.id',
                 '=',
-                'listing.Artists_Id'
+                'listing.artist_id'
             )
-            ->selectRaw("
-                listing.id as id,
-                CASE
-                    WHEN LOWER(listing.ListingType) = 'audio'
-                    THEN 'music'
-                    ELSE 'video'
-                END as type,
-                listing.TrackTitle as title,
-                {$artistName} as artist_name,
-                COALESCE(listing.Featuring, '') as featuring,
-                listing.CoverUrl as cover_url,
-                COALESCE(listing.slug, '') as slug,
-                COALESCE(artist.ArtistsName, '') as search_extra
-            ")
-            ->selectRaw(
-                $this->dateExpression('listing', 'listing', $columns)
-                . ' as created_at'
-            )
-            ->where('listing.IsPublished', 'YES')
-            ->whereIn(
-                DB::raw('LOWER(listing.ListingType)'),
-                ['audio', 'video']
-            );
+            ->where('listing.is_published', 1)
+            ->whereIn('listing.listing_type', [1, 2]);
 
-        $mixFeaturing = $this->optionalExpression(
-            'dj_mixs',
-            'mix',
-            ['featuring', 'Featuring'],
-            $columns
+        $this->selectResultColumns(
+            $listings,
+            'listing.id',
+            [
+                'type' => "
+                    CASE
+                        WHEN listing.listing_type = 1 THEN 'music'
+                        ELSE 'video'
+                    END
+                ",
+                'title' => 'listing.track_title',
+                'artist_name' => $artistName,
+                'featuring' => 'listing.featuring',
+                'cover_url' => 'listing.cover_url',
+                'slug' => 'listing.slug',
+                'search_extra' => 'artist.full_name',
+            ],
+            'listing.created_at'
         );
 
+        // The recovered DJ mixes table has no featuring column.
         $mixes = DB::table('dj_mixs as mix')
-            ->leftJoin('dj', 'dj.id', '=', 'mix.dj_id')
-            ->selectRaw("
-                mix.id as id,
-                'mix' as type,
-                mix.mix_title as title,
-                COALESCE(NULLIF(dj.dj_name, ''), 'TrendyBeatz DJ')
-                    as artist_name,
-                {$mixFeaturing} as featuring,
-                mix.cover_url as cover_url,
-                COALESCE(mix.slug, '') as slug,
-                COALESCE(dj.fullname, '') as search_extra
-            ")
-            ->selectRaw(
-                $this->dateExpression('dj_mixs', 'mix', $columns)
-                . ' as created_at'
-            )
-            ->where('mix.IsPublished', 'YES');
+            ->leftJoin('djs as dj', 'dj.id', '=', 'mix.dj_id')
+            ->where('mix.is_published', 1);
 
-        $albumFeaturing = $this->optionalExpression(
-            'albums',
-            'album',
-            ['featuring', 'Featuring'],
-            $columns
+        $this->selectResultColumns(
+            $mixes,
+            'mix.id',
+            [
+                'type' => "'mix'",
+                'title' => 'mix.title',
+                'artist_name' => "
+                    COALESCE(
+                        NULLIF(TRIM(dj.name), ''),
+                        'TrendyBeatz DJ'
+                    )
+                ",
+                'featuring' => "''",
+                'cover_url' => 'mix.cover_url',
+                'slug' => 'mix.slug',
+                'search_extra' => 'dj.full_name',
+            ],
+            'mix.created_at'
         );
 
         $albums = DB::table('albums as album')
             ->leftJoin(
                 'artists as artist',
-                'artist.Artists_Id',
+                'artist.id',
                 '=',
                 'album.artist_id'
             )
-            ->selectRaw("
-                album.id as id,
-                'album' as type,
-                album.title as title,
-                {$artistName} as artist_name,
-                {$albumFeaturing} as featuring,
-                album.cover_url as cover_url,
-                '' as slug,
-                COALESCE(artist.ArtistsName, '') as search_extra
-            ")
-            ->selectRaw(
-                $this->dateExpression('albums', 'album', $columns)
-                . ' as created_at'
-            )
-            ->where('album.IsPublished', 'YES');
+            ->where('album.is_published', 1);
 
-        $blogs = DB::table('blogs as blog')
-            ->selectRaw("
-                blog.id as id,
-                'blog' as type,
-                blog.title as title,
-                '' as artist_name,
-                '' as featuring,
-                blog.photo as cover_url,
-                blog.slug as slug,
-                COALESCE(blog.intro, '') as search_extra
-            ")
-            ->selectRaw(
-                $this->dateExpression('blogs', 'blog', $columns)
-                . ' as created_at'
-            )
-            ->where('blog.IsPublished', 'YES')
-            ->whereNotNull('blog.slug')
-            ->where('blog.slug', '<>', '');
-
-        $artists = DB::table('artists as artist')
-            ->selectRaw("
-                artist.id as id,
-                'artist' as type,
-                {$artistName} as title,
-                '' as artist_name,
-                '' as featuring,
-                artist.ProfilePic as cover_url,
-                '' as slug,
-                COALESCE(artist.ArtistsName, '') as search_extra
-            ")
-            ->selectRaw(
-                $this->dateExpression('artists', 'artist', $columns)
-                . ' as created_at'
-            )
-            ->where('artist.IsPublished', 'YES')
-            ->where(function (Builder $builder) {
-                $builder
-                    ->whereRaw("TRIM(COALESCE(artist.Stage_Name, '')) <> ''")
-                    ->orWhereRaw("TRIM(COALESCE(artist.ArtistsName, '')) <> ''");
-            });
-
-        $djSlug = $this->optionalExpression(
-            'dj',
-            'dj',
-            ['slug'],
-            $columns
+        $this->selectResultColumns(
+            $albums,
+            'album.id',
+            [
+                'type' => "'album'",
+                'title' => 'album.title',
+                'artist_name' => $artistName,
+                'featuring' => 'album.featuring',
+                'cover_url' => 'album.cover_url',
+                'slug' => 'album.slug',
+                'search_extra' => 'artist.full_name',
+            ],
+            'album.created_at'
         );
 
-        $djs = DB::table('dj')
-            ->selectRaw("
-                dj.id as id,
-                'dj' as type,
-                dj.dj_name as title,
-                '' as artist_name,
-                '' as featuring,
-                dj.photo as cover_url,
-                {$djSlug} as slug,
-                COALESCE(dj.fullname, '') as search_extra
-            ")
-            ->selectRaw(
-                $this->dateExpression('dj', 'dj', $columns)
-                . ' as created_at'
-            )
-            ->where('dj.IsPublished', 'YES')
-            ->whereNotNull('dj.dj_name')
-            ->where('dj.dj_name', '<>', '');
+        $blogs = DB::table('blogs as blog')
+            ->where('blog.Is_published', 1)
+            ->whereNotNull('blog.slug')
+            ->whereRaw("TRIM(blog.slug) <> ''");
+
+        $this->selectResultColumns(
+            $blogs,
+            'blog.id',
+            [
+                'type' => "'blog'",
+                'title' => 'blog.title',
+                'artist_name' => "''",
+                'featuring' => "''",
+                'cover_url' => 'blog.photo',
+                'slug' => 'TRIM(blog.slug)',
+                'search_extra' => 'blog.intro',
+            ],
+            'blog.created_at'
+        );
+
+        $artists = DB::table('artists as artist')
+            ->where('artist.is_published', 1)
+            ->whereRaw(
+                "TRIM(COALESCE(artist.stage_name, '')) <> ''"
+            );
+
+        $this->selectResultColumns(
+            $artists,
+            'artist.id',
+            [
+                'type' => "'artist'",
+                'title' => 'TRIM(artist.stage_name)',
+                'artist_name' => "''",
+                'featuring' => "''",
+                'cover_url' => 'artist.img',
+                'slug' => 'artist.slug',
+                'search_extra' => 'artist.full_name',
+            ],
+            'artist.created_at'
+        );
+
+        $djs = DB::table('djs as dj')
+            ->where('dj.is_published', 1)
+            ->whereRaw("TRIM(COALESCE(dj.name, '')) <> ''");
+
+        $this->selectResultColumns(
+            $djs,
+            'dj.id',
+            [
+                'type' => "'dj'",
+                'title' => 'TRIM(dj.name)',
+                'artist_name' => "''",
+                'featuring' => "''",
+                'cover_url' => 'dj.profile_img',
+                'slug' => 'dj.slug',
+                'search_extra' => 'dj.full_name',
+            ],
+            'dj.created_at'
+        );
 
         return $listings
             ->unionAll($mixes)
@@ -297,44 +261,46 @@ class SearchController extends Controller
             ->unionAll($djs);
     }
 
-    private function dateExpression(
-        string $table,
-        string $alias,
-        array $columns
-    ): string {
-        foreach ($columns[$table] as $column) {
-            if (strtolower($column) === 'created_at') {
-                return "{$alias}.`{$column}`";
-            }
+    /**
+     * Give every search source the same columns and string collation.
+     *
+     * Expressions here are internal SQL, never request input.
+     */
+    private function selectResultColumns(
+        Builder $builder,
+        string $idExpression,
+        array $expressions,
+        string $dateExpression
+    ): void {
+        $columns = [$idExpression . ' as id'];
+
+        foreach ([
+            'type',
+            'title',
+            'artist_name',
+            'featuring',
+            'cover_url',
+            'slug',
+            'search_extra',
+        ] as $name) {
+            $expression = $expressions[$name];
+
+            $columns[] = "
+                CONVERT(
+                    COALESCE({$expression}, '')
+                    USING utf8mb4
+                ) COLLATE utf8mb4_unicode_ci as {$name}
+            ";
         }
 
-        // Undated legacy entries appear after dated entries.
-        return 'NULL';
-    }
+        $columns[] = $dateExpression . ' as created_at';
 
-    private function optionalExpression(
-        string $table,
-        string $alias,
-        array $candidates,
-        array $columns
-    ): string {
-        foreach ($candidates as $candidate) {
-            foreach ($columns[$table] as $column) {
-                if (strtolower($column) === strtolower($candidate)) {
-                    return "COALESCE({$alias}.`{$column}`, '')";
-                }
-            }
-        }
-
-        return "''";
+        $builder->selectRaw(implode(",\n", $columns));
     }
 
     private function resultUrl(object $result): string
     {
-        /*
-         * Supply both legacy and normalized field names to your
-         * existing music/video URL helpers.
-         */
+        // Keep compatibility with your existing URL helpers.
         $listing = (object) [
             'id' => $result->id,
             'slug' => $result->slug,
@@ -347,39 +313,43 @@ class SearchController extends Controller
 
         return match ($result->type) {
             'music' => route('music_details', [
-                $result->id,
-                \App\Support\MusicUrl::slug($listing),
+                'id' => $result->id,
+                'slug' => MusicUrl::slug($listing),
             ]),
 
-            'video' => \App\Support\VideoUrl::detail($listing),
+            'video' => VideoUrl::detail($listing),
 
             'mix' => route('mixes.show', [
-                $result->id,
-                trim((string) $result->slug, " \t\n\r\0\x0B/")
-                    ?: Str::slug(
-                        $result->artist_name . ' ' . $result->title
-                    ),
-            ]),
-
-            'album' => route('albums.show', [
-                $result->id,
-                Str::slug(
+                'id' => $result->id,
+                'slug' => trim(
+                    (string) $result->slug,
+                    " \t\n\r\0\x0B/"
+                ) ?: Str::slug(
                     $result->artist_name . ' ' . $result->title
                 ),
             ]),
 
-            'blog' => route('blogs.show', $result->slug),
+            'album' => route('albums.show', [
+                'id' => $result->id,
+                'slug' => Str::slug(
+                    $result->artist_name . ' ' . $result->title
+                ),
+            ]),
 
-            'artist' => route(
-                'artists.show',
-                Str::slug($result->title)
-            ),
+            'blog' => route('blogs.show', [
+                'slug' => $result->slug,
+            ]),
 
-            'dj' => route(
-                'djs.show',
-                trim((string) $result->slug)
-                    ?: Str::slug($result->title)
-            ),
+            'artist' => route('artists.show', [
+                'slug' => Str::slug($result->title),
+            ]),
+
+            'dj' => route('djs.show', [
+                'slug' => trim(
+                    (string) $result->slug,
+                    " \t\n\r\0\x0B/"
+                ) ?: Str::slug($result->title),
+            ]),
         };
     }
 

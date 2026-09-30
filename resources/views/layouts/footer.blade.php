@@ -46,6 +46,10 @@
             <a href="{{ route('mixes.index') }}">
                 DJ Mix
             </a>
+
+            <a href="{{ route('djs.index') }}">
+                DJs Profile
+            </a>
         </section>
 
         <section>
