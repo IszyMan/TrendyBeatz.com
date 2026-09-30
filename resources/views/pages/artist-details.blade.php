@@ -105,10 +105,19 @@
                     </p>
                 @endif
 
-                @if (filled($artist->country_id))
+                @php
+                    $artistCountry = strtolower(trim((string) ($artist->country_id ?? '')));
+                @endphp
+
+                @if (in_array($artistCountry, ['naija', 'ghana', 'african'], true))
                     <p>
                         <strong>Country:</strong>
-                        <span>{{ ucfirst($artist->country_id) }}</span>
+                     <span>   <a
+                            href="{{ route('music.' . $artistCountry) }}"
+                            style="text-decoration: none;"
+                        >
+                            {{ ucfirst($artistCountry) }}
+                        </a></span>
                     </p>
                 @endif
             </div>
@@ -124,9 +133,6 @@
                     <p>{{ strip_tags($artist->Place_Birth) }}</p>
                 @endif
 
-                @if (filled($artist->ArtistsProfile))
-                    <p>{{ strip_tags($artist->ArtistsProfile) }}</p>
-                @endif
             </section>
         @endif
 

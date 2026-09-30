@@ -27,16 +27,16 @@
                     . $album->title
                 );
 
-                $slug = \Illuminate\Support\Str::slug($displayTitle);
+                
             @endphp
 
             <a
                 class="tb-home-album-card"
-                href="{{ route('albums.show', [$album->id, $slug]) }}"
+                href="{{ \App\Support\AlbumUrl::detail($album) }}"
             >
                 <span class="tb-home-album-cover">
                     <span class="tb-home-album-placeholder" aria-hidden="true">
-                        Album jpg
+                        TrendyAlbum
                     </span>
 
                     @if ($coverUrl)

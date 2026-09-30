@@ -22,11 +22,32 @@
         \App\Support\MusicUrl::slug($song),
     ]);
 
-    $metaDescription = trim(strip_tags((string) (
-        $song->introduction
-        ?: $song->TrackInfo
-        ?: ''
-    )));
+    $keywordTitle = $artistName . ' ' . $trackTitle;
+
+    if (
+        $featuring !== ''
+        && !preg_match('/\b(?:ft|feat|featuring)\.?\s/i', $trackTitle)
+    ) {
+        $keywordTitle .= ' feat. ' . $featuring;
+    }
+
+    $metaKeywords = implode(', ', [
+        $keywordTitle,
+        'Download ' . $keywordTitle,
+        'Stream ' . $trackTitle,
+        'Download ' . $keywordTitle . ' song',
+        'download music mp3 ' . $keywordTitle,
+        'Download ' . $fullTitle,
+        $keywordTitle . ' free mp3',
+    ]);
+
+    $metaDescription = collect([
+        $song->introduction ?? '',
+        $song->TrackInfo ?? '',
+    ])
+        ->map(fn ($text) => trim(strip_tags((string) $text)))
+        ->filter(fn ($text) => $text !== '')
+        ->implode(' ');
 
     if ($metaDescription === '') {
         $metaDescription = 'Discover and stream '
@@ -35,12 +56,14 @@
     }
 
     $metaDescription = \Illuminate\Support\Str::limit(
-        preg_replace('/\s+/', ' ', $metaDescription),
-        160,
+        preg_replace('/\s+/u', ' ', $metaDescription),
+        260,
         ''
     );
 
     $metaCover = trim((string) $song->CoverUrl);
+
+    $artistSlug = \Illuminate\Support\Str::slug($artistName);
 
     $socialImage = $metaCover === ''
         ? null
@@ -56,6 +79,7 @@
 @endphp
 
 @section('title', $pageTitle . ' | TrendyBeatz')
+@section('meta_keywords', $metaKeywords)
 @section('meta_description', $metaDescription)
 @section('canonical', $canonical)
 @section('social_title', $pageTitle . ' | TrendyBeatz')
@@ -124,9 +148,13 @@
         <div class="tb-music-detail-facts">
             <p>
                 <strong>Artist Name:</strong>
-                <span class="tb-music-detail-blue">
+                <a
+                    class="tb-music-detail-blue"
+                    href="{{ route('artists.show', $artistSlug) }}"
+                    style="text-decoration: none;"
+                >
                     {{ $artistName }}
-                </span>
+                </a>
             </p>
 
             <p>
@@ -136,12 +164,29 @@
                 </span>
             </p>
 
-            @if (trim((string) $song->Featuring) !== '')
+            @if ($featuredArtists->isNotEmpty())
                 <p>
                     <strong>Featuring:</strong>
-                    <span class="tb-music-detail-red">
-                        {{ $song->Featuring }}
-                    </span>
+
+                    @foreach ($featuredArtists as $featuredArtist)
+                        @if (!$loop->first)
+                            <span aria-hidden="true">, </span>
+                        @endif
+
+                        @if ($featuredArtist['slug'])
+                            <a
+                                class="tb-music-detail-red"
+                                href="{{ route('artists.show', $featuredArtist['slug']) }}"
+                                style="text-decoration: none;"
+                            >
+                                {{ $featuredArtist['name'] }}
+                            </a>
+                        @else
+                            <span class="tb-music-detail-red">
+                                {{ $featuredArtist['name'] }}
+                            </span>
+                        @endif
+                    @endforeach
                 </p>
             @endif
 
@@ -149,7 +194,7 @@
                 <p>
                     <strong>Recorded:</strong>
                     <a
-                        class="tb-music-detail-blue tb-music-detail-year-link"
+                        class="tb-music-detail-green tb-music-detail-year-link"
                         href="{{ route('music.year', $song->YearOfRelease) }}"
                     >
                         {{ $song->YearOfRelease }} Music
@@ -160,26 +205,57 @@
             @if (trim((string) $song->country_id) !== '')
                 <p>
                     <strong>Country:</strong>
-                    <span class="tb-music-detail-blue">
+                    <a
+                        class="tb-music-detail-blue"
+                        href="{{ route('music.' . $song->country_id) }}"
+                        style="text-decoration: none;"
+                    >
                         {{ ucfirst($song->country_id) }} Music
-                    </span>
+                    </a>
                 </p>
             @endif
 
-            @if (trim((string) $song->AlbumName) !== '')
+            @if (!empty($song->album_id) && trim((string) $song->album_name) !== '')
                 <p>
                     <strong>Album Name:</strong>
-                    <span class="tb-music-detail-red">
-                        {{ $song->AlbumName }}
-                    </span>
+                    <a
+                        class="tb-music-detail-red"
+                        href="{{ \App\Support\AlbumUrl::detail($song) }}"
+                        style="text-decoration: none;"
+                    >
+                        {{ $song->album_name }}
+                    </a>
                 </p>
             @endif
 
-            <p>
+          <p>
                 <strong>Category:</strong>
-                <span class="tb-music-detail-blue">
-                    Latest Music
-                </span>
+
+                @if ((int) ($song->isgospel ?? 0) === 1)
+                    <a
+                        class="tb-music-detail-blue"
+                        href="{{ route('music.gospel') }}"
+                        style="text-decoration: none;"
+                    >
+                        Gospel Songs
+                    </a>
+                @elseif ((int) ($song->ishighlife ?? 0) === 1)
+                    <a
+                        class="tb-music-detail-blue"
+                        href="{{ route('music.highlife') }}"
+                        style="text-decoration: none;"
+                    >
+                        Highlife Music
+                    </a>
+                @else
+                    <a
+                        class="tb-music-detail-blue"
+                        href="{{ route('music.all') }}"
+                        style="text-decoration: none;"
+                    >
+                        Latest Music
+                    </a>
+                @endif
             </p>
         </div>
     </section>
@@ -256,65 +332,90 @@
         $audiomackEmbed = trim((string) ($song->audiomack_embed_url ?? ''));
     @endphp
 
-    @if ($youtubeEmbed || $audiomackEmbed || $trackUrl || $digitalStoreUrl)
-        <section class="tb-music-detail-listening">
-            <h2>
-                Stream {{ $fullTitle }}
-                Legally on TrendyBeatz Below:
-            </h2>
+  
+        @if ($youtubeEmbed || $audiomackEmbed || $digitalStoreUrl || $hasAudioFile)
+            <section class="tb-music-detail-listening">
 
-            @if ($youtubeEmbed)
-                <div class="tb-music-detail-youtube">
-                    <iframe
-                        src="{{ $youtubeEmbed }}"
-                        title="{{ $fullTitle }} on YouTube"
-                        loading="lazy"
-                        allow="autoplay; encrypted-media; picture-in-picture"
-                        allowfullscreen
-                    ></iframe>
-                </div>
-            @endif
+                {{-- YouTube and Audiomack --}}
+                @if ($youtubeEmbed || $audiomackEmbed)
+                    <h2>
+                        Stream {{ $fullTitle }} legally on TrendyBeatz.com
+                    </h2>
 
-            @if ($audiomackEmbed)
-                <div class="tb-music-detail-audiomack">
-                    <iframe
-                        src="{{ $audiomackEmbed }}"
-                        title="{{ $fullTitle }} on Audiomack"
-                        loading="lazy"
-                        allow="autoplay"
-                    ></iframe>
-                </div>
-            @endif
+                    @if ($youtubeEmbed)
+                        <div class="tb-music-detail-youtube">
+                            <iframe
+                                src="{{ $youtubeEmbed }}"
+                                title="{{ $fullTitle }} on YouTube"
+                                loading="lazy"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowfullscreen
+                            ></iframe>
+                        </div>
+                    @endif
 
-            @if ($trackUrl)
-                <div class="tb-music-detail-audio">
-                    <audio controls preload="none">
-                        <source src="{{ $trackUrl }}">
-                        Your browser does not support audio playback.
-                    </audio>
+                      <br>
+                    <h2>Stream {{ $fullTitle }} on Audiomack</h2>
 
-                    <a
-                        class="tb-music-detail-download"
-                        href="{{ $trackUrl }}"
-                        download
-                    >
-                        Download {{ $fullTitle }} Mp3
-                    </a>
-                </div>
-            @endif
+                    @if ($audiomackEmbed)
+                        <div class="tb-music-detail-audiomack">
+                            <iframe
+                                src="{{ $audiomackEmbed }}"
+                                title="{{ $fullTitle }} on Audiomack"
+                                loading="lazy"
+                                allow="autoplay"
+                            ></iframe>
+                        </div>
+                    @endif
+                @endif
 
-            @if ($digitalStoreUrl)
-                <a
-                    class="tb-music-detail-store"
-                    href="{{ $digitalStoreUrl }}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Stream {{ $fullTitle }} on Digital Stores
-                </a>
-            @endif
-        </section>
-    @endif
+                {{-- Digital store --}}
+                @if ($digitalStoreUrl)
+                    <div class="tb-music-detail-digital">
+                        <h2>
+                            Stream {{ $fullTitle }} on Digital Store
+                        </h2>
+
+                        <a
+                            class="tb-music-detail-store"
+                            href="{{ $digitalStoreUrl }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Stream {{ $fullTitle }}
+                        </a>
+                    </div>
+                @endif
+
+                {{-- MP3 playback and download --}}
+                @if ($hasAudioFile)
+                    <div class="tb-music-detail-audio">
+                        <h2>Listen and Download {{ $fullTitle }} Mp3</h2>
+
+                        <p class="tb-music-copyright-notice">
+                            <strong>Copyright Notice:</strong>
+                            This song and its audio materials were published upon
+                            express request and direct permission from the
+                            copyright holder.
+                        </p>
+
+                        <audio controls preload="none">
+                            <source src="{{ $trackUrl }}">
+                            Your browser does not support audio playback.
+                        </audio>
+
+                        <a
+                            class="tb-music-detail-download"
+                            href="{{ $trackUrl }}"
+                            download
+                        >
+                            Download {{ $fullTitle }} Mp3
+                        </a>
+                    </div>
+                @endif
+            </section>
+        @endif
+  
 
 </article>
 
@@ -359,7 +460,11 @@
 
             <div class="tb-music-detail-discovery-list">
                 @foreach ($artistVideos as $video)
-                    <a href="{{ route('videos.index') }}">
+                     <a
+                            class="tb-home-song tb-home-video"
+                            href="{{ \App\Support\VideoUrl::detail($video) }}"
+                            
+                        >
                         <span
                             class="tb-music-detail-icon"
                             aria-hidden="true"
@@ -387,7 +492,7 @@
 
             <div class="tb-music-detail-discovery-list">
                 @foreach ($artistAlbums as $album)
-                    <a href="{{ route('albums.index') }}">
+                    <a href="{{ \App\Support\AlbumUrl::detail($album) }}">
                         <span
                             class="tb-music-detail-icon"
                             aria-hidden="true"

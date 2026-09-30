@@ -3,24 +3,51 @@
 @php
     $pageTitle = $post->title . ' — TrendyBeatz';
 
-    $pageDescription = \Illuminate\Support\Str::limit(
-        trim(preg_replace(
-            '/\s+/',
+    $cleanMetaText = static function ($text): string {
+        return trim(preg_replace(
+            '/\s+/u',
             ' ',
-            strip_tags((string) $post->intro)
-        )),
-        160,
-        '...'
-    );
+            html_entity_decode(
+                strip_tags((string) $text),
+                ENT_QUOTES | ENT_HTML5,
+                'UTF-8'
+            )
+        ));
+    };
+
+    $pageDescription = collect([
+        $post->intro ?? '',
+        $post->description ?? '',
+    ])
+        ->map($cleanMetaText)
+        ->filter(fn ($text) => $text !== '')
+        ->implode(' ');
 
     if ($pageDescription === '') {
         $pageDescription = 'Read ' . $post->title
             . ' and more news on TrendyBeatz.';
     }
 
+    $pageDescription = \Illuminate\Support\Str::limit(
+        $pageDescription,
+        260,
+        ''
+    );
+
+    $metaKeywords = collect([
+        $cleanMetaText($post->title),
+        $cleanMetaText($post->keywords ?? ''),
+        $cleanMetaText($post->category_name ?? ''),
+        'TrendyBeatz blog',
+        'TrendyBeatz news',
+    ])
+        ->filter(fn ($value) => $value !== '')
+        ->unique()
+        ->implode(', ');
+
     $canonicalUrl = route('blogs.show', $post->slug);
 
-    $cover = trim((string) $post->photo);
+    $cover = trim((string) ($post->photo ?? ''));
 
     if ($cover === '') {
         $socialImage = '';
@@ -39,6 +66,7 @@
 
 @section('title', $pageTitle)
 @section('meta_description', $pageDescription)
+@section('meta_keywords', $metaKeywords)
 @section('canonical', $canonicalUrl)
 @section('social_title', $post->title)
 @section('social_description', $pageDescription)
@@ -46,6 +74,8 @@
 @if ($socialImage !== '')
     @section('social_image', $socialImage)
 @endif
+
+
 
 @section('content')
     @php
@@ -66,6 +96,14 @@
 
         $categoryClass = $categoryClasses[$post->category_slug]
             ?? 'tb-blog-news';
+
+        
+
+        $commentCount = 0;
+
+        $lastUpdated = filled($post->created_at)
+            ? \Illuminate\Support\Carbon::parse($post->created_at)
+            : null;    
 
         $imageUrl = function ($value) {
             $image = trim((string) $value);
@@ -128,6 +166,36 @@
             ['image', $post->photo10],
             ['text', $post->Desc30],
         ];
+
+        $readingParts = [(string) ($post->intro ?? '')];
+
+        foreach ($contentBlocks as [$type, $value]) {
+            if ($type === 'text' && filled($value)) {
+                $readingParts[] = (string) $value;
+            }
+        }
+
+        $readingText = implode(' ', $readingParts);
+
+        // Remove markup while preserving spaces between paragraphs.
+        $readingText = preg_replace('/<[^>]*>/u', ' ', $readingText);
+
+        $readingText = html_entity_decode(
+            $readingText,
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8'
+        );
+
+        $words = preg_split(
+            '/[\s\p{Z}]+/u',
+            trim($readingText),
+            -1,
+            PREG_SPLIT_NO_EMPTY
+        );
+
+        $wordCount = count($words ?: []);
+
+        $readingMinutes = max(1, (int) ceil($wordCount / 200));
     @endphp
 
     <div class="tb-article-page">
@@ -191,16 +259,44 @@
                     {{ $post->category_name ?: 'News' }}
                 </span>
 
-                @if ($postedAt)
-                    <time datetime="{{ $postedAt->toDateString() }}">
-                        🗓 {{ $postedAt->format('d M Y') }}
-                    </time>
+                @if (filled($post->posted_by_name))
+                    <span class="tb-article-meta-item">
+                        <span aria-hidden="true">✍</span>
+                        <a
+                            href="{{ route('blogs.published_by', [
+                                'slug' => \Illuminate\Support\Str::slug($post->posted_by_name),
+                            ]) }}"
+                        >
+                            <strong>{{ $post->posted_by_name }}</strong>
+                        </a>
+                    </span>
                 @endif
 
-                @if (filled($post->posted_by_name))
-                    <span>
-                        ✍
-                        <strong>{{ $post->posted_by_name }}</strong>
+                @if ($postedAt)
+                    <span class="tb-article-meta-item">
+                        <span aria-hidden="true">🗓</span>
+                        <time datetime="{{ $postedAt->toDateString() }}">
+                            {{ $postedAt->format('d M Y') }}
+                        </time>
+                    </span>
+                @endif
+
+                <span class="tb-article-meta-item">
+                    <span aria-hidden="true">⏱</span>
+                    {{ $readingMinutes }} min read
+                </span>
+
+                <span class="tb-article-meta-item">
+                    <span aria-hidden="true">💬</span>
+                    {{ $commentCount }} comments
+                </span>
+
+                @if ($lastUpdated)
+                    <span class="tb-article-meta-item tb-article-meta-updated">
+                        Last updated:
+                        <time datetime="{{ $lastUpdated->toIso8601String() }}">
+                            {{ $lastUpdated->format('d M Y') }}
+                        </time>
                     </span>
                 @endif
             </div>
@@ -348,6 +444,10 @@
                             $latestCategoryClass = $categoryClasses[
                                 $latest->category_slug
                             ] ?? 'tb-blog-news';
+
+                            $latestDate = filled($latest->updated_at)
+                            ? \Illuminate\Support\Carbon::parse($latest->updated_at)
+                            : null;
                         @endphp
 
                         <a
@@ -375,6 +475,17 @@
                                 </span>
 
                                 <strong>{{ $latest->title }}</strong>
+                                <small>
+                                    @if ($latestDate)
+                                        <time datetime="{{ $latestDate->toDateString() }}">
+                                            {{ $latestDate->format('d M Y') }}
+                                        </time>
+                                    @endif
+
+                                    @if (filled($latest->posted_by_name))
+                                        ✍ {{ $latest->posted_by_name }}
+                                    @endif
+                                </small>
 
                                 <span class="tb-article-related-read">
                                     Continue Reading →

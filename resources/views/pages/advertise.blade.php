@@ -1,75 +1,435 @@
-@extends('public.layouts.app')
-@section('title', 'Advertise With Us — TrendyBeatz')
+@extends('layouts.app')
+
+@php
+    $pageTitle = 'Advertise With Us — TrendyBeatz';
+
+    $metaDescription = 'Advertise your business on TrendyBeatz. Explore audience statistics, banner placements and contact our advert team for pricing and bookings.';
+
+    $metaKeywords = 'advertise on TrendyBeatz, TrendyBeatz advertising, banner advertising, Nigerian audience, African audience, advert placement';
+
+    $canonical = route('page.advertise');
+
+    $audienceCountries = [
+        'Nigeria' => '55%',
+        'Ghana' => '11%',
+        'Zambia' => '5%',
+        'Tanzania' => '5%',
+        'South Africa' => '5%',
+        'Uganda' => '3%',
+        'United States' => '3%',
+        'India' => '3%',
+        'Kenya' => '3%',
+        'Malawi' => '1%',
+    ];
+@endphp
+
+@section('title', $pageTitle)
+@section('meta_keywords', $metaKeywords)
+@section('meta_description', $metaDescription)
+@section('canonical', $canonical)
+@section('social_title', $pageTitle)
+@section('social_description', $metaDescription)
+
 @section('content')
-<div style="max-width:860px;margin:40px auto;padding:0 20px;font-family:'Segoe UI',Arial,sans-serif;color:#222;">
-    <h1 style="font-size:28px;font-weight:800;margin-bottom:6px;color:#0d1b2a;">Advertise on TrendyBeatz</h1>
-    <p style="font-size:13px;color:#888;margin-bottom:28px;border-bottom:2px solid #4682B4;padding-bottom:12px;">TrendyBeatz Media &mdash; Last updated {{ date('F Y') }}</p>
-   <p style="text-align:left; color:black; font-size:20px"> TrendyBeatz is a Legal Music Discovery and Entertainment Website with Millions of Monthly Users and Tens of Millions of Monthly Impressions. We can give your Business the Publicity it needs to thrive. </p>
+    <style>
+        .tb-advertise {
+            --advert-green: #198754;
+            width: 100%;
+            max-width: 900px;
+            margin: 28px auto;
+            padding: 0 16px;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #25332b;
+            overflow-wrap: anywhere;
+        }
 
+        .tb-advertise * {
+            box-sizing: border-box;
+        }
 
-<p style="text-align:left; color:black; font-size:20px"> Music is food to the soul. Everyone Listens to Music, who doesn't? This is to tell you that we have every kind of user on TrendyBeatz and YOUR TARGET AUDIENCE is here. By Promoting your Business On TrendyBeatz, you're sure to reach a wide range of Nigerian and African Audience that Loves and are Interested in Music And Entertainment. We have coverage in All African Countries (with a fair coverage in Europe, Asia and America)</p>
+        .tb-advertise-header {
+            padding: 26px;
+            border: 1px solid #dce8df;
+            border-top: 4px solid var(--advert-green);
+            border-radius: 8px;
+            background: #f3f8f5;
+        }
 
-<p style="text-align:left; color:brown; font-size:20px"> TrendyBeatz.com Visitors Statistics
+        .tb-advertise-label {
+            margin: 0 0 10px;
+            color: var(--advert-green);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
 
+        .tb-advertise h1 {
+            margin: 0 0 12px;
+            color: #14251b;
+            font-size: clamp(27px, 4vw, 36px);
+            font-weight: 800;
+            line-height: 1.2;
+        }
 
+        .tb-advertise-updated {
+            margin: 0;
+            color: #617168;
+            font-size: 13px;
+            line-height: 1.6;
+        }
 
+        .tb-advertise-intro {
+            margin: 24px 0;
+        }
 
-<p style="text-align:left; color:black; font-size:20px">Monthly Users: 5 Million+ Monthly Users.  </p>
+        .tb-advertise p {
+            margin: 0 0 16px;
+            font-size: 15px;
+            line-height: 1.9;
+        }
 
-<p style="text-align:left; color:black; font-size:20px">Monthly Pageviews: 15 Million+ Monthly Pageviews  </p>
-<p style="text-align:left; color:black; font-size:20px">Daily Pageviews: 500,000+ Daily Pageviews  </p>
+        .tb-advertise-header .tb-advertise-label {
+            font-size: 12px;
+            line-height: 1.5;
+        }
 
-<p style="text-align:left; color:brown; font-size:20px"> TrendyBeatz.com Visitors Country Breakdown
+        .tb-advertise-header .tb-advertise-updated {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
 
+        .tb-advertise-section {
+            margin-top: 18px;
+            padding: 22px 24px;
+            border: 1px solid #e0e6e2;
+            border-radius: 8px;
+            background: #fff;
+        }
 
-<p style="text-align:left; color:black; font-size:20px">Nigeria: 55% of Users  </p>
+        .tb-advertise h2 {
+            margin: 0 0 16px;
+            padding-left: 12px;
+            border-left: 3px solid var(--advert-green);
+            color: #14251b;
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
 
-<p style="text-align:left; color:black; font-size:20px">Ghana: 11% of Users  </p>
-<p style="text-align:left; color:black; font-size:20px">Zambia: 5% oF Users  </p>
-<p style="text-align:left; color:black; font-size:20px">Tanzania: 5% of Users  </p>
-<p style="text-align:left; color:black; font-size:20px">South Africa: 5% of Users  </p>
-<p style="text-align:left; color:black; font-size:20px">Uganda: 3% of Users  </p>
-<p style="text-align:left; color:black; font-size:20px">United States: 3% of Users  </p>
-<p style="text-align:left; color:black; font-size:20px">India: 3% of Users  </p>
-<p style="text-align:left; color:black; font-size:20px">Kenya: 3% of Users  </p>
-<p style="text-align:left; color:black; font-size:20px">Malawi: 1% of Users  </p>
+        .tb-advertise-section p:last-child {
+            margin-bottom: 0;
+        }
 
-<p style="text-align:left; color:black; font-size:20px"> At TrendyBeatz, we have Fixed advert rates which allows you to Place your Advert to be seen by either the Whole Traffic (Visitors) or Half of the Traffic. This Deal is called take-over because it allocates a placement position solely to you with no other Advert in Rotation for the period of our Contract with you.</p>
+        .tb-advertise-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
 
-<p style="text-align:left; color:blue; font-size:20px"> Advert Formats</p>
+        .tb-advertise-stat {
+            padding: 20px 12px;
+            border: 1px solid #dce8df;
+            border-radius: 6px;
+            background: #f3f8f5;
+            text-align: center;
+        }
 
-<p style="text-align:left; color:green; font-size:20px"> Header Placement</p>
-<p style="text-align:left; color:green; font-size:20px"> Sticky Footer</p>
-<p style="text-align:left; color:brown; font-size:20px"> Sitewide Rectangle Banner</p>
-<p style="text-align:left; color:brown; font-size:20px"> In-post Rectange, etc.</p>
+        .tb-advertise-stat strong {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--advert-green);
+            font-size: 28px;
+            line-height: 1.2;
+        }
 
-<p style="text-align:left; color:blue; font-size:20px"> Contact for TrendyBeatz Advert Placement</p>
+        .tb-advertise-stat span {
+            font-size: 13px;
+            line-height: 1.5;
+        }
 
-<p style="text-align:left; color:black; font-size:20px"> If you wish to discuss pricing and place your advert on TrendyBeatz, please, contact our Advert Team on WhatsApp with your Banner and desired placement, so we can send our rate. Contact us on WhatsApp via 09076131844 (+2349076131844).</p>
+        .tb-advertise-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+        }
 
-<a href="https://api.whatsapp.com/send?phone=2349076131844" rel="nofollow" target="blank" style="font-size:23px;color:green" class="fa fa-whatsapp">Click Here To Contact the Advert Team on WhatsApp</a></button>
+        .tb-advertise-table th,
+        .tb-advertise-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #e0e6e2;
+            text-align: left;
+        }
 
-<p style="text-align:left; color:blue; font-size:20px"> TrendyBeatz Banner Size </p>
+        .tb-advertise-table th {
+            background: #f3f8f5;
+            color: #14251b;
+            font-weight: 700;
+        }
 
-<p style="text-align:left; color:green; font-size:20px"> Currently, we accept all Banner Sizes and Placements, except POP Ads.</p>
+        .tb-advertise-table th:last-child,
+        .tb-advertise-table td:last-child {
+            text-align: right;
+        }
 
-<p style="text-align:left; color:blue; font-size:20px"> Prohibited Adverts</p>
+        .tb-advertise-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
 
-<p style="text-align:left; color:green; font-size:20px"> Currently, we accept all Adverts excluding Porn Ads</p>
+        .tb-advertise-formats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
 
+        .tb-advertise-formats li {
+            padding: 14px 16px;
+            border: 1px solid #dce8df;
+            border-radius: 6px;
+            background: #f3f8f5;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.5;
+        }
 
-<p style="text-align:left; color:green; font-size:20px"> 6. Banner Image Editing: We can create an Advert Banner for you if you have none to advertise your Business </p>
+        .tb-advertise-price {
+            color: var(--advert-green);
+            font-weight: 800;
+        }
 
+        .tb-advertise-contact {
+            border-color: #dce8df;
+            background: #f3f8f5;
+        }
 
-<p style="text-align:left; color:black; font-size:20px"> Cost: ₦30,000 ($50) </p>
+        .tb-advertise a {
+            color: #0066cc;
+            text-decoration: none;
+        }
 
-<p style="text-align:left; color:blue; font-size:20px"> Advert Team Contact Details</p>
+        .tb-advertise a:hover {
+            text-decoration: underline;
+        }
 
-<p style="text-align:left; color:green; font-size:20px"> Call and WhatsApp for Nigerians: 09076131844, 07067455144  </p>
+        .tb-advertise a:focus-visible {
+            outline: 3px solid var(--advert-green);
+            outline-offset: 4px;
+        }
 
-<p style="text-align:left; color:green; font-size:20px"> Call and WhatsApp for Global: +2349076131844  </p>
+        .tb-advertise .tb-advertise-button {
+            display: inline-block;
+            max-width: 100%;
+            margin-top: 4px;
+            padding: 12px 18px;
+            border-radius: 5px;
+            background: var(--advert-green);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.5;
+            text-align: center;
+            text-decoration: none;
+        }
 
-<a href="https://api.whatsapp.com/send?phone=2349076131844" rel="nofollow" target="blank" style="font-size:23px;color:green" class="fa fa-whatsapp">Click Here To Contact the Advert Team on WhatsApp</a></button>
+        .tb-advertise .tb-advertise-button:hover {
+            background: #146c43;
+            text-decoration: none;
+        }
 
-</div>
+        @media (max-width: 600px) {
+            .tb-advertise {
+                margin: 18px auto;
+                padding: 0 12px;
+            }
+
+            .tb-advertise-header {
+                padding: 20px 16px;
+            }
+
+            .tb-advertise-section {
+                padding: 18px 16px;
+            }
+
+            .tb-advertise h2 {
+                font-size: 18px;
+            }
+
+            .tb-advertise-stats,
+            .tb-advertise-formats {
+                grid-template-columns: 1fr;
+            }
+
+            .tb-advertise-stat {
+                padding: 16px;
+            }
+
+            .tb-advertise .tb-advertise-button {
+                width: 100%;
+            }
+        }
+    </style>
+
+    <article class="tb-advertise">
+        <header class="tb-advertise-header">
+            <p class="tb-advertise-label">TrendyBeatz Media</p>
+
+            <h1>Advertise on TrendyBeatz</h1>
+
+            <p class="tb-advertise-updated">
+                Last updated {{ date('F Y') }}
+            </p>
+        </header>
+
+        <div class="tb-advertise-intro">
+            <p>
+                TrendyBeatz is a legal music discovery and entertainment
+                website with millions of monthly users and tens of
+                millions of monthly impressions. We can give your
+                business the publicity it needs to thrive.
+            </p>
+
+            <p>
+                Music is food for the soul. Everyone listens to music,
+                and our audience includes people with a wide range of
+                interests. Your target audience is here.
+            </p>
+
+            <p>
+                By promoting your business on TrendyBeatz, you can reach
+                Nigerian and African audiences who love music and
+                entertainment. We have coverage across African countries,
+                with additional reach in Europe, Asia and America.
+            </p>
+        </div>
+
+        <section class="tb-advertise-section">
+            <h2>Visitors Statistics</h2>
+
+            <div class="tb-advertise-stats">
+                <div class="tb-advertise-stat">
+                    <strong>5 Million+</strong>
+                    <span>Monthly Users</span>
+                </div>
+
+                <div class="tb-advertise-stat">
+                    <strong>15 Million+</strong>
+                    <span>Monthly Pageviews</span>
+                </div>
+
+                <div class="tb-advertise-stat">
+                    <strong>500,000+</strong>
+                    <span>Daily Pageviews</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="tb-advertise-section">
+            <h2>Visitors Country Breakdown</h2>
+
+            <table class="tb-advertise-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Country</th>
+                        <th scope="col">Share of Users</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach ($audienceCountries as $country => $percentage)
+                        <tr>
+                            <td>{{ $country }}</td>
+                            <td>{{ $percentage }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </section>
+
+        <section class="tb-advertise-section">
+            <h2>Advert Placement and Rates</h2>
+
+            <p>
+                We offer fixed advert rates that allow your advert
+                to reach either our whole traffic or half of our traffic.
+            </p>
+
+            <p>
+                This arrangement is called a takeover because a placement
+                position is allocated solely to you, with no other advert
+                in rotation for the duration of our contract.
+            </p>
+        </section>
+
+        <section class="tb-advertise-section">
+            <h2>Advert Formats</h2>
+
+            <ul class="tb-advertise-formats">
+                <li>Header Placement</li>
+                <li>Sticky Footer</li>
+                <li>Sitewide Rectangle Banner</li>
+                <li>In-post Rectangle</li>
+            </ul>
+        </section>
+
+        <section class="tb-advertise-section">
+            <h2>Banner Sizes and Advert Guidelines</h2>
+
+            <p>
+                We currently accept all banner sizes and placements,
+                except pop-up ads.
+            </p>
+
+            <p>
+                We accept all adverts excluding pornographic adverts.
+            </p>
+        </section>
+
+        <section class="tb-advertise-section">
+            <h2>Banner Image Editing</h2>
+
+            <p>
+                If you do not have an advert banner, we can create
+                one to advertise your business.
+            </p>
+
+            <p class="tb-advertise-price">
+                Cost: ₦30,000 ($50)
+            </p>
+        </section>
+
+        <section class="tb-advertise-section tb-advertise-contact">
+            <h2>Contact Our Advert Team</h2>
+
+            <p>
+                To discuss pricing and book an advert, contact our
+                advert team on WhatsApp with your banner and desired
+                placement so we can send you our rates.
+            </p>
+
+            <p>
+                <strong>Call and WhatsApp for Nigerians:</strong><br>
+                <a href="tel:+2349076131844">09076131844</a>,
+                <a href="tel:+2347067455144">07067455144</a>
+            </p>
+
+            <p>
+                <strong>Call and WhatsApp internationally:</strong><br>
+                <a href="tel:+2349076131844">+2349076131844</a>
+            </p>
+
+            <a
+                class="tb-advertise-button"
+                href="https://wa.me/2349076131844"
+                target="_blank"
+                rel="nofollow noopener noreferrer"
+            >
+                Contact the Advert Team on WhatsApp
+            </a>
+        </section>
+    </article>
 @endsection

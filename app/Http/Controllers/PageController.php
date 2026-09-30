@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\ConnectionException;
+
 
 
 
@@ -59,6 +63,14 @@ class PageController extends Controller
 
     public function musicDetails(int $id, string $slug): View|RedirectResponse
     {
+        $artistNameSql = "
+            COALESCE(
+                NULLIF(artist.Stage_Name, ''),
+                NULLIF(artist.ArtistsName, ''),
+                'TrendyBeatz'
+            ) as artist_name
+        ";
+
         $song = DB::table('listing as song')
             ->leftJoin(
                 'artists as artist',
@@ -72,16 +84,17 @@ class PageController extends Controller
                 '=',
                 'song.posted_by'
             )
+            ->leftJoin(
+                'albums as album',
+                'album.id',
+                '=',
+                'song.album_id'
+            )
             ->select(
                 'song.*',
+                'album.title as album_name',
                 'artist.id as artist_record_id',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                "),
+                DB::raw($artistNameSql),
                 'poster.name as posted_by_name'
             )
             ->where('song.id', $id)
@@ -100,56 +113,115 @@ class PageController extends Controller
             );
         }
 
-        $artistSongs = DB::table('listing as related')
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'related.Artists_Id'
-            )
-            ->select(
-                'related.id',
-                'related.TrackTitle as track_title',
-                'related.Featuring as featuring',
-                'related.CoverUrl as cover_url',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
+        /*
+        * Match featured artists to their published profiles.
+        */
+        $featuredNames = collect(
+            explode(',', (string) ($song->Featuring ?? ''))
+        )
+            ->map(fn ($name) => trim($name))
+            ->filter(fn ($name) => $name !== '')
+            ->values();
+
+        $normalizeName = static fn ($name) =>
+            mb_strtolower(trim((string) $name));
+
+        $namesToMatch = $featuredNames
+            ->map($normalizeName)
+            ->unique()
+            ->values()
+            ->all();
+
+        $profiles = collect();
+
+        if ($namesToMatch !== []) {
+            $profiles = DB::table('artists')
+                ->select('Stage_Name', 'ArtistsName')
+                ->where('IsPublished', 'YES')
+                ->where(function ($query) use ($namesToMatch) {
+                    $query
+                        ->whereIn(
+                            DB::raw('LOWER(TRIM(Stage_Name))'),
+                            $namesToMatch
+                        )
+                        ->orWhereIn(
+                            DB::raw('LOWER(TRIM(ArtistsName))'),
+                            $namesToMatch
+                        );
+                })
+                ->get();
+        }
+
+        $featuredArtists = $featuredNames->map(
+            function ($name) use ($profiles, $normalizeName) {
+                $matches = $profiles->filter(
+                    fn ($artist) =>
+                        $normalizeName($artist->Stage_Name)
+                            === $normalizeName($name)
+                        || $normalizeName($artist->ArtistsName)
+                            === $normalizeName($name)
+                );
+
+                $profileSlug = null;
+
+                if ($matches->count() === 1) {
+                    $artist = $matches->first();
+
+                    $profileName = trim(
+                        (string) $artist->Stage_Name
+                    );
+
+                    if ($profileName === '') {
+                        $profileName = trim(
+                            (string) $artist->ArtistsName
+                        );
+                    }
+
+                    $profileSlug = \Illuminate\Support\Str::slug(
+                        $profileName
+                    );
+                }
+
+                return [
+                    'name' => $name,
+                    'slug' => $profileSlug,
+                ];
+            }
+        );
+
+        /*
+        * Each call creates a separate query for related listings.
+        */
+        $relatedListings = static function () use ($artistNameSql) {
+            return DB::table('listing as related')
+                ->leftJoin(
+                    'artists as artist',
+                    'artist.Artists_Id',
+                    '=',
+                    'related.Artists_Id'
+                )
+                ->select(
+                    'related.id',
+                    'related.TrackTitle as track_title',
+                    'related.Featuring as featuring',
+                    'related.CoverUrl as cover_url',
+                    'related.ListingType as listing_type',
+                    DB::raw($artistNameSql)
+                )
+                ->where('related.IsPublished', 'YES');
+        };
+
+        $artistSongs = $relatedListings()
             ->where('related.Artists_Id', $song->Artists_Id)
             ->where('related.id', '<>', $song->id)
             ->where('related.ListingType', 'Audio')
-            ->where('related.IsPublished', 'YES')
             ->orderByDesc('related.id')
             ->limit(6)
             ->get();
 
-        $artistVideos = DB::table('listing as related')
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'related.Artists_Id'
-            )
-            ->select(
-                'related.id',
-                'related.TrackTitle as track_title',
-                'related.CoverUrl as cover_url',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
+        $artistVideos = $relatedListings()
             ->where('related.Artists_Id', $song->Artists_Id)
             ->whereRaw('LOWER(related.ListingType) = ?', ['video'])
-            ->where('related.IsPublished', 'YES')
             ->orderByDesc('related.id')
             ->limit(3)
             ->get();
@@ -160,75 +232,137 @@ class PageController extends Controller
             ->where('IsPublished', 'YES')
             ->orderByDesc('id')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function ($album) use ($song) {
+                $album->artist_name = $song->artist_name;
 
-        // Songs by other lead artists that name this artist in Featuring.
-        $collaborations = DB::table('listing as related')
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'related.Artists_Id'
-            )
-            ->select(
-                'related.id',
-                'related.TrackTitle as track_title',
-                'related.Featuring as featuring',
-                'related.CoverUrl as cover_url',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
+                return $album;
+            });
+
+        $collaborations = $relatedListings()
             ->where('related.Artists_Id', '<>', $song->Artists_Id)
             ->where('related.ListingType', 'Audio')
-            ->where('related.IsPublished', 'YES')
-            ->where('related.Featuring', 'like', '%' . addcslashes(
-                $song->artist_name,
-                '%_\\'
-            ) . '%')
+            ->where(
+                'related.Featuring',
+                'like',
+                '%' . addcslashes($song->artist_name, '%_\\') . '%'
+            )
             ->orderByDesc('related.id')
             ->limit(10)
             ->get();
 
-        $latestMusic = DB::table('listing as related')
-            ->leftJoin(
-                'artists as artist',
-                'artist.Artists_Id',
-                '=',
-                'related.Artists_Id'
-            )
-            ->select(
-                'related.id',
-                'related.TrackTitle as track_title',
-                'related.Featuring as featuring',
-                'related.CoverUrl as cover_url',
-                'related.ListingType as listing_type',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
+        $latestMusic = $relatedListings()
             ->where('related.id', '<>', $song->id)
-            ->where('related.IsPublished', 'YES')
             ->whereIn('related.ListingType', ['Audio', 'video', 'Video'])
             ->orderByDesc('related.id')
             ->limit(6)
             ->get();
 
+        /*
+        * Build the CDN audio URL.
+        * TrackUrl may contain a full URL or a filename.
+        */
+        $trackPath = trim((string) ($song->TrackUrl ?? ''));
+        $cdnAudioUrl = rtrim(
+            trim((string) config('cdn.audio_url')),
+            '/'
+        );
+
+        $trackUrl = null;
+        $hasAudioFile = false;
+
+        if ($trackPath !== '') {
+            if (preg_match('~^https?://~i', $trackPath)) {
+                $trackUrl = $trackPath;
+            } elseif ($cdnAudioUrl !== '') {
+                $relativePath = ltrim($trackPath, '/');
+
+                // Avoid /audio/audio/ when the CDN base ends in /audio.
+                if (
+                    str_ends_with($cdnAudioUrl, '/audio')
+                    && str_starts_with($relativePath, 'audio/')
+                ) {
+                    $relativePath = substr($relativePath, 6);
+                }
+
+                // Encode spaces and special characters in each path segment.
+                $relativePath = implode(
+                    '/',
+                    array_map(
+                        static fn ($segment) =>
+                            rawurlencode(rawurldecode($segment)),
+                        explode('/', $relativePath)
+                    )
+                );
+
+                $trackUrl = $cdnAudioUrl . '/' . $relativePath;
+            }
+        }
+
+        /*
+        * Check CDN availability without downloading the audio.
+        * Cache the result for five minutes.
+        */
+        if ($trackUrl !== null) {
+            $hasAudioFile = Cache::remember(
+                'audio-file-available:v2:' . sha1($trackUrl),
+                now()->addMinutes(5),
+                function () use ($trackUrl): bool {
+                    try {
+                        $response = Http::connectTimeout(2)
+                            ->timeout(4)
+                            ->head($trackUrl);
+
+                        if (!$response->successful()) {
+                            return false;
+                        }
+
+                        $contentType = strtolower(trim(
+                            explode(
+                                ';',
+                                (string) $response->header('Content-Type')
+                            )[0]
+                        ));
+
+                        $isAudio = str_starts_with(
+                            $contentType,
+                            'audio/'
+                        ) || in_array(
+                            $contentType,
+                            [
+                                'application/octet-stream',
+                                'binary/octet-stream',
+                                'application/mp3',
+                            ],
+                            true
+                        );
+
+                        $contentLength = $response->header(
+                            'Content-Length'
+                        );
+
+                        return $isAudio
+                            && (
+                                $contentLength === null
+                                || trim($contentLength) !== '0'
+                            );
+                    } catch (ConnectionException $exception) {
+                        return false;
+                    }
+                }
+            );
+        }
+
         return view('pages.music-details', compact(
             'song',
             'artistSongs',
             'artistVideos',
+            'featuredArtists',
             'artistAlbums',
             'collaborations',
-            'latestMusic'
+            'latestMusic',
+            'trackUrl',
+            'hasAudioFile'
         ));
     }
 
@@ -273,6 +407,49 @@ class PageController extends Controller
         return view('pages.song-of-the-day', [
             'songs' => $songs,
         ]);
+    }
+
+
+    public function songsOfTheWeek(): View
+    {
+        $songs = DB::table('song_of_the_week as featured')
+            ->join(
+                'listing as song',
+                'song.id',
+                '=',
+                'featured.listing_id'
+            )
+            ->leftJoin(
+                'artists as artist',
+                'artist.Artists_Id',
+                '=',
+                'song.Artists_Id'
+            )
+            ->select(
+                'song.id',
+                'song.slug',
+                'song.TrackTitle as track_title',
+                'song.CoverUrl as cover_url',
+                'song.Featuring as featuring',
+                'song.TrackUrl as track_url',
+                'featured.rate_no',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(artist.Stage_Name, ''),
+                        NULLIF(artist.ArtistsName, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
+            )
+            ->where('song.ListingType', 'Audio')
+            ->where('song.IsPublished', 'YES')
+            ->whereNotNull('song.slug')
+            ->where('song.slug', '<>', '')
+            ->orderByRaw('CAST(featured.rate_no AS UNSIGNED) ASC')
+            ->orderBy('featured.id')
+            ->paginate(24);
+
+        return view('pages.songs-of-the-week', compact('songs'));
     }
 
 
@@ -697,12 +874,88 @@ class PageController extends Controller
             );
         }
 
+        $featuredNames = collect(explode(',', (string) $video->Featuring))
+            ->map(fn ($name) => trim($name))
+            ->filter(fn ($name) => $name !== '')
+            ->values();
+
+        $normalizeName = static fn ($name) =>
+            mb_strtolower(trim((string) $name));
+
+        $namesToMatch = $featuredNames
+            ->map($normalizeName)
+            ->unique()
+            ->values()
+            ->all();
+
+        $profiles = collect();
+
+        if ($namesToMatch !== []) {
+            $profiles = DB::table('artists')
+                ->select('Stage_Name', 'ArtistsName')
+                ->where('IsPublished', 'YES')
+                ->where(function ($query) use ($namesToMatch) {
+                    $query
+                        ->whereIn(
+                            DB::raw('LOWER(TRIM(Stage_Name))'),
+                            $namesToMatch
+                        )
+                        ->orWhereIn(
+                            DB::raw('LOWER(TRIM(ArtistsName))'),
+                            $namesToMatch
+                        );
+                })
+                ->get();
+        }
+
+        $featuredArtists = $featuredNames->map(
+            function ($name) use ($profiles, $normalizeName) {
+                $matches = $profiles->filter(
+                    fn ($artist) =>
+                        $normalizeName($artist->Stage_Name) === $normalizeName($name)
+                        || $normalizeName($artist->ArtistsName) === $normalizeName($name)
+                );
+
+                $slug = null;
+
+                // Only link when there is one matching published profile.
+                if ($matches->count() === 1) {
+                    $artist = $matches->first();
+
+                    $profileName = trim((string) $artist->Stage_Name);
+
+                    if ($profileName === '') {
+                        $profileName = trim((string) $artist->ArtistsName);
+                    }
+
+                    $slug = \Illuminate\Support\Str::slug($profileName);
+                }
+
+                return [
+                    'name' => $name,
+                    'slug' => $slug,
+                ];
+            }
+        );
+
         $otherVideos = DB::table('listing as item')
+            ->leftJoin(
+                'artists as artist',
+                'artist.Artists_Id',
+                '=',
+                'item.Artists_Id'
+            )
             ->select(
-                'item.id',
-                'item.slug',
+                'item.*',
                 'item.TrackTitle as track_title',
-                'item.Featuring as featuring'
+                'item.Featuring as featuring',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(artist.Stage_Name, ''),
+                        NULLIF(artist.ArtistsName, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
             )
             ->where('item.Artists_Id', $video->Artists_Id)
             ->where('item.id', '<>', $video->id)
@@ -754,11 +1007,23 @@ class PageController extends Controller
             ->get();
 
         $latestVideos = DB::table('listing as item')
+            ->leftJoin(
+                'artists as artist',
+                'artist.Artists_Id',
+                '=',
+                'item.Artists_Id'
+            )
             ->select(
-                'item.id',
-                'item.slug',
+                'item.*',
                 'item.TrackTitle as track_title',
-                'item.Featuring as featuring'
+                'item.Featuring as featuring',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(artist.Stage_Name, ''),
+                        NULLIF(artist.ArtistsName, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
             )
             ->where('item.id', '<>', $video->id)
             ->whereRaw('LOWER(item.ListingType) = ?', ['video'])
@@ -769,6 +1034,7 @@ class PageController extends Controller
 
         return view('pages.video-details', compact(
             'video',
+            'featuredArtists',
             'canonicalSlug',
             'otherVideos',
             'artistSongs',
@@ -824,6 +1090,93 @@ class PageController extends Controller
             'poster' => $poster,
             'videos' => $videos,
         ]);
+    }
+
+    public function videosByYear(string $year): View
+    {
+        $videos = DB::table('listing as video')
+            ->leftJoin(
+                'artists as artist',
+                'artist.Artists_Id',
+                '=',
+                'video.Artists_Id'
+            )
+            ->select(
+                'video.id',
+                'video.TrackTitle as track_title',
+                'video.Featuring as featuring',
+                'video.CoverUrl as cover_url',
+                'video.YearOfRelease as released_year',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(artist.Stage_Name, ''),
+                        NULLIF(artist.ArtistsName, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
+            )
+            ->whereRaw('LOWER(video.ListingType) = ?', ['video'])
+            ->where('video.IsPublished', 'YES')
+            ->where('video.YearOfRelease', $year)
+            ->orderByDesc('video.id')
+            ->paginate(24);
+
+        return view('pages.videos-year', compact('videos', 'year'));
+    }
+
+
+    public function countryVideos(string $country): View
+    {
+        abort_unless(
+            in_array($country, ['naija', 'ghana', 'african'], true),
+            404
+        );
+
+        $countryName = match ($country) {
+            'naija' => 'Naija',
+            'ghana' => 'Ghana',
+            'african' => 'African',
+        };
+
+        $description = match ($country) {
+            'naija' => 'Watch the latest Naija music videos on TrendyBeatz. Discover Nigerian artists, explore new releases and find available music video downloads.',
+            'ghana' => 'Watch the latest Ghana music videos on TrendyBeatz. Discover Ghanaian artists, explore new releases and find available music video downloads.',
+            'african' => 'Watch the latest African music videos on TrendyBeatz. Discover artists across Africa, explore new releases and find available music video downloads.',
+        };
+
+        $videos = DB::table('listing as video')
+            ->leftJoin(
+                'artists as artist',
+                'artist.Artists_Id',
+                '=',
+                'video.Artists_Id'
+            )
+            ->select(
+                'video.id',
+                'video.TrackTitle as track_title',
+                'video.Featuring as featuring',
+                'video.CoverUrl as cover_url',
+                'video.country_id',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(artist.Stage_Name, ''),
+                        NULLIF(artist.ArtistsName, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
+            )
+            ->whereRaw('LOWER(video.ListingType) = ?', ['video'])
+            ->where('video.IsPublished', 'YES')
+            ->where('video.country_id', $country)
+            ->orderByDesc('video.id')
+            ->paginate(24);
+
+        return view('pages.videos-country', compact(
+            'videos',
+            'country',
+            'countryName',
+            'description'
+        ));
     }
 
 
@@ -1222,6 +1575,89 @@ class PageController extends Controller
     }
 
 
+    public function albumsByYear(string $year): View
+    {
+        $albums = DB::table('albums as album')
+            ->leftJoin(
+                'artists as artist',
+                'artist.Artists_Id',
+                '=',
+                'album.artist_id'
+            )
+            ->select(
+                'album.*',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(artist.Stage_Name, ''),
+                        NULLIF(artist.ArtistsName, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
+            )
+            ->selectSub(function ($query) {
+                $query->from('listing as track')
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('track.album_id', 'album.id')
+                    ->where('track.ListingType', 'Audio')
+                    ->where('track.IsPublished', 'YES');
+            }, 'track_count')
+            ->where('album.IsPublished', 'YES')
+            ->where('album.released_year', $year)
+            ->orderByDesc('album.id')
+            ->paginate(20);
+
+        return view('pages.albums-year', compact('albums', 'year'));
+    }
+
+
+    public function popularAlbums(): \Illuminate\Contracts\View\View
+    {
+        $albums = DB::table('albums as album')
+            ->leftJoin(
+                'artists as artist',
+                'artist.Artists_Id',
+                '=',
+                'album.artist_id'
+            )
+            ->select(
+                'album.*',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(artist.Stage_Name, ''),
+                        NULLIF(artist.ArtistsName, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
+            )
+            ->selectSub(function ($query) {
+                $query
+                    ->from('listing as track')
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('track.album_id', 'album.id')
+                    ->whereRaw('LOWER(track.ListingType) = ?', ['audio'])
+                    ->where('track.IsPublished', 'YES');
+            }, 'track_count')
+            ->selectSub(function ($query) {
+                $query
+                    ->from('album_of_the_day as popular')
+                    ->selectRaw('MAX(popular.rate_no)')
+                    ->whereColumn('popular.album_id', 'album.id');
+            }, 'popularity_rate')
+            ->whereExists(function ($query) {
+                $query
+                    ->selectRaw('1')
+                    ->from('album_of_the_day as popular')
+                    ->whereColumn('popular.album_id', 'album.id');
+            })
+            ->where('album.IsPublished', 'YES')
+            ->orderByDesc('popularity_rate')
+            ->orderByDesc('album.id')
+            ->paginate(20);
+
+        return view('pages.popular-albums', compact('albums'));
+    }
+
+
     public function allMusic(): \Illuminate\Contracts\View\View
     {
         $songs = DB::table('listing as song')
@@ -1360,12 +1796,144 @@ class PageController extends Controller
             ->limit(6)
             ->get();
 
+        $trackPath = trim((string) ($mix->track_url ?? ''));
+
+        $cdnMixUrl = rtrim(
+            trim((string) config('cdn.djmix_url')),
+            '/'
+        );
+
+        $trackUrl = null;
+        $hasAudioFile = false;
+
+        if ($trackPath !== '') {
+            if (preg_match('~^https?://~i', $trackPath)) {
+                $trackUrl = $trackPath;
+            } elseif ($cdnMixUrl !== '') {
+                $relativePath = ltrim($trackPath, '/');
+
+                // Prevent /djmix/djmix/ in the URL.
+                if (
+                    str_ends_with($cdnMixUrl, '/djmix')
+                    && str_starts_with($relativePath, 'djmix/')
+                ) {
+                    $relativePath = substr($relativePath, 6);
+                }
+
+                $relativePath = implode(
+                    '/',
+                    array_map(
+                        static fn ($segment) =>
+                            rawurlencode(rawurldecode($segment)),
+                        explode('/', $relativePath)
+                    )
+                );
+
+                $trackUrl = $cdnMixUrl . '/' . $relativePath;
+            }
+        }
+
+        if ($trackUrl !== null) {
+            $hasAudioFile = Cache::remember(
+                'djmix-audio-available:v1:' . sha1($trackUrl),
+                now()->addMinutes(5),
+                function () use ($trackUrl): bool {
+                    try {
+                        $response = Http::connectTimeout(2)
+                            ->timeout(4)
+                            ->head($trackUrl);
+
+                        if (!$response->successful()) {
+                            return false;
+                        }
+
+                        $contentType = strtolower(trim(
+                            explode(
+                                ';',
+                                (string) $response->header('Content-Type')
+                            )[0]
+                        ));
+
+                        $isAudio = str_starts_with($contentType, 'audio/')
+                            || in_array($contentType, [
+                                'application/octet-stream',
+                                'binary/octet-stream',
+                                'application/mp3',
+                            ], true);
+
+                        $contentLength = $response->header('Content-Length');
+
+                        return $isAudio
+                            && (
+                                $contentLength === null
+                                || trim($contentLength) !== '0'
+                            );
+                    } catch (ConnectionException $exception) {
+                        return false;
+                    }
+                }
+            );
+        }    
+
         return view('pages.djmix-details', [
             'mix' => $mix,
             'canonicalSlug' => $canonicalSlug,
             'otherMixesByDj' => $otherMixesByDj,
             'otherDjs' => $otherDjs,
+            'trackUrl' => $trackUrl,
+            'hasAudioFile' => $hasAudioFile,
         ]);
+    }
+
+    public function djs(): View
+    {
+        $djs = DB::table('dj')
+            ->where('IsPublished', 'YES')
+            ->whereNotNull('dj_name')
+            ->where('dj_name', '<>', '')
+            ->orderBy('dj_name')
+            ->orderBy('id')
+            ->paginate(20);
+
+        return view('pages.djs', compact('djs'));
+    }
+
+    public function djDetails(string $slug): View
+    {
+        $dj = DB::table('dj')
+            ->where('IsPublished', 'YES')
+            ->get()
+            ->first(function ($row) use ($slug) {
+                $djSlug = trim((string) ($row->slug ?? ''));
+
+                if ($djSlug === '') {
+                    $djSlug = Str::slug($row->dj_name);
+                }
+
+                return $djSlug === $slug;
+            });
+
+        abort_unless($dj, 404);
+
+        $mixes = DB::table('dj_mixs as mix')
+            ->select(
+                'mix.id',
+                'mix.slug',
+                'mix.mix_title',
+                'mix.cover_url'
+            )
+            ->where('mix.dj_id', $dj->id)
+            ->where('mix.IsPublished', 'YES')
+            ->whereNotNull('mix.mix_title')
+            ->where('mix.mix_title', '<>', '')
+            ->orderByDesc('mix.id')
+            ->paginate(20);
+
+        return view('pages.djs-details', compact(
+            'dj',
+            'mixes',
+            'slug'
+        ));
     }
 
 
@@ -1409,6 +1977,33 @@ class PageController extends Controller
             'posterSlug' => $slug,
             'mixes' => $mixes,
         ]);
+    }
+
+    public function mixesByYear(string $year): View
+    {
+        $mixes = DB::table('dj_mixs as mix')
+            ->leftJoin('dj', 'dj.id', '=', 'mix.dj_id')
+            ->select(
+                'mix.id',
+                'mix.slug',
+                'mix.mix_title',
+                'mix.cover_url',
+                'mix.released_year',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(dj.dj_name, ''),
+                        'TrendyBeatz DJ'
+                    ) as dj_name
+                ")
+            )
+            ->where('mix.IsPublished', 'YES')
+            ->where('mix.released_year', $year)
+            ->whereNotNull('mix.mix_title')
+            ->where('mix.mix_title', '<>', '')
+            ->orderByDesc('mix.id')
+            ->paginate(24);
+
+        return view('pages.djmix-year', compact('mixes', 'year'));
     }
 
 
@@ -1620,6 +2215,38 @@ class PageController extends Controller
             'relatedPosts' => $relatedPosts,
             'latestPosts' => $latestPosts,
         ]);
+    }
+
+    public function blogsPublishedBy(string $slug): View
+    {
+        $publishers = DB::query()
+            ->fromSub($this->blogListingQuery(), 'published_posts')
+            ->select('posted_by_name')
+            ->whereNotNull('posted_by_name')
+            ->where('posted_by_name', '<>', '')
+            ->distinct()
+            ->get();
+
+        $matches = $publishers->filter(
+            fn ($publisher) =>
+                \Illuminate\Support\Str::slug($publisher->posted_by_name) === $slug
+        );
+
+        abort_unless($matches->count() === 1, 404);
+
+        $publisherName = $matches->first()->posted_by_name;
+
+        $posts = DB::query()
+            ->fromSub($this->blogListingQuery(), 'published_posts')
+            ->where('posted_by_name', $publisherName)
+            ->orderByDesc('id')
+            ->paginate(12);
+
+        return view('pages.blogs-published-by', compact(
+            'posts',
+            'publisherName',
+            'slug'
+        ));
     }
         
 }

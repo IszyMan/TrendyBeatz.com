@@ -3,40 +3,53 @@
 @php
     $artistName = $video->artist_name ?: 'TrendyBeatz';
     $trackTitle = trim((string) $video->TrackTitle);
-    $featuring = trim((string) $video->Featuring);
+    $featuring = trim((string) ($video->Featuring ?? ''));
 
     $displayTitle = $artistName . ' - ' . $trackTitle;
+    $keywordTitle = $artistName . ' ' . $trackTitle;
 
     if (
         $featuring !== ''
         && !preg_match('/\b(?:ft|feat|featuring)\.?\s/i', $trackTitle)
     ) {
         $displayTitle .= ' feat. ' . $featuring;
+        $keywordTitle .= ' feat. ' . $featuring;
     }
 
     $pageTitle = $displayTitle . ' | Download Video MP4 » TrendyBeatz';
 
-    $descriptionSource = trim(strip_tags(
-        (string) (
-            $video->introduction
-            ?: $video->TrackInfo
-            ?: $video->trackinfo1
-            ?: ''
-        )
-    ));
+    $metaKeywords = implode(', ', [
+        $keywordTitle . ' video',
+        'Download ' . $keywordTitle . ' video',
+        'Watch ' . $trackTitle . ' video',
+        'Stream ' . $keywordTitle . ' video',
+        'download video mp4 ' . $keywordTitle,
+        'Download ' . $displayTitle . ' MP4',
+        $keywordTitle . ' music video',
+    ]);
 
-    $description = $descriptionSource !== ''
-        ? \Illuminate\Support\Str::limit(
-            preg_replace('/\s+/', ' ', $descriptionSource),
-            160,
-            ''
-        )
-        : 'Watch and download ' . $displayTitle
+    $description = collect([
+        $video->introduction ?? '',
+        $video->TrackInfo ?? '',
+    ])
+        ->map(fn ($text) => trim(strip_tags((string) $text)))
+        ->filter(fn ($text) => $text !== '')
+        ->implode(' ');
+
+    if ($description === '') {
+        $description = 'Watch and download ' . $displayTitle
             . ' music video on TrendyBeatz.';
+    }
+
+    $description = \Illuminate\Support\Str::limit(
+        preg_replace('/\s+/u', ' ', $description),
+        280,
+        ''
+    );
 
     $canonicalUrl = \App\Support\VideoUrl::detail($video);
 
-    $coverPath = trim((string) $video->CoverUrl);
+    $coverPath = trim((string) ($video->CoverUrl ?? ''));
 
     if ($coverPath === '') {
         $socialImage = '';
@@ -55,6 +68,7 @@
 
 @section('title', $pageTitle)
 @section('meta_description', $description)
+@section('meta_keywords', $metaKeywords)
 @section('canonical', $canonicalUrl)
 @section('social_title', $displayTitle)
 @section('social_description', $description)
@@ -63,8 +77,11 @@
     @section('social_image', $socialImage)
 @endif
 
+
 @section('content')
     @php
+
+        $artistSlug = \Illuminate\Support\Str::slug($artistName);
         
         $videoFile = trim((string) $video->TrackUrl);
 
@@ -155,21 +172,42 @@
             <div class="tb-music-detail-facts">
                 <p>
                     <strong>Artist Name:</strong>
-                    <span class="tb-music-detail-blue">
+                    <a
+                        class="tb-music-detail-blue"
+                        href="{{ route('artists.show', $artistSlug) }}"
+                        style="text-decoration: none;"
+                    >
                         {{ $artistName }}
-                    </span>
+                    </a>
                 </p>
 
-                @if ($featuring !== '')
+                @if ($featuredArtists->isNotEmpty())
                     <p>
                         <strong>Featuring:</strong>
-                        <span class="tb-music-detail-red">
-                            {{ $featuring }}
-                        </span>
+
+                        @foreach ($featuredArtists as $featuredArtist)
+                            @if (!$loop->first)
+                                <span aria-hidden="true">, </span>
+                            @endif
+
+                            @if ($featuredArtist['slug'])
+                                <a
+                                    class="tb-music-detail-red"
+                                    href="{{ route('artists.show', $featuredArtist['slug']) }}"
+                                    style="text-decoration: none;"
+                                >
+                                    {{ $featuredArtist['name'] }}
+                                </a>
+                            @else
+                                <span class="tb-music-detail-red">
+                                    {{ $featuredArtist['name'] }}
+                                </span>
+                            @endif
+                        @endforeach
                     </p>
                 @endif
 
-                <p>
+                <p class="tb-music-detail-green">
                     <strong>Track Title:</strong>
                     {{ $trackTitle }}
                 </p>
@@ -177,7 +215,13 @@
                 @if (filled($video->YearOfRelease))
                     <p>
                         <strong>Year of Release:</strong>
-                        {{ $video->YearOfRelease }}
+                        <a
+                            class="tb-music-detail-red"
+                            href="{{ route('videos.year', $video->YearOfRelease) }}"
+                            style="text-decoration: none;"
+                        >
+                            {{ $video->YearOfRelease }} Videos
+                        </a>
                     </p>
                 @endif
 
@@ -190,13 +234,25 @@
 
                 <p>
                     <strong>Category:</strong>
-                    Latest Video
+                    <a
+                      
+                        href="{{ route('videos.index') }}"
+                        style="text-decoration: none;"
+                    >
+                        Latest Video
+                    </a>
                 </p>
 
-                @if (filled($video->country_id))
+                @if (in_array($video->country_id, ['naija', 'ghana', 'african'], true))
                     <p>
                         <strong>Country:</strong>
-                        {{ ucfirst($video->country_id) }} Music Video
+                        <a
+                            class="tb-music-detail-blue"
+                            href="{{ route('videos.' . $video->country_id) }}"
+                            style="text-decoration: none;"
+                        >
+                            {{ ucfirst($video->country_id) }} Music Video
+                        </a>
                     </p>
                 @endif
             </div>
@@ -267,7 +323,7 @@
         @endif
     </article>
 
-    {{-- Separate panel leaves space for the share section later --}}
+    
     <div class="tb-music-detail tb-music-detail-related tb-video-detail">
         @if ($otherVideos->isNotEmpty())
             <section class="tb-music-detail-discovery">
@@ -308,6 +364,8 @@
 
                 <div class="tb-music-detail-discovery-list">
                     @foreach ($artistSongs as $song)
+
+                    
                         <a href="{{ \App\Support\MusicUrl::detail($song) }}">
                             <span class="tb-music-detail-icon" aria-hidden="true">
                                 ♫
@@ -360,7 +418,7 @@
                         </span>
 
                         <span class="tb-music-detail-discovery-text">
-                            <strong>{{ $item->track_title }}</strong>
+                            <strong>{{ $item->artist_name }} - {{ $item->track_title }}</strong>
                             <small>Latest video</small>
                         </span>
                     </a>

@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Privacy Policy — TrendyBeatz';
+    $pageTitle = 'Terms & Conditions — TrendyBeatz';
 
-    $metaDescription = 'Read the TrendyBeatz privacy policy to learn about information we collect, cookies, third-party links and how to contact us about privacy concerns.';
+    $metaDescription = 'Read the TrendyBeatz terms and conditions covering content usage, user conduct, updates to our terms and contact details.';
 
-    $metaKeywords = 'TrendyBeatz privacy policy, personal information, cookies, usage data, third-party links, privacy concerns';
+    $metaKeywords = 'TrendyBeatz terms and conditions, TrendyBeatz terms of use, content usage, user conduct, music download terms';
 
-    $canonical = route('page.privacy');
+    $canonical = route('page.terms');
 @endphp
 
 @section('title', $pageTitle)
@@ -19,40 +19,41 @@
 
 @section('content')
     <style>
-        .tb-privacy {
-            --privacy-green: #198754;
+        .tb-terms {
+            --terms-green: #198754;
+            --terms-text: #25332b;
             width: 100%;
             max-width: 900px;
             margin: 28px auto;
             padding: 0 16px;
             box-sizing: border-box;
             font-family: 'Segoe UI', Arial, sans-serif;
-            color: #25332b;
+            color: var(--terms-text);
             overflow-wrap: anywhere;
         }
 
-        .tb-privacy * {
+        .tb-terms * {
             box-sizing: border-box;
         }
 
-        .tb-privacy-header {
+        .tb-terms-header {
             padding: 26px;
             border: 1px solid #dce8df;
-            border-top: 4px solid var(--privacy-green);
+            border-top: 4px solid var(--terms-green);
             border-radius: 8px;
             background: #f3f8f5;
         }
 
-        .tb-privacy-label {
+        .tb-terms-label {
             margin: 0 0 10px;
-            color: var(--privacy-green);
+            color: var(--terms-green);
             font-size: 12px;
             font-weight: 800;
             letter-spacing: 1.2px;
             text-transform: uppercase;
         }
 
-        .tb-privacy h1 {
+        .tb-terms h1 {
             margin: 0 0 12px;
             color: #14251b;
             font-size: clamp(27px, 4vw, 36px);
@@ -60,20 +61,20 @@
             line-height: 1.2;
         }
 
-        .tb-privacy-updated {
+        .tb-terms-updated {
             margin: 0;
             color: #617168;
             font-size: 13px;
             line-height: 1.6;
         }
 
-        .tb-privacy-intro {
+        .tb-terms-intro {
             margin: 24px 0;
             font-size: 16px;
             line-height: 1.85;
         }
 
-        .tb-privacy-section {
+        .tb-terms-section {
             margin: 0 0 18px;
             padding: 22px 24px;
             border: 1px solid #e0e6e2;
@@ -81,115 +82,116 @@
             background: #fff;
         }
 
-        .tb-privacy h2 {
+        .tb-terms h2 {
             margin: 0 0 12px;
             padding-left: 12px;
-            border-left: 3px solid var(--privacy-green);
+            border-left: 3px solid var(--terms-green);
             color: #14251b;
             font-size: 20px;
             font-weight: 700;
             line-height: 1.4;
         }
 
-        .tb-privacy-section p {
+        .tb-terms-section p {
             margin: 0;
             font-size: 15px;
             line-height: 1.9;
         }
 
-        .tb-privacy-contact {
-            border-color: #dce8df;
+        .tb-terms-contact {
             background: #f3f8f5;
+            border-color: #dce8df;
         }
 
-        .tb-privacy a {
+        .tb-terms a {
             color: #0066cc;
             text-decoration: none;
         }
 
-        .tb-privacy a:hover {
+        .tb-terms a:hover {
             text-decoration: underline;
         }
 
-        .tb-privacy a:focus-visible {
-            outline: 3px solid var(--privacy-green);
+        .tb-terms a:focus-visible {
+            outline: 3px solid var(--terms-green);
             outline-offset: 4px;
         }
 
         @media (max-width: 600px) {
-            .tb-privacy {
+            .tb-terms {
                 margin: 18px auto;
                 padding: 0 12px;
             }
 
-            .tb-privacy-header {
+            .tb-terms-header {
                 padding: 20px 16px;
             }
 
-            .tb-privacy-section {
+            .tb-terms-section {
                 padding: 18px 16px;
             }
 
-            .tb-privacy h2 {
+            .tb-terms h2 {
                 font-size: 18px;
             }
         }
     </style>
 
-    <article class="tb-privacy">
-        <header class="tb-privacy-header">
-            <p class="tb-privacy-label">TrendyBeatz Media</p>
+    <article class="tb-terms">
+        <header class="tb-terms-header">
+            <p class="tb-terms-label">TrendyBeatz Media</p>
 
-            <h1>Privacy Policy</h1>
+            <h1>Terms &amp; Conditions</h1>
 
-            <p class="tb-privacy-updated">
+            <p class="tb-terms-updated">
                 Last updated {{ date('F Y') }}
             </p>
         </header>
 
-        <p class="tb-privacy-intro">
-            Your privacy is important to us. This policy explains
-            what information TrendyBeatz collects, how we use it,
-            and your choices.
+        <p class="tb-terms-intro">
+            By accessing or using TrendyBeatz, you agree to be bound
+            by these Terms and Conditions. If you do not agree,
+            please do not use our site.
         </p>
 
-        <section class="tb-privacy-section">
-            <h2>Information We Collect</h2>
+        <section class="tb-terms-section">
+            <h2>Use of Content</h2>
 
             <p>
-                We may collect your name, email address and usage
-                data when you interact with our site (e.g. commenting
-                or subscribing). We do not sell your personal
-                information to third parties.
+                Content on TrendyBeatz — including music, articles
+                and images — is provided for personal,
+                non-commercial use only. You may not redistribute,
+                re-upload, sell or commercially exploit any content
+                without prior written permission from TrendyBeatz
+                or the respective rights holder.
             </p>
         </section>
 
-        <section class="tb-privacy-section">
-            <h2>Cookies</h2>
+        <section class="tb-terms-section">
+            <h2>User Conduct</h2>
 
             <p>
-                We use cookies to improve your browsing experience
-                and to analyse site traffic. You can disable cookies
-                in your browser settings, though some features may
-                not function correctly.
+                You agree not to misuse the site, upload harmful
+                content, or attempt to gain unauthorised access
+                to any part of our platform.
             </p>
         </section>
 
-        <section class="tb-privacy-section">
-            <h2>Third-Party Links</h2>
+        <section class="tb-terms-section">
+            <h2>Changes to Terms</h2>
 
             <p>
-                Our site may contain links to external websites.
-                We are not responsible for the privacy practices
-                of those sites.
+                We reserve the right to update these terms at any
+                time. Continued use of the site after changes
+                constitutes acceptance of the updated terms.
             </p>
         </section>
 
-        <section class="tb-privacy-section tb-privacy-contact">
+        <section class="tb-terms-section tb-terms-contact">
             <h2>Contact</h2>
 
             <p>
-                For privacy concerns, email
+                Questions? Email
                 <a href="mailto:info@trendybeatz.com">
                     info@trendybeatz.com
                 </a>.

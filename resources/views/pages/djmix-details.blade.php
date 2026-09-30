@@ -30,9 +30,21 @@
 
     $pageDescription = \Illuminate\Support\Str::limit(
         preg_replace('/\s+/', ' ', $pageDescription),
-        160,
+        260,
         ''
     );
+
+    $metaKeywords = implode(', ', [
+        $metaDjName . ' ' . $metaMixTitle,
+        'Download ' . $metaDjName . ' ' . $metaMixTitle,
+        'Stream ' . $metaMixTitle,
+        'Download ' . $metaDjName . ' ' . $metaMixTitle . ' mix',
+        'download mp3 ' . $metaDjName . ' ' . $metaMixTitle,
+        'Download ' . $metaDjName . ' - ' . $metaMixTitle,
+        $metaDjName . ' ' . $metaMixTitle . ' free mp3',
+        $metaDjName . ' mixtapes',
+        'TrendyBeatz DJ mixes',
+    ]);
 
     $canonicalUrl = route('mixes.show', [
         $mix->id,
@@ -58,6 +70,7 @@
 
 @section('title', $pageTitle)
 @section('meta_description', $pageDescription)
+@section('meta_keywords', $metaKeywords)
 @section('canonical', $canonicalUrl)
 @section('social_title', $metaDjName . ' - ' . $metaMixTitle)
 @section('social_description', $pageDescription)
@@ -148,7 +161,13 @@
             <div class="tb-music-detail-facts">
                 <p>
                     <strong>DJ:</strong>
-                    <span class="tb-music-detail-blue">{{ $djName }}</span>
+                    <a
+                        class="tb-music-detail-blue"
+                        href="{{ route('djs.show', \Illuminate\Support\Str::slug($mix->dj_name)) }}"
+                        style="text-decoration: none;"
+                    >
+                         <span class="tb-music-detail-blue">{{ $djName }}</span>
+                    </a>
                 </p>
 
                 <p>
@@ -159,9 +178,26 @@
                 @if (filled($mix->released_year))
                     <p>
                         <strong>Year:</strong>
-                        {{ $mix->released_year }}
+                        <a
+                            class="tb-music-detail-green"
+                            href="{{ route('mixes.year', $mix->released_year) }}"
+                            style="text-decoration: none;"
+                        >
+                            {{ $mix->released_year }}
+                        </a>
                     </p>
                 @endif
+
+                <p>
+                    <strong>Category:</strong>
+                    <a
+                        class="tb-music-detail-blue"
+                        href="{{ route('mixes.index') }}"
+                        style="text-decoration: none;"
+                    >
+                        Latest DJ Mix
+                    </a>
+                </p>
             </div>
         </section>
 
@@ -193,13 +229,18 @@
             </section>
         @endif
 
-        @if ($trackUrl)
+        @if ($hasAudioFile)
             <section class="tb-music-detail-listening">
-                <h2>
-                    Listen to {{ $displayTitle }}
-                </h2>
+                <h2>Listen to {{ $displayTitle }}</h2>
 
                 <div class="tb-music-detail-audio">
+                    <p class="tb-music-copyright-notice">
+                        <strong>Copyright Notice:</strong>
+                        This song and its audio materials were published upon
+                        express request and direct permission from the
+                        copyright holder.
+                    </p>
+
                     <audio controls preload="none">
                         <source src="{{ $trackUrl }}">
                         Your browser does not support audio playback.

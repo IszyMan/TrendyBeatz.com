@@ -147,13 +147,16 @@
     >
         <input
             type="search"
-            name="search"
-            value="{{ request('search') }}"
+            name="q"
+            value="{{ request('q') }}"
+            placeholder="Search music, artists, DJs..."
             aria-label="Search TrendyBeatz"
-            placeholder="Search TrendyBeatz.."
+            maxlength="200"
             required
         >
 
         <button type="submit">Search</button>
     </form>
+
+    
 </div>

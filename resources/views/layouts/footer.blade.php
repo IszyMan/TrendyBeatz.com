@@ -18,6 +18,14 @@
             <a href="{{ route('blogs.category', 'celebrity-news') }}">
                 Celebrity News
             </a>
+
+            <a href="{{ route('page.promote') }}">
+                Upload Your Songs
+            </a>
+
+            <a href="{{ route('page.promote') }}">
+                Music Promotion
+            </a>
         </section>
 
         <section>
@@ -41,22 +49,34 @@
         </section>
 
         <section>
-            <h2>Explore</h2>
+            <h2>Company</h2>
 
-            <a href="{{ route('music.all') }}">
-                All Music
+            <a href="{{ route('page.about') }}">
+                About Us
             </a>
 
-            <a href="{{ route('music.ghana') }}">
-                Ghana Music
+            <a href="{{ route('page.terms') }}">
+                Terms of Use
             </a>
 
-            <a href="{{ route('music.african') }}">
-                African Music
+            <a href="{{ route('page.privacy') }}">
+                Privacy Policy
             </a>
 
-            <a href="{{ route('blogs.index') }}">
-                News & Blog
+            <a href="{{ route('page.contact') }}">
+                Contact Us
+            </a>
+
+            <a href="{{ route('page.advertise') }}">
+                Advertise With Us
+            </a>
+
+            <a href="{{ route('page.dmca') }}">
+                DMCA
+            </a>
+
+            <a href="{{ route('page.disclaimer') }}">
+                Disclaimer
             </a>
         </section>
 

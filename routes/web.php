@@ -3,6 +3,8 @@
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\StaticPageController;
+use App\Http\Controllers\SearchController;
 
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
@@ -10,6 +12,7 @@ Route::get('/', [HomeController::class, 'index'])
 
 Route::get('/song-of-the-day', [PageController::class, 'songOfTheDay'])->name('songs.day');  
 
+Route::get('/songs-of-the-week', [PageController::class, 'songsOfTheWeek'])->name('songs.week');
 
 Route::get('/legal-download/{year}/songs',[PageController::class, 'songsByYear'])
     ->where('year', '(?:19|20)[0-9]{2}')->name('music.year');
@@ -28,6 +31,7 @@ Route::get('/musics/highlife',[PageController::class, 'highlifeSongs'])->name('m
 
 Route::get('/musics', [PageController::class, 'allMusic'])
     ->name('music.all');
+    
 
 Route::get('/musics/naija', [PageController::class, 'countrySongs'])->defaults('country', 'naija')
     ->name('music.naija');
@@ -38,7 +42,22 @@ Route::get('/musics/ghana', [PageController::class, 'countrySongs'])->defaults('
 Route::get('/musics/african', [PageController::class, 'countrySongs'])->defaults('country', 'african')
     ->name('music.african');
 
+Route::get('/naija-music-videos', [PageController::class, 'countryVideos'])
+    ->defaults('country', 'naija')
+    ->name('videos.naija');
+
+Route::get('/ghana-music-videos', [PageController::class, 'countryVideos'])
+    ->defaults('country', 'ghana')
+    ->name('videos.ghana');
+
+Route::get('/african-music-videos', [PageController::class, 'countryVideos'])
+    ->defaults('country', 'african')
+    ->name('videos.african');    
+
 Route::get('/download-latest-videos',[PageController::class, 'latestVideos'])->name('videos.index');
+
+Route::get('/{year}/videos', [PageController::class, 'videosByYear'])->where('year', '[0-9]{4}')
+    ->name('videos.year');
 
 
 Route::get('/download-video/{id}/{slug}', [PageController::class, 'videoDetails'])->whereNumber('id')
@@ -53,15 +72,24 @@ Route::get('/artists/sections/{country}', [PageController::class, 'artistCountry
 
 Route::get('/artists/{slug}', [PageController::class, 'artistDetails'])->name('artists.show');
 
+Route::get('/{year}/albums', [PageController::class, 'albumsByYear'])->where('year', '[0-9]{4}')
+    ->name('albums.year');
+
 Route::get('/artist-albums', [PageController::class, 'albums'])->name('albums.index');
 
 Route::get('/artist-albums/{id}/{slug}', [PageController::class, 'albumDetails'])
     ->whereNumber('id')->name('albums.show');
 
+Route::get('/popular-albums',[PageController::class, 'popularAlbums'])->name('albums.popular');    
+
 Route::get('/album-posted-by/{slug}',[PageController::class, 'albumPostedBy'])->name('albums.posted_by');  
 
-Route::get('/musics', [PageController::class, 'allMusic'])->name('music.all');
+Route::get('/dj-mix', [PageController::class, 'djs'])->name('djs.index');
 
+Route::get('/{year}/djmix', [PageController::class, 'mixesByYear'])->where('year', '[0-9]{4}')
+    ->name('mixes.year');
+
+Route::get('/dj-mix-{slug}', [PageController::class, 'djDetails'])->name('djs.show');
 
 Route::get('/djmix', [PageController::class, 'djMixes'])->name('mixes.index');
 
@@ -90,8 +118,30 @@ Route::get('/blogs/{category}', [PageController::class, 'blogCategory'])
 Route::get('/blog/{slug}', [PageController::class, 'blogDetails'])
     ->name('blogs.show');
 
-Route::get('/search', [PageController::class, 'search'])
+Route::get('/published-by/{slug}', [PageController::class, 'blogsPublishedBy'])
+    ->name('blogs.published_by');    
+
+Route::get('/search', [SearchController::class, 'index'])
     ->name('search');
+
+
+Route::controller(StaticPageController::class)->group(function () {
+    Route::get('/privacy-policy', 'privacyPolicy')->name('page.privacy');
+
+    Route::get('/aboutus', 'aboutUs')->name('page.about');
+
+    Route::get('/terms-of-use', 'termsOfUse')->name('page.terms');
+
+    Route::get('/contactus', 'contactUs')->name('page.contact');
+
+    Route::get('/advertise_with_us', 'advertiseWithUs')->name('page.advertise');
+
+    Route::get('/promote-music', 'promoteMusic')->name('page.promote');
+
+    Route::get('/disclaimer', 'disclaimer')->name('page.disclaimer');
+
+    Route::get('/dmca', 'dmca')->name('page.dmca');
+});
 
 
 

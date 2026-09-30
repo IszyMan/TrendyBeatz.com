@@ -5,6 +5,11 @@
     'TrendyBeatz - Nigeria No. 1 Entertainment and Music Discovery Website For Legal Downloads'
 )
 
+@section(
+    'meta_keywords',
+    'TrendyBeatz, latest Nigerian music, Naija music, music discovery, legal music downloads, download music mp3, stream music, Ghana music, African music, gospel songs, highlife music, music videos, albums, EP downloads, DJ mixes, mixtapes, music reviews, entertainment news, artiste profiles, music promotion'
+)
+
 @section('content')
     <h1 class="section-heading">
         Discover Latest Naija Music and Entertainment
@@ -44,7 +49,7 @@
         'heading' => 'Song of the Week',
         'badge' => 'Song of the Week',
         'items' => $week,
-        'more' => url('/songs-of-the-week'),
+        'more' => route('songs.week'),
     ])
 
     @include('partials.home.songs', [

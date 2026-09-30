@@ -36,12 +36,9 @@
         : null;
 
     $intro = \Illuminate\Support\Str::limit(
-        trim(preg_replace(
-            '/\s+/',
-            ' ',
-            strip_tags((string) $post->intro)
-        )),
-        230
+        trim(strip_tags((string) $post->intro)),
+        180,
+        '...'
     );
 @endphp
 

@@ -30,6 +30,19 @@
         ''
     );
 
+    $metaKeywords = implode(', ', [
+        $artistName . ' ' . $albumTitle,
+        'Download ' . $artistName . ' ' . $albumTitle,
+        'Stream ' . $albumTitle,
+        'Download ' . $artistName . ' ' . $albumTitle . ' album',
+        'download album mp3 ' . $artistName . ' ' . $albumTitle,
+        'Download ' . $displayTitle,
+        $artistName . ' ' . $albumTitle . ' free mp3',
+        $albumTitle . ' tracklist',
+        $artistName . ' albums',
+        'TrendyBeatz album downloads',
+    ]);
+
     $canonicalUrl = route('albums.show', [
         $album->id,
         $correctSlug,
@@ -54,6 +67,7 @@
 
 @section('title', $pageTitle)
 @section('meta_description', $pageDescription)
+@section('meta_keywords', $metaKeywords)
 @section('canonical', $canonicalUrl)
 @section('social_title', $displayTitle . ' Album')
 @section('social_description', $pageDescription)
@@ -124,13 +138,18 @@
                 <p>
                     <strong>Album Artist:</strong>
                     <span class="tb-music-detail-blue">
-                        {{ $artistName }}
+                        <a
+                            href="{{ route('artists.show', \Illuminate\Support\Str::slug($artistName)) }}"
+                            style="text-decoration: none;"
+                        >
+                            {{ $artistName }}
+                        </a>
                     </span>
                 </p>
 
                 <p>
                     <strong>Title:</strong>
-                    {{ $albumTitle }}
+                  <span class="tb-music-detail-green">  {{ $albumTitle }}</span>
                 </p>
 
                 @if ($releaseDate)
@@ -142,20 +161,35 @@
 
                 <p>
                     <strong>Category:</strong>
-                    Music Albums
-                </p>
+                    <a
+                        class="tb-music-detail-blue"
+                        href="{{ route('albums.index') }}"
+                        style="text-decoration: none;"
+                    >
+                        Music Albums
+                    </a>
+                </p>                
+
+                @if (filled($album->released_year))
+                    @if (filled($album->released_year))
+                        <p>
+                            <strong>Released Year:</strong>
+                            <a
+                                class="tb-music-detail-red"
+                                href="{{ route('albums.year', $album->released_year) }}"
+                                style="text-decoration: none;"
+                            >
+                                {{ $album->released_year }} Music Albums
+                            </a>
+                        </p>
+                    @endif
+                @endif
+
 
                 <p>
                     <strong>Track List:</strong>
                     {{ $tracks->count() }}
                 </p>
-
-                @if (filled($album->released_year))
-                    <p>
-                        <strong>Released Year:</strong>
-                        {{ $album->released_year }}
-                    </p>
-                @endif
             </div>
         </section>
 
