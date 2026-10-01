@@ -237,15 +237,19 @@
 
                     <span class="tb-album-detail-track-info">
                         <strong>
-                            {{ $artistName }} - {{ $song->track_title }}
+                            {{ $song->track_title }}
                         </strong>
 
                         @if (filled($song->featuring))
                             <small>
-                                feat. {{ $song->featuring }}
+                                <b>feat. {{ $song->featuring }}</b>
                             </small>
                         @endif
+
+                        <small>Tap to Stream</small>
                     </span>
+
+                    
 
                     <span
                         class="tb-album-detail-track-arrow"
@@ -261,6 +265,34 @@
             @endforelse
         </section>
     </article>
+
+
+    {{-- The share section  --}}
+
+    <section class="tb-share-card">
+        <p class="tb-share-heading">
+            🔗 Share {{ $displayTitle }} with others on
+        </p>
+
+        <div class="tb-share-row">
+            <button
+                type="button"
+                class="tb-share-copy"
+                onclick="tbCopyPageLink(this)"
+                aria-live="polite"
+            >Copy Link</button>
+            <div class="a2a_kit a2a_kit_size_24 a2a_default_style">
+                <a class="a2a_button_facebook"></a>
+                <a class="a2a_button_x"></a>
+                <a class="a2a_button_email"></a>
+                <a class="a2a_button_pinterest"></a>
+                <a class="a2a_button_linkedin"></a>
+                <a class="a2a_button_whatsapp"></a>
+            </div>
+
+            
+        </div>
+    </section>
 
     <div class="tb-music-detail tb-music-detail-related tb-album-detail">
         @if ($otherAlbums->isNotEmpty())
@@ -309,10 +341,17 @@
             </section>
         @endif
 
-        <p class="tb-music-detail-more">
+        <p class="tb-home-view-all">
             <a href="{{ route('albums.index') }}">
                 Browse All Albums →
             </a>
         </p>
     </div>
+
+
+    @include('partials.comments', [
+        'postType' => 'album',
+        'postId' => $album->id,
+        'postTitle' => $displayTitle,
+    ])
 @endsection

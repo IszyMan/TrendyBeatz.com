@@ -73,7 +73,7 @@ class BlogController extends Controller
 
         if ((int) $locked->acquired !== 1) {
             if ($filename) {
-                File::delete(public_path('images/' . $filename));
+                File::delete(public_path('images/blog/' . $filename));
             }
 
             throw ValidationException::withMessages([
@@ -101,7 +101,7 @@ class BlogController extends Controller
             });
         } catch (\Throwable $e) {
             if ($filename) {
-                File::delete(public_path('images/' . $filename));
+                File::delete(public_path('images/blog/' . $filename));
             }
 
             throw $e;
@@ -181,7 +181,7 @@ class BlogController extends Controller
         DB::table('blogs')->where('id', $row->id)->delete();
 
         if ($row->photo) {
-            File::delete(public_path('images/' . basename($row->photo)));
+            File::delete(public_path('images/blog/' . basename($row->photo)));
         }
 
         return redirect()
@@ -233,14 +233,19 @@ class BlogController extends Controller
 
     private function saveImage(\Illuminate\Http\UploadedFile $image): string
     {
-        $directory = public_path('images');
+        $directory = public_path('images/blog');
 
         File::ensureDirectoryExists($directory);
 
-        $filename = 'admin-blog-'
-            . bin2hex(random_bytes(12))
-            . '.'
-            . $image->extension();
+        $filename = basename(
+            str_replace('\\', '/', $image->getClientOriginalName())
+        );
+
+        if (File::exists($directory . '/' . $filename)) {
+            throw ValidationException::withMessages([
+                'photo_upload' => 'An image with this filename already exists. Rename the image before uploading.',
+            ]);
+        }
 
         $image->move($directory, $filename);
 

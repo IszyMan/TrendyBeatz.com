@@ -57,7 +57,7 @@
         $coverPath = ltrim($cover, '/');
 
         $socialImage = asset(
-            str_starts_with($coverPath, 'images/')
+            str_starts_with($coverPath, 'images/blog/')
                 ? $coverPath
                 : 'images/blog/' . basename($coverPath)
         );
@@ -96,10 +96,8 @@
 
         $categoryClass = $categoryClasses[$post->category_slug]
             ?? 'tb-blog-news';
-
+    
         
-
-        $commentCount = 0;
 
         $lastUpdated = filled($post->created_at)
             ? \Illuminate\Support\Carbon::parse($post->created_at)
@@ -119,7 +117,7 @@
             $path = ltrim($image, '/');
 
             return asset(
-                str_starts_with($path, 'images/')
+                str_starts_with($path, 'images/blog/')
                     ? $path
                     : 'images/blog/' . basename($path)
             );
@@ -255,9 +253,15 @@
             </div>
 
             <div class="tb-article-meta">
-                <span class="tb-article-badge {{ $categoryClass }}">
+                <a
+                    class="tb-article-badge {{ $categoryClass }}"
+                    href="{{ route('blogs.category', [
+                        'category' => $post->category_slug,
+                    ]) }}"
+                    style="text-decoration: none;"
+                >
                     {{ $post->category_name ?: 'News' }}
-                </span>
+                </a>
 
                 @if (filled($post->posted_by_name))
                     <span class="tb-article-meta-item">
@@ -288,7 +292,9 @@
 
                 <span class="tb-article-meta-item">
                     <span aria-hidden="true">💬</span>
-                    {{ $commentCount }} comments
+
+                    {{ $commentCount }}
+                    {{ $commentCount === 1 ? 'comment' : 'comments' }}
                 </span>
 
                 @if ($lastUpdated)
@@ -352,6 +358,34 @@
                 <a href="{{ route('home') }}">TrendyBeatz</a>
             </p>
         </article>
+
+
+        {{-- The share section  --}}
+
+    <section class="tb-share-card">
+        <p class="tb-share-heading">
+            🔗 Share {{ $post->title }} Article with others on
+        </p>
+
+        <div class="tb-share-row">
+            <button
+                type="button"
+                class="tb-share-copy"
+                onclick="tbCopyPageLink(this)"
+                aria-live="polite"
+            >Copy Link</button>
+            <div class="a2a_kit a2a_kit_size_24 a2a_default_style">
+                <a class="a2a_button_facebook"></a>
+                <a class="a2a_button_x"></a>
+                <a class="a2a_button_email"></a>
+                <a class="a2a_button_pinterest"></a>
+                <a class="a2a_button_linkedin"></a>
+                <a class="a2a_button_whatsapp"></a>
+            </div>
+
+            
+        </div>
+    </section>
 
         @if ($relatedPosts->isNotEmpty())
             <section class="tb-article-panel">
@@ -524,4 +558,11 @@
             <em>View All Posts →</em>
         </a>
     </div>
+
+
+    @include('partials.comments', [
+        'postType' => 'blog',
+        'postId' => $post->id,
+        'postTitle' => $post->title,
+    ])
 @endsection

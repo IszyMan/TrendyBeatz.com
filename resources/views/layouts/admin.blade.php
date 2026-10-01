@@ -8,8 +8,12 @@
     );
 
     $canManageBlogs = in_array(
-        $roleId,
-        [config('admin.administrator'), config('admin.editor')],
+        (int) auth()->user()->roleid,
+        [
+            (int) config('admin.administrator'),
+            (int) config('admin.standard'),
+            (int) config('admin.editor'),
+        ],
         true
     );
 
@@ -25,6 +29,7 @@
     <title>@yield('title', 'Admin') | TrendyBeatz</title>
 
     <link rel="icon" type="image/png" href="{{ asset('images/faviconn.png') }}">
+    <link rel="stylesheet" href="{{ asset('css/comments.css') }}">
 
     <style>
         * {
@@ -737,6 +742,33 @@ a.tb-pagination-link:hover,
                         Add Featured Album
                     </a>
                 </details>
+
+                @php
+                    $pendingCommentCount = \Illuminate\Support\Facades\DB::table('comments')
+                        ->where(function ($query) {
+                            $query
+                                ->where('is_allowed', 0)
+                                ->orWhereNull('is_allowed');
+                        })
+                        ->count();
+                @endphp
+
+                <a
+                    @class([
+                        'admin-menu-link',
+                        'admin-menu-comments',
+                        'active' => request()->routeIs('admin.comments.*'),
+                    ])
+                    href="{{ route('admin.comments.index') }}"
+                >
+                    Comments
+
+                    @if ($pendingCommentCount > 0)
+                        <span class="admin-comments-badge">
+                            {{ $pendingCommentCount }}
+                        </span>
+                    @endif
+                </a>
 
                 <span class="admin-menu-link">Settings — coming next</span>
             @endif

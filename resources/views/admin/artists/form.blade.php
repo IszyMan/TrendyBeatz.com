@@ -62,6 +62,32 @@
         </select>
     </label>
 
+    <!--<label class="admin-field">
+        Artist category ID
+
+        <input
+            type="number"
+            name="category_id"
+            min="0"
+            max="2147483647"
+            required
+            value="{{ old('category_id', $artist->category_id ?? '') }}"
+        >
+    </label>
+
+    <label class="admin-field">
+        Display order
+
+        <input
+            type="number"
+            name="order_id"
+            min="0"
+            max="2147483647"
+            required
+            value="{{ old('order_id', $artist->order_id ?? '') }}"
+        >
+    </label>-->
+
     <label class="admin-field">
         Net worth ID
 

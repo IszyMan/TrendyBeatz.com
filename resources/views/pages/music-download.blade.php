@@ -24,35 +24,35 @@
         class="tb-download-quick-links"
         aria-label="Browse music sections"
     >
-        <a href="#latest-naija">Naija Music <span>→</span></a>
+        <a href="{{ route('music.naija') }}">Naija Music <span>→</span></a>
 
-        <a href="#latest-ghana">Ghanaian Music <span>→</span></a>
+        <a href="{{ route('music.ghana') }}">Ghanaian Music <span>→</span></a>
 
-        <a href="#latest-african">African Music <span>→</span></a>
+        <a href="{{ route('music.african') }}">African Music <span>→</span></a>
 
-        <a href="#gospel-songs">Gospel Music <span>→</span></a>
+        <a href="{{ route('music.gospel') }}">Gospel Music <span>→</span></a>
 
-        <a href="#highlife-songs">HighLife Music <span>→</span></a>
+        <a href="{{ route('music.highlife') }}">HighLife Music <span>→</span></a>
 
-        <a href="#popular-albums">Popular Albums <span>→</span></a>
+        <a href="{{ route('albums.popular') }}">Popular Albums <span>→</span></a>
 
         <a href="{{ route('blogs.category', 'music-reviews') }}">
             Music Reviews <span>→</span>
         </a>
 
-        <a href="{{ url('/top-rated-songs') }}">
+        <a href="{{ route('songs.top_rated') }}">
             Top Rated Songs <span>→</span>
         </a>
 
-        <a href="{{ url('/top-trending-songs') }}">
+        <a href="{{ route('songs.trending') }}">
             Top 10 Trending Songs <span>→</span>
         </a>
 
-        <a href="#songs-of-the-week">
+        <a href="{{ route('songs.week') }}">
             Top 10 Song Of The Week <span>→</span>
         </a>
 
-        <a href="#song-of-the-day">
+        <a href="{{ route('songs.day') }}">
             Top 10 Song Of The Day
             (Songs Released Today) <span>→</span>
         </a>

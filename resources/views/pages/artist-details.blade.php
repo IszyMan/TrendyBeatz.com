@@ -229,25 +229,25 @@
                             <div class="tb-artist-album-body">
                                 @if ($tracks->isNotEmpty())
                                     <ol class="tb-artist-album-tracks">
-                                        @foreach ($tracks as $song)
+                                         @foreach ($tracks as $song)
                                             <li>
-                                                <a
-                                                    href="{{ \App\Support\MusicUrl::detail($song) }}"
-                                                >
+                                                <a href="{{ \App\Support\MusicUrl::detail($song) }}">
                                                     <span class="tb-artist-album-track-number">
                                                         {{ $loop->iteration }}.
                                                     </span>
 
                                                     <span class="tb-artist-album-track-text">
-                                                        <strong>
-                                                            {{ $song->track_title }}
-                                                        </strong>
+                                                        <strong>{{ $song->track_title }}</strong>
 
                                                         @if (filled($song->featuring))
                                                             <small>
-                                                                feat. {{ $song->featuring }}
+                                                                <b>feat. {{ $song->featuring }}</b>
                                                             </small>
                                                         @endif
+
+                                                        <small class="tb-artist-album-track-stream">
+                                                            Tap to Stream
+                                                        </small>
                                                     </span>
 
                                                     <span
@@ -423,10 +423,39 @@
             </section>
         @endif
 
-        <p class="tb-artist-detail-back">
+        {{-- The share section  --}}
+
+    <section class="tb-share-card">
+        <p class="tb-share-heading">
+            🔗 Share {{ $artistName }} Profile with others on
+        </p>
+
+        <div class="tb-share-row">
+            <button
+                type="button"
+                class="tb-share-copy"
+                onclick="tbCopyPageLink(this)"
+                aria-live="polite"
+            >Copy Link</button>
+            <div class="a2a_kit a2a_kit_size_24 a2a_default_style">
+                <a class="a2a_button_facebook"></a>
+                <a class="a2a_button_x"></a>
+                <a class="a2a_button_email"></a>
+                <a class="a2a_button_pinterest"></a>
+                <a class="a2a_button_linkedin"></a>
+                <a class="a2a_button_whatsapp"></a>
+            </div>
+
+            
+        </div>
+    </section>
+
+        <p class="tb-home-view-all">
             <a href="{{ route('artists.index') }}">
                 ← Browse All Artists
             </a>
         </p>
+
+        
     </article>
 @endsection

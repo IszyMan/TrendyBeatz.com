@@ -125,7 +125,7 @@ class ListingController extends Controller
 
     public function create(): View
     {
-        return view('admin.listings.form', [
+        return view('admin.listings.create', [
             'listing' => null,
             'artists' => $this->artists(),
         ]);
@@ -137,7 +137,7 @@ class ListingController extends Controller
             ->where('id', $listing)
             ->firstOrFail();
 
-        return view('admin.listings.form', [
+        return view('admin.listings.edit', [
             'listing' => $this->formListing($row),
             'artists' => $this->artists(),
         ]);

@@ -24,9 +24,11 @@
 
 <a
         class="tb-artist-card"
-        href="{{ route('artists.show', $artistSlug) }}"
+        href="{{ filled($artistSlug)
+            ? route('artists.show', ['slug' => $artistSlug])
+            : route('artists.index') }}"
     >
-    <span class="tb-artist-card-photo">
+        <span class="tb-artist-card-photo">
         <span class="tb-artist-card-placeholder" aria-hidden="true">
             TB
         </span>

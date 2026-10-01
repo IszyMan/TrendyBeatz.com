@@ -130,24 +130,14 @@
                     @php
                         $coverUrl = $imageUrl($mixtape->cover_url);
 
-                        $mixSlug = trim(
-                            (string) $mixtape->slug,
-                            " \t\n\r\0\x0B/"
-                        );
+                        $mixtape->dj_name = $djName;
 
-                        if ($mixSlug === '') {
-                            $mixSlug = \Illuminate\Support\Str::slug(
-                                $djName . ' ' . $mixtape->mix_title
-                            );
-                        }
+                        
                     @endphp
 
                     <a
                         class="tb-dj-mixtape"
-                        href="{{ route('mixes.show', [
-                            $mixtape->id,
-                            $mixSlug
-                        ]) }}"
+                        href="{{ \App\Support\DjMixUrl::detail($mixtape) }}"
                     >
                         <span class="tb-dj-mixtape-cover">
                             <span aria-hidden="true">DJ Mix</span>
@@ -185,7 +175,7 @@
 
             
 
-        <p class="tb-artist-detail-back">
+        <p class="tb-home-view-all">
             <a href="{{ route('djs.index') }}">
                 ← Browse All DJs
             </a>

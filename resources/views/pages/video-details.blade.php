@@ -166,7 +166,7 @@
 
         <section class="tb-music-detail-section">
             <h2 class="tb-music-detail-heading">
-                Download and Watch {{ $displayTitle }}
+                Video Details
             </h2>
 
             <div class="tb-music-detail-facts">
@@ -323,6 +323,33 @@
         @endif
     </article>
 
+    {{-- The share section  --}}
+
+    <section class="tb-share-card">
+        <p class="tb-share-heading">
+            🔗 Share <b>{{ $displayTitle }}</b> with others on
+        </p>
+
+        <div class="tb-share-row">
+            <button
+                type="button"
+                class="tb-share-copy"
+                onclick="tbCopyPageLink(this)"
+                aria-live="polite"
+            >Copy Link</button>
+            <div class="a2a_kit a2a_kit_size_24 a2a_default_style">
+                <a class="a2a_button_facebook"></a>
+                <a class="a2a_button_x"></a>
+                <a class="a2a_button_email"></a>
+                <a class="a2a_button_pinterest"></a>
+                <a class="a2a_button_linkedin"></a>
+                <a class="a2a_button_whatsapp"></a>
+            </div>
+
+            
+        </div>
+    </section>
+
     
     <div class="tb-music-detail tb-music-detail-related tb-video-detail">
         @if ($otherVideos->isNotEmpty())
@@ -343,11 +370,17 @@
                                     {{ $artistName }} - {{ $item->track_title }}
                                 </strong>
 
-                                <small>
-                                    Watch video
-                                    @if (filled($item->featuring))
-                                        · Ft {{ $item->featuring }}
+                                <span>
+                                    
+
+                                   @if (filled($item->featuring))
+                                       <b> feat. {{ $item->featuring }}</b>
                                     @endif
+                              
+                                </span>
+
+                                <small>
+                                    Tap to watch                                    
                                 </small>
                             </span>
                         </a>
@@ -364,8 +397,6 @@
 
                 <div class="tb-music-detail-discovery-list">
                     @foreach ($artistSongs as $song)
-
-                    
                         <a href="{{ \App\Support\MusicUrl::detail($song) }}">
                             <span class="tb-music-detail-icon" aria-hidden="true">
                                 ♫
@@ -376,18 +407,28 @@
                                     {{ $artistName }} - {{ $song->TrackTitle }}
                                 </strong>
 
-                                <small>
-                                    Listen to song
-                                    @if (filled($song->Featuring))
-                                        · Ft {{ $song->Featuring }}
-                                    @endif
-                                </small>
+                                @if (filled($song->Featuring))
+                                    <span>
+                                      <b>  feat. {{ $song->Featuring }}</b>
+                                    </span>
+                                @endif
+
+                                <small>Tap to Stream</small>
                             </span>
                         </a>
                     @endforeach
                 </div>
+
+                <a
+                    class="tb-home-view-all"
+                    href="{{ route('artists.show', $artistSlug) }}"
+                >
+                    View All {{ $artistName }} Songs →
+                </a>
             </section>
         @endif
+
+                
 
         <section class="tb-music-detail-discovery">
             <h2 class="tb-music-detail-heading">
@@ -403,13 +444,24 @@
 
                         <span class="tb-music-detail-discovery-text">
                             <strong>
-                                {{ $song->artist_name ?: 'TrendyBeatz' }}
+                                {{ $song->artist_name }}
                                 - {{ $song->TrackTitle }}
                             </strong>
-                            <small>Latest music MP3</small>
+
+                            <span>
+                                    @if (filled($song->Featuring))
+                                      <b>  feat. {{ $song->Featuring }}</b>
+                                    @endif
+                            </span>
+
+                            <small>Tap to Stream</small>
                         </span>
                     </a>
                 @endforeach
+
+                <a class="tb-home-view-all" href="{{route('music.download')}}">
+                    View All Latest Music→
+                </a>
 
                 @foreach ($latestVideos as $item)
                     <a href="{{ \App\Support\VideoUrl::detail($item) }}">
@@ -419,17 +471,31 @@
 
                         <span class="tb-music-detail-discovery-text">
                             <strong>{{ $item->artist_name }} - {{ $item->track_title }}</strong>
-                            <small>Latest video</small>
+                              
+                            
+                            <span>
+                                @if (filled($item->Featuring))
+                                      <b>  feat. {{ $item->Featuring }}</b>
+                                    @endif
+                            </span>
+                            <small>Tap to Watch</small>
                         </span>
                     </a>
                 @endforeach
             </div>
 
-            <p class="tb-music-detail-more">
-                <a href="{{ route('videos.index') }}">
+            <a class="tb-home-view-all" href="{{route('videos.index')}}">
                     View All Latest Videos →
                 </a>
-            </p>
         </section>
     </div>
+
+    
+
+    @include('partials.comments', [
+        'postType' => 'video',
+        'postId' => $video->id,
+        'postTitle' => $artistName . ' - '
+            . ($video->track_title ?? $video->TrackTitle),
+    ])
 @endsection

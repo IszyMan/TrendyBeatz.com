@@ -30,7 +30,7 @@ class AdminDashboardController extends Controller
                 ? DB::table('dj_mixs')->count()
                 : null,
 
-            'blogCount' => $isAdministrator || $isEditor
+            'blogCount' => $isAdministrator || $isStandard || $isEditor
                 ? DB::table('blogs')->count()
                 : null,
         ]);

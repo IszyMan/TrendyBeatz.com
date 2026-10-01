@@ -71,7 +71,7 @@
             @if ($editing && $blog->photo)
                 <div class="blog-current-image">
                     <img
-                        src="{{ asset('images/' . basename($blog->photo)) }}"
+                        src="{{ asset('images/blog/' . basename($blog->photo)) }}"
                         alt="Current featured image"
                     >
                     <small>{{ $blog->photo }}</small>

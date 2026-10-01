@@ -306,57 +306,7 @@
     </style>
 
     <section class="tb-search-page">
-        <h1 class="tb-search-heading">Search TrendyBeatz</h1>
-
-        <form
-            class="tb-search-form"
-            action="{{ route('search') }}"
-            method="GET"
-            role="search"
-        >
-            <label class="tb-search-label" for="tb-search-query">
-                Search TrendyBeatz..
-            </label>
-
-            <input
-                class="tb-search-input"
-                id="tb-search-query"
-                type="search"
-                name="q"
-                value="{{ $query }}"
-                placeholder="Search artist, song, album, DJ or blog..."
-                maxlength="200"
-                required
-            >
-
-            <label class="tb-search-label" for="tb-search-type">
-                Content type
-            </label>
-
-            <select
-                class="tb-search-select"
-                id="tb-search-type"
-                name="type"
-            >
-                @foreach ($types as $value => $label)
-                    <option
-                        value="{{ $value }}"
-                        @selected($type === $value)
-                    >
-                        {{ $label }}
-                    </option>
-                @endforeach
-            </select>
-
-            <button class="tb-search-button" type="submit">
-                Search
-            </button>
-        </form>
-
-        <p class="tb-search-help">
-            Search by artist, title or featured artist.
-            Try “Wizkid Essence”. Results appear newest first.
-        </p>
+      
 
         @error('q')
             <p class="tb-search-error">{{ $message }}</p>
@@ -367,10 +317,10 @@
         @enderror
 
         @if ($results)
-            <p class="tb-search-summary">
+            <p class="tb-music-detail-heading">
                 {{ number_format($results->total()) }}
                 {{ $results->total() === 1 ? 'result' : 'results' }}
-                for <strong>“{{ $query }}”</strong>
+                for <strong> “{{ $query }}”</strong>
             </p>
 
             <div class="tb-search-results">

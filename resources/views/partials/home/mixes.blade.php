@@ -6,14 +6,7 @@
     <div class="tb-home-mix-grid">
         @forelse ($items as $mix)
             @php
-                $mixSlug = trim((string) $mix->slug);
-
-                if ($mixSlug === '') {
-                    $mixSlug = \Illuminate\Support\Str::slug(
-                        $mix->dj_name . ' ' . $mix->mix_title
-                    );
-                }
-
+                
                 $cover = trim((string) $mix->cover_url);
 
                 if ($cover === '') {
@@ -33,7 +26,7 @@
 
             <a
                 class="tb-home-mix"
-                href="{{ route('mixes.show', [$mix->id, $mixSlug]) }}"
+                href="{{ \App\Support\DjMixUrl::detail($mix) }}"
             >
                 <span class="tb-home-mix-thumb">
                     <span class="tb-home-mix-placeholder" aria-hidden="true">

@@ -62,6 +62,11 @@
                                         Edit
                                     </a>
 
+                                    @if (
+                                        (int) auth()->user()->roleid
+                                            === (int) config('admin.administrator')
+                                    )
+
                                     <form
                                         method="POST"
                                         action="{{ route('admin.dj-mixes.destroy', $mix->id) }}"
@@ -77,6 +82,7 @@
                                             Delete
                                         </button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

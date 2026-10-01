@@ -149,7 +149,7 @@
             type="search"
             name="q"
             value="{{ request('q') }}"
-            placeholder="Search music, artists, DJs..."
+            placeholder="Search TrendyBeatz.."
             aria-label="Search TrendyBeatz"
             maxlength="200"
             required

@@ -13,7 +13,7 @@
         'Adekunle Gold', 'Ayo Maff', 'Famous Pluto', 'Jeriq',
         'Ladipoe', 'Asake', 'Asa', 'Mavo',
         'Buju BNXN', 'Odumodublvck', 'Timaya', 'DJ Tunez',
-        'DJ Frenzy', 'Qing Madi', 'Peruzzi', 'Yung6ix',
+        'DJ Frenzy', 'Qing Madi', 'Ayra Starr', 'Yung6ix',
     ];
 
     $popularAlbums = \Illuminate\Support\Facades\DB::table('albums as album')
@@ -140,7 +140,7 @@
     </a>
 
     <a class="aside-link" href="{{ route('page.advertise') }}">
-        Advertise On<br>TrendyBeatz
+        Advertise On TrendyBeatz
     </a>
 
     <a class="aside-link" href="{{ route('page.about') }}">

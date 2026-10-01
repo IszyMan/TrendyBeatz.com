@@ -65,21 +65,27 @@
                                         Edit
                                     </a>
 
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.albums.destroy', $album->id) }}"
-                                        onsubmit="return confirm('Delete this album?')"
-                                    >
-                                        @csrf
-                                        @method('DELETE')
+                                    @if (
+                                        (int) auth()->user()->roleid
+                                            === (int) config('admin.administrator')
+                                    )
 
-                                        <button
-                                            class="admin-button admin-button-danger"
-                                            type="submit"
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.albums.destroy', $album->id) }}"
+                                            onsubmit="return confirm('Delete this album?')"
                                         >
-                                            Delete
-                                        </button>
-                                    </form>
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button
+                                                class="admin-button admin-button-danger"
+                                                type="submit"
+                                            >
+                                                Delete
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

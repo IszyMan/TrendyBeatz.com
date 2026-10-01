@@ -398,12 +398,99 @@ class PageController extends Controller
             )
             ->where('song.ListingType', 'Audio')
             ->where('song.IsPublished', 'YES')
-            ->whereNotNull('song.slug')
-            ->where('song.slug', '<>', '')
+            ->orderByDesc('featured.created_at')
             ->orderByDesc('featured.id')
             ->paginate(30);
 
         return view('pages.song-of-the-day', [
+            'songs' => $songs,
+        ]);
+    }
+
+    public function topRatedSongs(): View
+    {
+        $songs = self::recoveryTable('featured_rated as featured')
+            ->joinSub(
+                self::recoverySource('listing'),
+                'song',
+                'song.id',
+                '=',
+                'featured.listing_id'
+            )
+            ->leftJoinSub(
+                self::recoverySource('artists'),
+                'artist',
+                'artist.Artists_Id',
+                '=',
+                'song.Artists_Id'
+            )
+            ->select(
+                'song.id',
+                'song.slug',
+                'song.TrackTitle as track_title',
+                'song.CoverUrl as cover_url',
+                'song.Featuring as featuring',
+                'song.created_at',
+                'featured.rate_no',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(artist.Stage_Name, ''),
+                        NULLIF(artist.ArtistsName, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
+            )
+            ->where('song.ListingType', 'Audio')
+            ->where('song.IsPublished', 'YES')
+            ->orderByDesc('featured.created_at')
+            ->orderByDesc('featured.id')
+            ->paginate(30);
+
+        return view('pages.top-rated-songs', [
+            'songs' => $songs,
+        ]);
+    }
+
+    public function topTrendingSongs(): View
+    {
+        $songs = self::recoveryTable('featured_rated as featured')
+            ->joinSub(
+                self::recoverySource('listing'),
+                'song',
+                'song.id',
+                '=',
+                'featured.listing_id'
+            )
+            ->leftJoinSub(
+                self::recoverySource('artists'),
+                'artist',
+                'artist.Artists_Id',
+                '=',
+                'song.Artists_Id'
+            )
+            ->select(
+                'song.id',
+                'song.slug',
+                'song.TrackTitle as track_title',
+                'song.CoverUrl as cover_url',
+                'song.Featuring as featuring',
+                'song.created_at',
+                'featured.rate_no',
+                DB::raw("
+                    COALESCE(
+                        NULLIF(artist.Stage_Name, ''),
+                        NULLIF(artist.ArtistsName, ''),
+                        'TrendyBeatz'
+                    ) as artist_name
+                ")
+            )
+            ->where('song.ListingType', 'Audio')
+            ->where('song.IsPublished', 'YES')
+            ->orderByDesc('featured.created_at')
+            ->orderByDesc('featured.id')
+            ->paginate(30);
+
+        return view('pages.top-trending-songs', [
             'songs' => $songs,
         ]);
     }
@@ -645,7 +732,7 @@ class PageController extends Controller
             ->where('song.ListingType', 'Audio')
             ->where('song.IsPublished', 'YES')
             ->orderByDesc('song.id')
-            ->paginate(24);
+            ->paginate(50);
 
         return view('pages.gospel-songs', [
             'songs' => $songs,
@@ -681,7 +768,7 @@ class PageController extends Controller
             ->where('song.ListingType', 'Audio')
             ->where('song.IsPublished', 'YES')
             ->orderByDesc('song.id')
-            ->paginate(24);
+            ->paginate(50);
 
         return view('pages.highlife-songs', [
             'songs' => $songs,
@@ -743,7 +830,7 @@ class PageController extends Controller
             ->where('song.ListingType', 'Audio')
             ->where('song.IsPublished', 'YES')
             ->orderByDesc('song.id')
-            ->paginate(24);
+            ->paginate(50);
 
         return view('pages.music-country', [
             'country' => $country,
@@ -782,7 +869,7 @@ class PageController extends Controller
             ->where('song.ListingType', 'Audio')
             ->where('song.IsPublished', 'YES')
             ->orderByDesc('song.id')
-            ->paginate(24);
+            ->paginate(50);
 
         return view('pages.songs-by-year', [
             'songs' => $songs,
@@ -1779,27 +1866,14 @@ class PageController extends Controller
 
         abort_unless($mix, 404);
 
-        $canonicalSlug = trim(
-            (string) $mix->slug,
-            " \t\n\r\0\x0B/"
-        );
+        $canonicalSlug = \App\Support\DjMixUrl::slug($mix);
 
-        if ($canonicalSlug === '') {
-            $canonicalSlug = Str::slug(
-                trim(
-                    ($mix->dj_name ?: 'TrendyBeatz DJ')
-                    . ' '
-                    . $mix->mix_title
-                )
-            );
-        }
-
-        if ($slug !== $canonicalSlug) {
-            return redirect(
-                route('mixes.show', [$mix->id, $canonicalSlug]),
-                301
-            );
-        }
+            if ($slug !== $canonicalSlug) {
+                return redirect(
+                    \App\Support\DjMixUrl::detail($mix),
+                    301
+                );
+            }
 
         $otherMixesByDj = self::recoveryTable('dj_mixs as mix')
             ->leftJoinSub(
@@ -2287,11 +2361,18 @@ class PageController extends Controller
             ->limit(5)
             ->get();
 
+        $commentCount = DB::table('comments')
+            ->where('post_type', 'blog')
+            ->where('post_id', $post->id)
+            ->where('is_allowed', 1)
+            ->count();    
+
         return view('pages.blog-details', [
             'post' => $post,
             'categories' => $categories,
             'relatedPosts' => $relatedPosts,
             'latestPosts' => $latestPosts,
+            'commentCount' => $commentCount,
         ]);
     }
 

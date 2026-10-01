@@ -173,19 +173,15 @@
                             <span aria-hidden="true">, </span>
                         @endif
 
-                        @if ($featuredArtist['slug'])
-                            <a
-                                class="tb-music-detail-red"
-                                href="{{ route('artists.show', $featuredArtist['slug']) }}"
-                                style="text-decoration: none;"
-                            >
-                                {{ $featuredArtist['name'] }}
-                            </a>
-                        @else
-                            <span class="tb-music-detail-red">
-                                {{ $featuredArtist['name'] }}
-                            </span>
-                        @endif
+                        <a
+                            class="tb-music-detail-red"
+                            href="{{ !empty($featuredArtist['slug'])
+                                ? route('artists.show', $featuredArtist['slug'])
+                                : route('artists.index') }}"
+                            style="text-decoration: none;"
+                        >
+                            {{ $featuredArtist['name'] }}
+                        </a>
                     @endforeach
                 </p>
             @endif
@@ -419,7 +415,32 @@
 
 </article>
 
-{{-- The share section can be inserted here later. --}}
+{{-- The share section  --}}
+
+<section class="tb-share-card">
+    <p class="tb-share-heading">
+        🔗 Share {{ $fullTitle }} Music with others on
+    </p>
+
+    <div class="tb-share-row">
+        <button
+            type="button"
+            class="tb-share-copy"
+            onclick="tbCopyPageLink(this)"
+            aria-live="polite"
+        >Copy Link</button>
+        <div class="a2a_kit a2a_kit_size_24 a2a_default_style">
+            <a class="a2a_button_facebook"></a>
+            <a class="a2a_button_x"></a>
+            <a class="a2a_button_email"></a>
+            <a class="a2a_button_pinterest"></a>
+            <a class="a2a_button_linkedin"></a>
+            <a class="a2a_button_whatsapp"></a>
+        </div>
+
+        
+    </div>
+</section>
 
 {{-- PANEL 2: Discovery sections --}}
 <aside class="tb-music-detail tb-music-detail-related">
@@ -432,6 +453,11 @@
 
             <div class="tb-music-detail-discovery-list">
                 @foreach ($artistSongs as $related)
+                @php
+                    $featuring = trim((string) (
+                        $related->featuring ?? $related->Featuring ?? ''
+                    ));
+                @endphp
                     <a href="{{ \App\Support\MusicUrl::detail($related) }}">
                         <span
                             class="tb-music-detail-icon"
@@ -444,6 +470,13 @@
                                 - {{ $related->track_title }}
                             </strong>
 
+                            <span>
+                                 <b>   @if (filled($related->featuring))
+                                        feat. {{ $related->featuring }}
+                                    @endif
+                                </b>
+                            </span>
+
                             <small>Tap to Stream</small>
                         </span>
                     </a>
@@ -451,30 +484,48 @@
             </div>
         </section>
     @endif
+                <a
+                    class="tb-home-view-all"
+                    href="{{ route('artists.show', $artistSlug) }}"
+                >
+                    View All {{ $artistName }} Songs →
+                </a>
 
     @if ($artistVideos->isNotEmpty())
-        <section class="tb-music-detail-discovery">
-            <h2 class="tb-music-detail-heading">
-                Discover &amp; Watch {{ $artistName }} Videos
-            </h2>
+    <section class="tb-music-detail-discovery">
+        <h2 class="tb-music-detail-heading">
+            Discover &amp; Watch {{ $artistName }} Videos
+        </h2>
 
-            <div class="tb-music-detail-discovery-list">
-                @foreach ($artistVideos as $video)
-                     <a
-                            class="tb-home-song tb-home-video"
-                            href="{{ \App\Support\VideoUrl::detail($video) }}"
-                            
-                        >
-                        <span
-                            class="tb-music-detail-icon"
-                            aria-hidden="true"
-                        >▶</span>
+        <div class="tb-music-detail-discovery-list">
+            @foreach ($artistVideos as $video)
+                @php
+                    $featuring = trim((string) (
+                        $video->featuring
+                        ?? $video->Featuring
+                        ?? ''
+                    ));
+                @endphp
 
-                        <span class="tb-music-detail-discovery-text">
-                            <strong>
-                                {{ $artistName }}
-                                - {{ $video->track_title }}
-                            </strong>
+                <a
+                    class="tb-home-song tb-home-video"
+                    href="{{ \App\Support\VideoUrl::detail($video) }}"
+                >
+                    <span
+                        class="tb-music-detail-icon"
+                        aria-hidden="true"
+                    >▶</span>
+
+                    <span class="tb-music-detail-discovery-text">
+                        <strong>
+                            {{ $artistName }}
+                            - {{ $video->track_title }}
+                        </strong>
+
+                       <b> @if ($featuring !== '')
+                            <span>feat. {{ $featuring }}</span>
+                            @endif
+                        </b>
 
                             <small>Watch video</small>
                         </span>
@@ -523,6 +574,14 @@
 
             <div class="tb-music-detail-discovery-list">
                 @foreach ($collaborations as $related)
+                    @php
+                        $featuring = trim((string) (
+                            $related->featuring
+                            ?? $related->Featuring
+                            ?? ''
+                        ));
+                    @endphp
+
                     <a href="{{ \App\Support\MusicUrl::detail($related) }}">
                         <span
                             class="tb-music-detail-icon"
@@ -534,6 +593,11 @@
                                 {{ $related->artist_name }}
                                 - {{ $related->track_title }}
                             </strong>
+
+                           <b> @if ($featuring !== '')
+                                <span>feat. {{ $featuring }}</span>
+                            @endif
+                            </b>
 
                             <small>Tap to Stream</small>
                         </span>
@@ -556,6 +620,12 @@
                         $isVideo = strtolower(
                             (string) $related->listing_type
                         ) === 'video';
+
+                        $featuring = trim((string) (
+                            $related->featuring
+                            ?? $related->Featuring
+                            ?? ''
+                        ));
                     @endphp
 
                     <a href="{{ $isVideo
@@ -574,10 +644,14 @@
                                 - {{ $related->track_title }}
                             </strong>
 
+                           <b> @if ($featuring !== '')
+                                <span>feat. {{ $featuring }}</span>
+                            @endif</b>
+
                             <small>
                                 {{ $isVideo
                                     ? 'Watch Video'
-                                    : 'Stream Audio' }}
+                                    : 'Tap to Stream' }}
                             </small>
                         </span>
                     </a>
@@ -586,13 +660,20 @@
         </section>
     @endif
 
-    <p class="tb-music-detail-more">
-        <a href="{{ route('music.all') }}">
+   
+        <a class="tb-home-view-all" href="{{ route('music.all') }}">
             Click Here for more Music on TrendyBeatz.com →
         </a>
-    </p>
-
-    {{-- Comments can be inserted here later. --}}
+       
 
 </aside>
+
+
+{{-- Comments can be inserted here later. --}}
+
+    @include('partials.comments', [
+        'postType' => 'music',
+        'postId' => $song->id,
+        'postTitle' => $fullTitle,
+    ])
 @endsection

@@ -258,7 +258,35 @@
         @endif
     </article>
 
-    {{-- Separate panel: other mixes and DJs --}}
+
+    {{-- The share section  --}}
+
+    <section class="tb-share-card">
+        <p class="tb-share-heading">
+            🔗 Share {{ $displayTitle }} Music with others on
+        </p>
+
+        <div class="tb-share-row">
+            <button
+                type="button"
+                class="tb-share-copy"
+                onclick="tbCopyPageLink(this)"
+                aria-live="polite"
+            >Copy Link</button>
+            <div class="a2a_kit a2a_kit_size_24 a2a_default_style">
+                <a class="a2a_button_facebook"></a>
+                <a class="a2a_button_x"></a>
+                <a class="a2a_button_email"></a>
+                <a class="a2a_button_pinterest"></a>
+                <a class="a2a_button_linkedin"></a>
+                <a class="a2a_button_whatsapp"></a>
+            </div>
+
+            
+        </div>
+    </section>
+
+    {{-- Other mixes and DJs --}}
     <section class="tb-music-detail tb-music-detail-related tb-mix-detail-related">
         <section class="tb-music-detail-discovery">
             <h2 class="tb-music-detail-heading">
@@ -296,7 +324,7 @@
                         }
                     @endphp
 
-                    <a href="{{ route('mixes.show', [$otherMix->id, $otherSlug]) }}">
+                    <a href="{{ \App\Support\DjMixUrl::detail($otherMix) }}">
                         <span class="tb-mix-detail-thumb">
                             <span aria-hidden="true">TB</span>
 
@@ -312,7 +340,9 @@
 
                         <span class="tb-mix-detail-item-text">
                             <strong>{{ $otherMix->dj_name }}</strong>
-                            <span>{{ $otherMix->mix_title }}</span>
+                            <span><b>{{ $otherMix->mix_title }}</b></span>
+
+                            <small>Listen & Download</small>
                         </span>
                     </a>
                 @empty
@@ -331,17 +361,7 @@
             <div class="tb-mix-detail-list">
                 @forelse ($otherDjs as $otherDj)
                     @php
-                        $djMixSlug = trim(
-                            (string) $otherDj->slug,
-                            " \t\n\r\0\x0B/"
-                        );
-
-                        if ($djMixSlug === '') {
-                            $djMixSlug = \Illuminate\Support\Str::slug(
-                                $otherDj->dj_name . ' ' . $otherDj->mix_title
-                            );
-                        }
-
+                        
                         $djImage = trim((string) (
                             $otherDj->dj_photo ?: $otherDj->cover_url
                         ));
@@ -361,7 +381,7 @@
                         }
                     @endphp
 
-                    <a href="{{ route('mixes.show', [$otherDj->id, $djMixSlug]) }}">
+                    <a href="{{ \App\Support\DjMixUrl::detail($otherDj) }}">
                         <span class="tb-mix-detail-thumb">
                             <span aria-hidden="true">DJ</span>
 
@@ -377,7 +397,8 @@
 
                         <span class="tb-mix-detail-item-text">
                             <strong>{{ $otherDj->dj_name }}</strong>
-                            <span>{{ $otherDj->mix_title }}</span>
+                            <span><b>{{ $otherDj->mix_title }}</b></span>
+                            <small>Listen & Download</small>
                         </span>
                     </a>
                 @empty
@@ -388,10 +409,16 @@
             </div>
         </section>
 
-        <p class="tb-music-detail-more">
+        <p class="tb-home-view-all">
             <a href="{{ route('mixes.index') }}">
                 View All Latest DJ Mix →
             </a>
         </p>
     </section>
+
+    @include('partials.comments', [
+        'postType' => 'djmix',
+        'postId' => $mix->id,
+        'postTitle' => $djName . ' - ' . $mix->mix_title,
+    ])
 @endsection

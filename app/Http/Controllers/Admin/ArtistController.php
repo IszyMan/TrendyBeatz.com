@@ -214,18 +214,7 @@ class ArtistController extends Controller
                 'required',
                 Rule::in(['YES', 'NO']),
             ],
-            'category_id' => [
-                'required',
-                'integer',
-                'min:0',
-                'max:2147483647',
-            ],
-            'order_id' => [
-                'required',
-                'integer',
-                'min:0',
-                'max:2147483647',
-            ],
+            
             'Is_also_comedian' => [
                 'required',
                 Rule::in(['0', '1']),
@@ -278,8 +267,6 @@ class ArtistController extends Controller
             'meta_keyword' => $data['meta_keyword'] ?? null,
             'country_id' => self::COUNTRIES[$data['country_id']],
             'is_published' => $data['IsPublished'] === 'YES' ? 1 : 0,
-            'artist_type' => (int) $data['category_id'],
-            'order_id' => (int) $data['order_id'],
             'is_also_comedian' => (int) $data['Is_also_comedian'],
             'networth_id' => $data['networth_id'] ?? null,
         ];

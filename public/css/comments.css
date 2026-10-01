@@ -1,0 +1,375 @@
+.tb-comments {
+    margin: 28px 0;
+    padding: 24px;
+    border: 1px solid #e5eae7;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(15, 50, 30, 0.05);
+    color: #17271e;
+    font-family: Arial, sans-serif;
+}
+
+.tb-comments-kicker {
+    color: #16803d;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.tb-comments-heading h2 {
+    margin: 8px 0;
+    font-size: 24px;
+}
+
+.tb-comments-heading p {
+    margin: 0 0 22px;
+    color: #66736b;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.tb-comment-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.tb-comment-form label {
+    display: block;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.tb-comment-form input:not([type="hidden"]),
+.tb-comment-form textarea {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px 14px;
+    border: 1px solid #dce4df;
+    border-radius: 10px;
+    background: #fafcfb;
+    color: #17271e;
+    font: 400 16px/1.5 Arial, sans-serif;
+}
+
+.tb-comment-form textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+.tb-comment-form input:focus,
+.tb-comment-form textarea:focus {
+    outline: 2px solid #22c55e;
+    outline-offset: 2px;
+    background: #fff;
+}
+
+.tb-comment-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.tb-comment-footer p {
+    max-width: 380px;
+    margin: 0;
+    color: #738078;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.tb-comment-footer button {
+    flex-shrink: 0;
+    padding: 12px 20px;
+    border: 0;
+    border-radius: 10px;
+    background: #16803d;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tb-comment-footer button:hover {
+    background: #126832;
+}
+
+.tb-comment-footer button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.tb-comment-feedback {
+    margin-top: 16px;
+    padding: 13px 15px;
+    border-radius: 9px;
+    background: #fff1f2;
+    color: #9f1239;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.tb-comment-feedback.is-success {
+    background: #ecfdf3;
+    color: #166534;
+}
+
+.tb-comment-feedback[hidden] {
+    display: none;
+}
+
+.tb-comments-list {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid #edf1ee;
+}
+
+.tb-comments-list h3 {
+    font-size: 18px;
+}
+
+.tb-comments-list h3 span {
+    color: #748078;
+    font-weight: 400;
+}
+
+.tb-comment {
+    display: flex;
+    gap: 12px;
+    padding: 18px 0;
+    border-bottom: 1px solid #edf1ee;
+}
+
+.tb-comment > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.tb-comment-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #eaf8ef;
+    color: #16803d;
+    font-weight: 800;
+}
+
+.tb-comment time {
+    display: block;
+    margin-top: 4px;
+    color: #849088;
+    font-size: 11px;
+}
+
+.tb-comment p {
+    margin: 10px 0 0;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.tb-comments-empty {
+    color: #748078;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* Administrator comments */
+
+.admin-comment-card {
+    margin-bottom: 16px;
+    padding: 20px;
+    border: 1px solid #e2e8e4;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.admin-comment-message {
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.admin-comment-actions,
+.admin-comment-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 14px 0;
+}
+
+.admin-comment-actions form {
+    margin: 0;
+}
+
+.admin-comment-actions button {
+    padding: 9px 14px;
+    border: 0;
+    border-radius: 7px;
+    background: #16803d;
+    color: #fff;
+    cursor: pointer;
+}
+
+.admin-comment-actions .admin-comment-delete {
+    background: #be123c;
+}
+
+.admin-comment-tabs a {
+    padding: 8px 12px;
+    border-radius: 7px;
+    background: #edf6ef;
+    color: #166534;
+    text-decoration: none;
+}
+
+.admin-comment-tabs a.active {
+    background: #16803d;
+    color: #fff;
+}
+
+.admin-menu-comments {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-comments-badge {
+    margin-left: auto;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 11px;
+}
+
+@media (max-width: 600px) {
+    .tb-comments {
+        padding: 18px;
+    }
+
+    .tb-comment-fields {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .tb-comment-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tb-comment-footer button {
+        width: 100%;
+    }
+}
+
+.tb-comments {
+    margin: 18px 0;
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.tb-comments-list {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.tb-comments-list h3 {
+    margin: 0 0 10px;
+    font-size: 17px;
+}
+
+.tb-comment {
+    gap: 10px;
+    padding: 12px 0;
+}
+
+.tb-comment-avatar {
+    flex-basis: 30px;
+    height: 30px;
+    font-size: 12px;
+}
+
+.tb-comment strong {
+    font-size: 13px;
+}
+
+.tb-comment p {
+    margin-top: 5px;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.tb-comments-empty {
+    margin: 8px 0 14px;
+    font-size: 13px;
+}
+
+.tb-comments-heading {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #edf1ee;
+}
+
+.tb-comments-heading h2 {
+    margin: 0 0 12px;
+    font-size: 18px;
+}
+
+.tb-comment-fields {
+    gap: 12px;
+}
+
+.tb-comment-form label {
+    margin-bottom: 12px;
+    font-size: 12px;
+}
+
+.tb-comment-optional {
+    color: #849088;
+    font-weight: 400;
+}
+
+.tb-comment-form input:not([type="hidden"]),
+.tb-comment-form textarea {
+    margin-top: 6px;
+    padding: 9px 11px;
+    border-radius: 8px;
+}
+
+.tb-comment-form textarea {
+    min-height: 90px;
+}
+
+.tb-comment-footer {
+    gap: 12px;
+}
+
+.tb-comment-footer p {
+    font-size: 11px;
+}
+
+.tb-comment-footer button {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+@media (max-width: 600px) {
+    .tb-comments {
+        padding: 14px;
+    }
+
+    .tb-comment-fields {
+        gap: 0;
+    }
+}

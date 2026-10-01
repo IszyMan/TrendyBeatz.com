@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\CommentController;
 
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
@@ -13,6 +14,10 @@ Route::get('/', [HomeController::class, 'index'])
 Route::get('/song-of-the-day', [PageController::class, 'songOfTheDay'])->name('songs.day');  
 
 Route::get('/songs-of-the-week', [PageController::class, 'songsOfTheWeek'])->name('songs.week');
+
+Route::get('/top-trending-songs',[PageController::class, 'topTrendingSongs'])->name('songs.trending');
+
+Route::get('/top-rated-songs',[PageController::class, 'topRatedSongs'])->name('songs.top_rated');
 
 Route::get('/legal-download/{year}/songs',[PageController::class, 'songsByYear'])
     ->where('year', '(?:19|20)[0-9]{2}')->name('music.year');
@@ -123,6 +128,9 @@ Route::get('/published-by/{slug}', [PageController::class, 'blogsPublishedBy'])
 
 Route::get('/search', [SearchController::class, 'index'])
     ->name('search');
+
+Route::post('/comments', [CommentController::class, 'store'])->middleware('throttle:5,1')
+    ->name('comments.store');    
 
 
 Route::controller(StaticPageController::class)->group(function () {
