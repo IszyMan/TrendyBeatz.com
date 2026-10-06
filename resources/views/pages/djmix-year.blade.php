@@ -3,7 +3,7 @@
 @php
     $pageNumber = $mixes->currentPage();
 
-    $pageTitle = 'DJ Mix - Download Latest '
+    $pageTitle = 'DJ Mix - Discover Latest '
         . $year . ' Naija DJ Mixtape';
 
     if ($pageNumber > 1) {
@@ -13,7 +13,7 @@
     $description = 'Discover ' . $year
         . ' DJ mixes and Naija mixtapes on TrendyBeatz. '
         . 'Browse releases from your favourite DJs, listen online '
-        . 'and find available downloads.';
+        . 'and find available legal downloads.';
 
     $keywords = 'download DJ mix, latest DJ mix, '
         . $year . ' DJ mix, '
@@ -46,7 +46,7 @@
     <section class="tb-djmix-year">
         <header class="tb-djmix-year-header">
             <h1 class="section-heading">
-                Download {{ $year }} Naija DJ Mixes and Mixtapes
+                Discover {{ $year }} Naija DJ Mixes and Mixtapes
             </h1>
 
             <p class="home-date">
@@ -58,7 +58,7 @@
             <!--<p class="tb-djmix-year-description">
                 Explore DJ mixes and mixtapes released in {{ $year }}.
                 Discover releases from your favourite DJs, open each
-                mixtape to listen and find download options where available.
+                mixtape to listen and find legal download options where available.
             </p>-->
         </header>
 

@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Dj Mix - Download Latest Naija DJ Mix - DJ Mixtape | Trendybeatz';
+    $pageTitle = 'Dj Mix - Discover & Stream Latest Naija DJ Mix - DJ Mixtape | Trendybeatz';
 
-    $pageDescription = 'Discover and listen to the latest Naija DJ mixes and African mixtapes on TrendyBeatz. Explore new Afrobeats mixes and find DJ mixtapes to stream or download.';
+    $pageDescription = 'Discover and Stream the latest Naija DJ mixes and African mixtapes on TrendyBeatz. Explore new Afrobeats mixes and find DJ mixtapes to stream or download legally.';
 
     $canonicalUrl = $mixes->currentPage() === 1
         ? route('mixes.index')
@@ -52,7 +52,7 @@
 @section('content')
     <section class="tb-day-page">
         <h1 class="section-heading">
-            Dj Mix - Download Latest Naija Dj Mix/mixtapes
+            Dj Mix - Discover Latest Naija Dj Mix/mixtapes
         </h1>
 
         @php

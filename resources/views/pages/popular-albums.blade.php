@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Popular Albums Download - Download Latest Music Albums Mp3 | TrendyBeatz';
+    $pageTitle = 'Popular Albums Discovery - Discover and Stream Popular Music Albums | TrendyBeatz';
 
     $pageDescription = 'Discover popular Nigerian and African albums and EPs on TrendyBeatz. Browse tracklists, check release dates, and stream or download your favourite music.';
 
     $pageKeywords = 'popular albums, popular albums download, '
-        . 'download music albums mp3, popular Nigerian albums, '
+        . 'download music albums, popular Nigerian albums, '
         . 'popular African albums, Naija music albums, '
         . 'latest music albums, Nigerian EPs, African EPs, '
         . 'Afrobeats albums, Afropop albums, hip hop albums, '

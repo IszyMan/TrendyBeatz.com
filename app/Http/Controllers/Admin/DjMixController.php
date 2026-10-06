@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Support\ActivityLogger;
 
 class DjMixController extends Controller
 {
@@ -64,6 +65,17 @@ class DjMixController extends Controller
 
     public function store(Request $request)
     {
+        $idData = $request->validate([
+            'mix_id' => [
+                'nullable',
+                'integer',
+                'min:1',
+                Rule::unique('dj_mixs', 'id'),
+            ],
+        ], [
+            'mix_id.unique' => 'This Mix ID already exists. Choose another ID.',
+        ]);
+
         $data = $this->validated($request);
 
         // Validate the filename before moving uploaded images.
@@ -72,6 +84,11 @@ class DjMixController extends Controller
         );
 
         $values = $this->mixValues($data);
+
+        if (filled($idData['mix_id'] ?? null)) {
+            $values['id'] = (int) $idData['mix_id'];
+        }
+
         $values['track_url'] = $audioFilename;
 
         $userId = (int) $request->user()->id;
@@ -106,10 +123,33 @@ class DjMixController extends Controller
             }
 
             // Numeric ID and counters use their database defaults.
-            DB::table('dj_mixs')->insertGetId($values);
+            DB::transaction(function () use ($values) {
+                $id = DB::table('dj_mixs')->insertGetId($values);
+            
+                if ((int) $values['is_published'] === 1) {
+                    ActivityLogger::record(
+                        'published',
+                        'dj mix',
+                        $id,
+                        $values['title']
+                    );
+                }
+            });
         } catch (\Throwable $exception) {
             foreach ($uploaded as $filename) {
                 File::delete(public_path('images/' . $filename));
+            }
+
+            // Handle an ID taken by another request after validation.
+            if (
+                $exception instanceof \Illuminate\Database\QueryException
+                && (int) ($exception->errorInfo[1] ?? 0) === 1062
+                && isset($values['id'])
+                && DB::table('dj_mixs')->where('id', $values['id'])->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'mix_id' => 'This Mix ID already exists. Choose another ID.',
+                ]);
             }
 
             throw $exception;
@@ -174,9 +214,47 @@ class DjMixController extends Controller
             }
 
             // Preserve user_id, posted_by, created_at and counters.
-            DB::table('dj_mixs')
-                ->where('id', $row->id)
-                ->update($values);
+            DB::transaction(function () use ($row, $values) {
+                $before = DB::table('dj_mixs')
+                    ->where('id', $row->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            
+                $changed = false;
+            
+                foreach ($values as $field => $value) {
+                    if ($field === 'updated_at') {
+                        continue;
+                    }
+            
+                    if ((string) ($before->{$field} ?? '') !== (string) ($value ?? '')) {
+                        $changed = true;
+                        break;
+                    }
+                }
+            
+                DB::table('dj_mixs')
+                    ->where('id', $before->id)
+                    ->update($values);
+            
+                if ($changed) {
+                    $publicationChanged =
+                        (int) $before->is_published !== (int) $values['is_published'];
+            
+                    $action = $publicationChanged
+                        ? ((int) $values['is_published'] === 1
+                            ? 'published'
+                            : 'unpublished')
+                        : 'updated';
+            
+                    ActivityLogger::record(
+                        $action,
+                        'dj mix',
+                        $before->id,
+                        $values['title']
+                    );
+                }
+            });
         } catch (\Throwable $exception) {
             foreach ($uploaded as $filename) {
                 File::delete(public_path('images/' . $filename));
@@ -204,9 +282,20 @@ class DjMixController extends Controller
             ->where('id', $dj_mix)
             ->firstOrFail();
 
-        DB::table('dj_mixs')
-            ->where('id', $row->id)
-            ->delete();
+        DB::transaction(function () use ($row) {
+            $deleted = DB::table('dj_mixs')
+                ->where('id', $row->id)
+                ->delete();
+        
+            if ($deleted) {
+                ActivityLogger::record(
+                    'deleted',
+                    'dj mix',
+                    $row->id,
+                    $row->title
+                );
+            }
+        });
 
         foreach ([$row->cover_url, $row->back_cover] as $filename) {
             $this->deleteUploadedImage($filename);
@@ -250,6 +339,7 @@ class DjMixController extends Controller
                 'regex:/^(19|20)\d{2}$/',
             ],
             'track_url' => ['nullable', 'string', 'max:191'],
+            'audiomack_embed_url' => ['nullable', 'string', 'max:5000'],
             'IsPublished' => [
                 'required',
                 Rule::in(['YES', 'NO']),
@@ -275,6 +365,10 @@ class DjMixController extends Controller
                 'mix_title' => 'Enter a DJ mix title.',
             ]);
         }
+        
+        $data['audiomack_embed_url'] = $this->audiomackEmbedUrl(
+            $data['audiomack_embed_url'] ?? null
+        );
 
         return $data;
     }
@@ -302,6 +396,7 @@ class DjMixController extends Controller
             'details2' => $data['details2'] ?? null,
             'description1' => $data['description1'] ?? null,
             'description2' => $data['description2'] ?? null,
+            'audiomack_embed_url' => $data['audiomack_embed_url'] ?? null,
             'released_year' => $data['released_year'] ?? null,
             'is_published' => $data['IsPublished'] === 'YES'
                 ? 1
@@ -359,10 +454,26 @@ class DjMixController extends Controller
 
         File::ensureDirectoryExists($directory);
 
-        $filename = 'admin-mix-'
-            . bin2hex(random_bytes(12))
-            . '.'
-            . $image->extension();
+        $originalName = pathinfo(
+            $image->getClientOriginalName(),
+            PATHINFO_FILENAME
+        );
+
+        $baseName = Str::limit(
+            Str::slug($originalName) ?: 'image',
+            140,
+            ''
+        );
+
+        $extension = $image->extension();
+        $filename = $baseName . '.' . $extension;
+        $counter = 1;
+
+        // Avoid overwriting an existing image.
+        while (File::exists($directory . DIRECTORY_SEPARATOR . $filename)) {
+            $filename = $baseName . '-' . $counter . '.' . $extension;
+            $counter++;
+        }
 
         $image->move($directory, $filename);
 
@@ -373,14 +484,92 @@ class DjMixController extends Controller
     {
         $filename = trim((string) $value);
 
-        // Delete only images generated by this controller.
+        // Accept only an image filename without directory paths.
         if (!preg_match(
-            '~^admin-mix-[a-f0-9]{24}\.(jpg|jpeg|png|webp|gif)$~i',
+            '/\A[a-z0-9_-]+\.(jpg|jpeg|png|webp|gif)\z/i',
             $filename
         )) {
             return;
         }
 
+        // Keep images still used by another record.
+        if (
+            DB::table('dj_mixs')
+                ->where(function ($query) use ($filename) {
+                    $query->where('cover_url', $filename)
+                        ->orWhere('back_cover', $filename);
+                })
+                ->exists()
+            || DB::table('djs')->where('profile_img', $filename)->exists()
+            || DB::table('artists')->where('img', $filename)->exists()
+            || DB::table('albums')->where('cover_url', $filename)->exists()
+            || DB::table('listings')->where('cover_url', $filename)->exists()
+        ) {
+            return;
+        }
+
         File::delete(public_path('images/' . $filename));
+    }
+    
+    
+    private function audiomackEmbedUrl(?string $value): ?string
+    {
+        $value = trim((string) $value);
+    
+        if ($value === '') {
+            return null;
+        }
+    
+        $error = [
+            'audiomack_embed_url' =>
+                'Paste a valid Audiomack embed iframe.',
+        ];
+    
+        $document = new \DOMDocument();
+    
+        $previous = libxml_use_internal_errors(true);
+    
+        try {
+            $loaded = $document->loadHTML(
+                '<?xml encoding="UTF-8">' . $value,
+                LIBXML_NONET
+            );
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+    
+        if (!$loaded) {
+            throw ValidationException::withMessages($error);
+        }
+    
+        $iframes = $document->getElementsByTagName('iframe');
+    
+        if ($iframes->length !== 1) {
+            throw ValidationException::withMessages($error);
+        }
+    
+        $url = trim($iframes->item(0)->getAttribute('src'));
+        $parts = parse_url($url);
+    
+        if (
+            !filter_var($url, FILTER_VALIDATE_URL)
+            || $parts === false
+            || strtolower($parts['scheme'] ?? '') !== 'https'
+            || !in_array(
+                strtolower($parts['host'] ?? ''),
+                ['audiomack.com', 'www.audiomack.com'],
+                true
+            )
+            || !str_starts_with($parts['path'] ?? '', '/embed/')
+            || strlen($parts['path'] ?? '') <= strlen('/embed/')
+            || isset($parts['user'])
+            || isset($parts['pass'])
+            || isset($parts['port'])
+        ) {
+            throw ValidationException::withMessages($error);
+        }
+    
+        return $url;
     }
 }

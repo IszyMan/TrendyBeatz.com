@@ -3,7 +3,7 @@
 @php
     $pageNumber = $songs->currentPage();
 
-    $pageTitle = 'Download Latest And Trending Songs of The Week Here';
+    $pageTitle = 'Discover Latest And Trending Songs of The Week Here';
 
     if ($pageNumber > 1) {
         $pageTitle .= ' - Page ' . $pageNumber;
@@ -11,7 +11,7 @@
 
     $description = 'Discover songs of the week on TrendyBeatz. '
         . 'Explore featured Naija and African music, find new artists '
-        . 'and stream songs or find available downloads.';
+        . 'and stream songs or find available legal downloads.';
 
     $keywords = 'songs of the week, trending songs, '
         . 'Naija songs of the week, Nigerian music, African music, '

@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Download Latest Songs Posted by '
+    $pageTitle = 'Discover Latest Songs Posted by '
         . $poster->name
         . ' | Trendybeatz';
 
-    $pageDescription = 'Discover the latest songs posted by '. $poster->name . ' on TrendyBeatz. Explore new music, stream tracks, and find available downloads from your favourite artists.';
+    $pageDescription = 'Discover the latest songs posted by '. $poster->name . ' on TrendyBeatz. Explore new music, stream tracks, and find available legal downloads from your favourite artists.';
 
     $pageKeywords = 'download music mp3, latests songs, 2Baba, tekno, tiwa savage, burna boy, zlatan, mi, ycee, flavour,phyno, rema, olamide, d prince, akon, timaya, spinall, neptune, cuppy, kizz daniel, spinall, neptune, kizz daniel naija musics, nigerian songs, dj cuppy, new music, ycee, tekno, download music mp3, akon';
 
@@ -65,7 +65,7 @@
 @section('content')
     <section class="tb-posted-songs-page">
         <h1 class="section-heading">
-            Download Latest Songs Posted By {{ $poster->name }}
+            Discover Latest Songs Posted By {{ $poster->name }}
         </h1>
 
         <p class="tb-posted-songs-date">

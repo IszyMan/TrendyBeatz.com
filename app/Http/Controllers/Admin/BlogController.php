@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Support\ActivityLogger;
 
 class BlogController extends Controller
 {
@@ -97,7 +98,16 @@ class BlogController extends Controller
                 $data['created_at'] = now();
                 $data['updated_at'] = now();
 
-                DB::table('blogs')->insert($data);
+                $id = DB::table('blogs')->insertGetId($data);
+
+                if ((int) $data['Is_published'] === 1) {
+                    ActivityLogger::record(
+                        'published',
+                        'blog',
+                        $id,
+                        $data['title']
+                    );
+                }
             });
         } catch (\Throwable $e) {
             if ($filename) {
@@ -156,17 +166,59 @@ class BlogController extends Controller
             $data['updated_at'] = now();
 
             // posted_by and user_id remain the original values.
-            DB::table('blogs')->where('id', $row->id)->update($data);
+            DB::transaction(function () use ($row, $data) {
+                $before = DB::table('blogs')
+                    ->where('id', $row->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            
+                $changed = false;
+            
+                foreach ($data as $field => $value) {
+                    if ($field === 'updated_at') {
+                        continue;
+                    }
+            
+                    if ((string) ($before->{$field} ?? '') !== (string) ($value ?? '')) {
+                        $changed = true;
+                        break;
+                    }
+                }
+            
+                DB::table('blogs')
+                    ->where('id', $before->id)
+                    ->update($data);
+            
+                if ($changed) {
+                    $publicationChanged =
+                        (int) $before->Is_published !== (int) $data['Is_published'];
+            
+                    $action = $publicationChanged
+                        ? ((int) $data['Is_published'] === 1
+                            ? 'published'
+                            : 'unpublished')
+                        : 'updated';
+            
+                    ActivityLogger::record(
+                        $action,
+                        'blog',
+                        $before->id,
+                        $data['title']
+                    );
+                }
+            });
         } catch (\Throwable $e) {
             if ($filename) {
-                File::delete(public_path('images/' . $filename));
+                File::delete(public_path('images/blog/' . $filename));
             }
 
             throw $e;
         }
 
         if ($filename && $row->photo) {
-            File::delete(public_path('images/' . basename($row->photo)));
+            File::delete(
+                public_path('images/blog/' . basename($row->photo))
+            );
         }
 
         return redirect()
@@ -178,7 +230,20 @@ class BlogController extends Controller
     {
         $row = DB::table('blogs')->where('id', $blog)->firstOrFail();
 
-        DB::table('blogs')->where('id', $row->id)->delete();
+        DB::transaction(function () use ($row) {
+            $deleted = DB::table('blogs')
+                ->where('id', $row->id)
+                ->delete();
+        
+            if ($deleted) {
+                ActivityLogger::record(
+                    'deleted',
+                    'blog',
+                    $row->id,
+                    $row->title
+                );
+            }
+        });
 
         if ($row->photo) {
             File::delete(public_path('images/blog/' . basename($row->photo)));
@@ -237,13 +302,21 @@ class BlogController extends Controller
 
         File::ensureDirectoryExists($directory);
 
-        $filename = basename(
+        $originalName = basename(
             str_replace('\\', '/', $image->getClientOriginalName())
         );
 
+        $baseName = Str::slug(
+            pathinfo($originalName, PATHINFO_FILENAME)
+        ) ?: 'image';
+
+        $extension = strtolower($image->extension());
+        $filename = $baseName . '.' . $extension;
+
         if (File::exists($directory . '/' . $filename)) {
             throw ValidationException::withMessages([
-                'photo_upload' => 'An image with this filename already exists. Rename the image before uploading.',
+                'photo_upload' =>
+                    'An image with this filename already exists. Rename the image before uploading.',
             ]);
         }
 

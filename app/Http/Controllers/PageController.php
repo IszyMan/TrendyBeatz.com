@@ -398,7 +398,6 @@ class PageController extends Controller
             )
             ->where('song.ListingType', 'Audio')
             ->where('song.IsPublished', 'YES')
-            ->orderByDesc('featured.created_at')
             ->orderByDesc('featured.id')
             ->paginate(30);
 
@@ -442,7 +441,6 @@ class PageController extends Controller
             )
             ->where('song.ListingType', 'Audio')
             ->where('song.IsPublished', 'YES')
-            ->orderByDesc('featured.created_at')
             ->orderByDesc('featured.id')
             ->paginate(30);
 
@@ -486,7 +484,6 @@ class PageController extends Controller
             )
             ->where('song.ListingType', 'Audio')
             ->where('song.IsPublished', 'YES')
-            ->orderByDesc('featured.created_at')
             ->orderByDesc('featured.id')
             ->paginate(30);
 
@@ -532,8 +529,7 @@ class PageController extends Controller
             ->where('song.IsPublished', 'YES')
             ->whereNotNull('song.slug')
             ->where('song.slug', '<>', '')
-            ->orderByRaw('CAST(featured.rate_no AS UNSIGNED) ASC')
-            ->orderBy('featured.id')
+            ->orderByDesc('featured.id')
             ->paginate(24);
 
         return view('pages.songs-of-the-week', compact('songs'));
@@ -643,7 +639,7 @@ class PageController extends Controller
                 '=',
                 'song.id'
             )
-            ->orderByRaw('CAST(featured.rate_no AS UNSIGNED) ASC')
+            ->orderByDesc('featured.id')
             ->limit(10)
             ->get();
     }
@@ -658,7 +654,7 @@ class PageController extends Controller
                 '=',
                 'song.id'
             )
-            ->orderByRaw('CAST(featured.rate_no AS UNSIGNED) ASC')
+            ->orderByDesc('featured.id')
             ->limit(10)
             ->get();
     }
@@ -779,23 +775,23 @@ class PageController extends Controller
     {
         $pages = [
             'naija' => [
-                'title' => 'Download Latest Naija Music Mp3 Here | Trendybeatz',
-                'description' => 'Discover the latest Naija songs on TrendyBeatz. Explore new Nigerian music, stream tracks from your favourite artists, and find available MP3 downloads.',
-                'heading' => 'Download Latest Naija Music Mp3',
+                'title' => 'Discover Latest Naija Music - Legally Stream and Download | Trendybeatz',
+                'description' => 'Discover, Stream and Legally Download the latest Naija songs on TrendyBeatz. Discover artists from across the continent, stream new releases, and find available Legal Streaming and downloads.',
+                'heading' => 'Discover Latest Naija Music',
                 'section_heading' => 'Latest Naija Songs',
                 'badge' => 'Naija Music',
             ],
             'ghana' => [
-                'title' => 'Download Latest Ghana Music Mp3 Here | Trendybeatz',
-                'description' => 'Discover the latest Ghanaian songs on TrendyBeatz. Stream new music from Ghanaian artists and explore available MP3 downloads across popular genres.',
-                'heading' => 'Download Latest Ghana Music Mp3',
+                'title' => 'Discover Latest Ghana Music - Legally Stream and Download | Trendybeatz',
+                'description' => 'Discover, Stream and Legally Download the latest Ghana Music on TrendyBeatz. Discover artists from across the continent, stream new releases, and find available Legal Streaming and song downloads.',
+                'heading' => 'Discover Latest Ghana Music',
                 'section_heading' => 'Latest Ghana Songs',
                 'badge' => 'Ghana Music',
             ],
             'african' => [
-                'title' => 'Download Latest African Music Mp3 Here | Trendybeatz',
-                'description' => 'Explore the latest African songs on TrendyBeatz. Discover artists from across the continent, stream new releases, and find available MP3 downloads.',
-                'heading' => 'Download Latest African Music Mp3',
+                'title' => 'Discover Latest African Music - Legally Stream and Download | Trendybeatz',
+                'description' => 'Discover, Stream and Legally Download the latest African Music on TrendyBeatz. Discover artists from across the continent, stream new releases, and find available Legal Streaming and song downloads.',
+                'heading' => 'Discover Latest African Music',
                 'section_heading' => 'Latest African Songs',
                 'badge' => 'African Music',
             ],
@@ -1310,32 +1306,25 @@ class PageController extends Controller
             })
             ->values();
 
-        $countries = [
-            'naija' => [
-                'heading' => 'Nigerian Artists',
-                'artists' => $this->publishedArtists()
-                    ->where('country_id', 'naija')
-                    ->orderBy('Stage_Name')
-                    ->orderBy('id')
-                    ->paginate(18, ['*'], 'naija_page'),
-            ],
-            'ghana' => [
-                'heading' => 'Ghanaian Artists',
-                'artists' => $this->publishedArtists()
-                    ->where('country_id', 'ghana')
-                    ->orderBy('Stage_Name')
-                    ->orderBy('id')
-                    ->paginate(18, ['*'], 'ghana_page'),
-            ],
-            'african' => [
-                'heading' => 'African Artists',
-                'artists' => $this->publishedArtists()
-                    ->where('country_id', 'african')
-                    ->orderBy('Stage_Name')
-                    ->orderBy('id')
-                    ->paginate(18, ['*'], 'african_page'),
-            ],
+        $countries = [];
+
+        $headings = [
+            'naija' => 'Nigerian Artists',
+            'ghana' => 'Ghanaian Artists',
+            'african' => 'African Artists',
         ];
+        
+        foreach ($headings as $country => $heading) {
+            $countries[$country] = [
+                'heading' => $heading,
+                'artists' => $this->filteredArtists()
+                    ->where('country_id', $country)
+                    ->orderBy('Stage_Name')
+                    ->orderBy('id')
+                    ->paginate(18, ['*'], $country . '_page')
+                    ->appends(request()->only('search', 'letter')),
+            ];
+        }
 
         return view('pages.artists', [
             'popularArtists' => $popularArtists,
@@ -1356,11 +1345,12 @@ class PageController extends Controller
             'african' => 'African Artists',
         ];
 
-        $artists = $this->publishedArtists()
+        $artists = $this->filteredArtists()
             ->where('country_id', $country)
             ->orderBy('Stage_Name')
             ->orderBy('id')
-            ->paginate(18);
+            ->paginate(18)
+            ->appends(request()->only('search', 'letter'));
 
         return view('partials.artists.country-section', [
             'country' => $country,
@@ -1563,10 +1553,13 @@ class PageController extends Controller
             ->first();
 
         abort_unless($album, 404);
+        
+        $digitalStoreUrl = trim((string) DB::table('albums')
+            ->where('id', $album->id)
+            ->value('buy_song'));
 
-        $correctSlug = Str::slug(
-            $album->artist_name . ' ' . $album->title
-        );
+        $correctSlug = \App\Support\AlbumUrl::slug($album);
+        
 
         if ($slug !== $correctSlug) {
             return redirect()->route(
@@ -1610,6 +1603,7 @@ class PageController extends Controller
             'tracks' => $tracks,
             'otherAlbums' => $otherAlbums,
             'correctSlug' => $correctSlug,
+            'digitalStoreUrl' => $digitalStoreUrl
         ]);
     }
 
@@ -1865,6 +1859,10 @@ class PageController extends Controller
             ->first();
 
         abort_unless($mix, 404);
+        
+        $mix->audiomack_embed_url = DB::table('dj_mixs')
+            ->where('id', $mix->id)
+            ->value('audiomack_embed_url');
 
         $canonicalSlug = \App\Support\DjMixUrl::slug($mix);
 
@@ -2412,6 +2410,30 @@ class PageController extends Controller
             'publisherName',
             'slug'
         ));
+    }
+    
+    private function filteredArtists(): Builder
+    {
+        $query = $this->publishedArtists();
+    
+        $search = trim((string) request()->query('search', ''));
+        $letter = strtoupper(trim((string) request()->query('letter', '')));
+    
+        if ($search !== '') {
+            $query->where(function (Builder $query) use ($search) {
+                $query->where('Stage_Name', 'like', '%' . $search . '%')
+                    ->orWhere('ArtistsName', 'like', '%' . $search . '%');
+            });
+        }
+    
+        if (preg_match('/^[A-Z]$/', $letter)) {
+            $query->whereRaw(
+                "COALESCE(NULLIF(TRIM(Stage_Name), ''), TRIM(ArtistsName)) LIKE ?",
+                [$letter . '%']
+            );
+        }
+    
+        return $query;
     }
 
     /**

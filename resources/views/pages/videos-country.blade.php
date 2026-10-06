@@ -3,7 +3,7 @@
 @php
     $pageNumber = $videos->currentPage();
 
-    $pageTitle = 'Download Latest ' . $countryName . ' Music Video Here';
+    $pageTitle = 'Discover Latest ' . $countryName . ' Music Video Here';
 
     if ($pageNumber > 1) {
         $pageTitle .= ' - Page ' . $pageNumber;
@@ -29,7 +29,7 @@
     <section class="tb-country-videos">
         <header>
             <h1 class="section-heading">
-                Download Latest {{ $countryName }} Music Videos
+                Discover Latest {{ $countryName }} Music Videos
             </h1>
 
             <p>{{ $description }}</p>

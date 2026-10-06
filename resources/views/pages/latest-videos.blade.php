@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Video - Download Latest Videos - Music Videos and Comedy Videos';
+    $pageTitle = 'Video - Discover Latest Videos - Music Videos and Comedy Videos';
 
-    $pageDescription = 'Download Latest Videos - Music Videos and Comedy Videos and mp4, Naija Music Videos, Latest Comedy Videos, Latest Music Videos';
+    $pageDescription = 'Discover Latest Videos - Music Videos and Comedy Videos and mp4, Naija Music Videos, Latest Comedy Videos, Latest Music Videos';
 
     $pageKeywords = 'download latest video, latest video, latest naija music video, latest naija video, download latest naija video, Latest Comedy Videos, download comedy video';
 
@@ -55,7 +55,7 @@
 @section('content')
     <section class="tb-day-page">
         <h1 class="section-heading">
-            Video - Download Latest Videos -
+            Video - Discover Latest Videos -
             Music Videos and Comedy Videos Here
         </h1>
 

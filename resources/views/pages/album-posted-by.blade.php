@@ -3,7 +3,7 @@
 @php
     $posterSlug = \Illuminate\Support\Str::slug($poster->name);
 
-    $pageTitle = 'Albums - Download Latest Music Albums Posted by '
+    $pageTitle = 'Albums - Discover Latest Music Albums Posted by '
         . $poster->name
         . ' | TrendyBeatz';
 
@@ -63,7 +63,7 @@
 @section('content')
     <section class="tb-day-page">
         <h1 class="section-heading">
-            Download Latest Albums Posted By: {{ $poster->name }}
+            Discover Latest Albums Posted By: {{ $poster->name }}
         </h1>
 
         @php

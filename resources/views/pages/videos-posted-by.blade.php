@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Download Latest Music Video Posted by '
+    $pageTitle = 'Discover Latest Music Video Posted by '
         . $poster->name
         . ' | TrendyBeatz';
 
     $pageDescription = 'Watch and discover the latest music videos posted by '
         . $poster->name
         . ' on TrendyBeatz. Browse Nigerian and African video releases, '
-        . 'explore artists, and find videos available to download.';
+        . 'explore artists, and find videos available to legally download.';
 
     $baseUrl = route('videos.posted_by', [
         \Illuminate\Support\Str::slug($poster->name),
@@ -61,7 +61,7 @@
 @section('content')
     <section class="tb-day-page">
         <h1 class="section-heading">
-            Download Latest Music Video Posted By {{ $poster->name }}
+            Discover Latest Music Video Posted By {{ $poster->name }}
         </h1>
 
         @php

@@ -6,14 +6,14 @@
      * are calculated in the body below.
      */
     $artistName = $song->artist_name ?: 'TrendyBeatz';
-    $trackTitle = trim((string) $song->TrackTitle);
+    $trackTitle = trim(html_entity_decode((string) $song->TrackTitle, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     $featuring = trim((string) $song->Featuring);
     $fullTitle = $artistName . ' - ' . $trackTitle;
     if (
         $featuring !== ''
         && !preg_match('/\b(?:ft|feat|featuring)\.?\s/i', $trackTitle)
     ) {
-        $fullTitle .= ' feat. ' . $featuring;
+        $fullTitle .= ' ft. ' . $featuring;
     }
     $pageTitle = $fullTitle . ' Music';
 
@@ -78,7 +78,7 @@
         );
 @endphp
 
-@section('title', $pageTitle . ' | TrendyBeatz')
+@section('title', $pageTitle . ' | Legal Download » TrendyBeatz')
 @section('meta_keywords', $metaKeywords)
 @section('meta_description', $metaDescription)
 @section('canonical', $canonical)
@@ -266,11 +266,23 @@
         ));
 
         $descriptionParagraphs = array_filter(
-            [
-                trim(strip_tags((string) $song->TrackInfo)),
-                trim(strip_tags((string) $song->trackinfo1)),
-                trim(strip_tags((string) $song->trackinfo2)),
-            ],
+            array_map(
+                static function ($text) {
+                    // Convert HTML breaks into actual newlines.
+                    $text = preg_replace(
+                        '/<br\s*\/?>/i',
+                        "\n",
+                        (string) $text
+                    );
+        
+                    return trim(strip_tags($text));
+                },
+                [
+                    $song->TrackInfo,
+                    $song->trackinfo1,
+                    $song->trackinfo2,
+                ]
+            ),
             fn ($text) => $text !== ''
         );
     @endphp
@@ -289,11 +301,43 @@
                 @endif
 
                 @foreach ($descriptionParagraphs as $paragraph)
-                    <p>{{ $paragraph }}</p>
+                    <p>{!! nl2br(e($paragraph)) !!}</p>
                 @endforeach
+                
+                
+                <p class="tb-artist-discovery-note">
+                <em>
+                    Discover Latest {{ $artistName }} Songs / Music,
+                    Videos &amp; Albums/EP's here On TrendyBeatz.
+                </em>
+            </p>
             </div>
+            
+            
+            
         </section>
     @endif
+    
+    
+    <div class="tb-green-button-group">
+        <a
+            class="tb-green-button"
+            href="https://t.me/+TodwxcYXdmu-P5Mh"
+            target="_blank"
+            rel="nofollow"
+        >
+            Join Our Telegram Group For Latest Music
+        </a>
+    
+        <a
+            class="tb-green-button"
+            href="https://trendybeatz.com/blog/why-you-should-stop-downloading-music-and-start-streaming-instead"
+            target="_blank"
+        >
+            Read: Why You Should Stop Downloading Music and Start Streaming Instead
+        </a>
+    </div>
+    
 
     @php
         $trackPath = trim((string) $song->TrackUrl);
@@ -327,6 +371,9 @@
         $youtubeEmbed = trim((string) ($song->youtube_embed_url ?? ''));
         $audiomackEmbed = trim((string) ($song->audiomack_embed_url ?? ''));
     @endphp
+    
+    
+       
 
   
         @if ($youtubeEmbed || $audiomackEmbed || $digitalStoreUrl || $hasAudioFile)
@@ -335,7 +382,7 @@
                 {{-- YouTube and Audiomack --}}
                 @if ($youtubeEmbed || $audiomackEmbed)
                     <h2>
-                        Stream {{ $fullTitle }} legally on TrendyBeatz.com
+                        Stream {{ $fullTitle }} Legally on TrendyBeatz Below:
                     </h2>
 
                     @if ($youtubeEmbed)
@@ -351,7 +398,7 @@
                     @endif
 
                       <br>
-                    <h2>Stream {{ $fullTitle }} on Audiomack</h2>
+                    <!--<h2>Stream {{ $fullTitle }} on Audiomack</h2>-->
 
                     @if ($audiomackEmbed)
                         <div class="tb-music-detail-audiomack">
@@ -368,17 +415,17 @@
                 {{-- Digital store --}}
                 @if ($digitalStoreUrl)
                     <div class="tb-music-detail-digital">
-                        <h2>
+                        <!--<h2>
                             Stream {{ $fullTitle }} on Digital Store
-                        </h2>
+                        </h2>-->
 
                         <a
                             class="tb-music-detail-store"
                             href="{{ $digitalStoreUrl }}"
                             target="_blank"
-                            rel="noopener noreferrer"
+                            rel="nofollow"
                         >
-                            Stream {{ $fullTitle }}
+                            Stream {{ $fullTitle }} on Digital Store
                         </a>
                     </div>
                 @endif
@@ -386,7 +433,7 @@
                 {{-- MP3 playback and download --}}
                 @if ($hasAudioFile)
                     <div class="tb-music-detail-audio">
-                        <h2>Listen and Download {{ $fullTitle }} Mp3</h2>
+                        <h2>Listen and Download {{ $fullTitle }} Legal Mp3</h2>
 
                         <p class="tb-music-copyright-notice">
                             <strong>Copyright Notice:</strong>
@@ -405,13 +452,23 @@
                             href="{{ $trackUrl }}"
                             download
                         >
-                            Download {{ $fullTitle }} Mp3
+                            Download {{ $fullTitle }} Mp3 Music Legally
                         </a>
                     </div>
                 @endif
             </section>
         @endif
-  
+  <br>
+  <div id="taboola-below-article-thumbnails"></div>
+<script type="text/javascript">
+  window._taboola = window._taboola || [];
+  _taboola.push({
+    mode: 'alternating-thumbnails-a',
+    container: 'taboola-below-article-thumbnails',
+    placement: 'Below Article Thumbnails',
+    target_type: 'mix'
+  });
+</script>
 
 </article>
 
@@ -434,7 +491,7 @@
             <a class="a2a_button_x"></a>
             <a class="a2a_button_email"></a>
             <a class="a2a_button_pinterest"></a>
-            <a class="a2a_button_linkedin"></a>
+            <a class="a2a_button_telegram"></a>
             <a class="a2a_button_whatsapp"></a>
         </div>
 
@@ -661,7 +718,7 @@
     @endif
 
    
-        <a class="tb-home-view-all" href="{{ route('music.all') }}">
+        <a class="tb-home-view-all" href="{{ route('music.download') }}">
             Click Here for more Music on TrendyBeatz.com →
         </a>
        

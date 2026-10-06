@@ -3,7 +3,7 @@
 @php
     $pageTitle = 'Music - Discover and Stream Latest Music | Legal Download';
 
-    $pageDescription = 'Discover, Stream and Download All the Latest Naija Music mp3, Videos, Dj mix & Entertainment Gists';
+    $pageDescription = 'Discover, Stream and Legally Download All the Latest Naija Music mp3, Videos, Dj mix & Entertainment Gists';
 
     $pageKeywords = 'Latest Nigerian Musics and Video, trending, songs, discover music, download music, latest naija music mp3 videos download, latest naija music mp3 videos download';
 
@@ -104,7 +104,7 @@
 
                 <a
                     class="tb-download-album"
-                    href="{{ route('albums.index') }}"
+                    href="{{ \App\Support\AlbumUrl::detail($album) }}"
                 >
                     <span class="tb-download-album-cover">
                         <span

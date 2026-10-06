@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Support\ActivityLogger;
 
 class ArtistController extends Controller
 {
@@ -19,17 +20,31 @@ class ArtistController extends Controller
         'african' => 3,
     ];
 
-    public function index()
+    public function index(Request $request)
     {
+        $search = trim((string) $request->query('search', ''));
+    
         $artists = DB::table('artists')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('stage_name', 'like', '%' . $search . '%')
+                        ->orWhere('full_name', 'like', '%' . $search . '%')
+                        ->orWhere('artist_id', 'like', '%' . $search . '%');
+    
+                    if (ctype_digit($search)) {
+                        $query->orWhere('id', (int) $search);
+                    }
+                });
+            })
             ->orderByDesc('id')
-            ->paginate(20);
-
+            ->paginate(20)
+            ->withQueryString();
+    
         $artists->getCollection()->transform(
             fn ($artist) => $this->viewArtist($artist)
         );
-
-        return view('admin.artists.index', compact('artists'));
+    
+        return view('admin.artists.index', compact('artists', 'search'));
     }
 
     public function create()
@@ -74,7 +89,7 @@ class ArtistController extends Controller
             // MySQL assigns the numeric primary key automatically.
             DB::transaction(function () use ($values) {
                 $id = DB::table('artists')->insertGetId($values);
-
+            
                 DB::table('artists')
                     ->where('id', $id)
                     ->update([
@@ -85,6 +100,15 @@ class ArtistController extends Controller
                             STR_PAD_LEFT
                         ),
                     ]);
+            
+                if ((int) $values['is_published'] === 1) {
+                    ActivityLogger::record(
+                        'published',
+                        'artist',
+                        $id,
+                        $values['stage_name']
+                    );
+                }
             });
         } catch (\Throwable $exception) {
             if ($filename !== null) {
@@ -142,9 +166,47 @@ class ArtistController extends Controller
             $values['updated_at'] = now();
 
             // Preserve id, user_id, posted_by and created_at.
-            DB::table('artists')
-                ->where('id', $row->id)
-                ->update($values);
+            DB::transaction(function () use ($row, $values) {
+                $before = DB::table('artists')
+                    ->where('id', $row->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            
+                $changed = false;
+            
+                foreach ($values as $field => $value) {
+                    if ($field === 'updated_at') {
+                        continue;
+                    }
+            
+                    if ((string) ($before->{$field} ?? '') !== (string) ($value ?? '')) {
+                        $changed = true;
+                        break;
+                    }
+                }
+            
+                DB::table('artists')
+                    ->where('id', $before->id)
+                    ->update($values);
+            
+                if ($changed) {
+                    $publicationChanged =
+                        (int) $before->is_published !== (int) $values['is_published'];
+            
+                    $action = $publicationChanged
+                        ? ((int) $values['is_published'] === 1
+                            ? 'published'
+                            : 'unpublished')
+                        : 'updated';
+            
+                    ActivityLogger::record(
+                        $action,
+                        'artist',
+                        $before->id,
+                        $values['stage_name']
+                    );
+                }
+            });
         } catch (\Throwable $exception) {
             if ($filename !== null) {
                 File::delete(public_path('images/' . $filename));
@@ -184,9 +246,20 @@ class ArtistController extends Controller
             ]);
         }
 
-        DB::table('artists')
-            ->where('id', $row->id)
-            ->delete();
+        DB::transaction(function () use ($row) {
+            $deleted = DB::table('artists')
+                ->where('id', $row->id)
+                ->delete();
+        
+            if ($deleted) {
+                ActivityLogger::record(
+                    'deleted',
+                    'artist',
+                    $row->id,
+                    $row->stage_name
+                );
+            }
+        });
 
         $this->deleteUploadedImage($row->img);
 
@@ -312,10 +385,26 @@ class ArtistController extends Controller
 
         File::ensureDirectoryExists($directory);
 
-        $filename = 'admin-artist-'
-            . bin2hex(random_bytes(12))
-            . '.'
-            . $image->extension();
+        $originalName = pathinfo(
+            $image->getClientOriginalName(),
+            PATHINFO_FILENAME
+        );
+
+        $baseName = Str::limit(
+            Str::slug($originalName) ?: 'image',
+            140,
+            ''
+        );
+
+        $extension = $image->extension();
+        $filename = $baseName . '.' . $extension;
+        $counter = 1;
+
+        // Avoid overwriting an existing image.
+        while (File::exists($directory . DIRECTORY_SEPARATOR . $filename)) {
+            $filename = $baseName . '-' . $counter . '.' . $extension;
+            $counter++;
+        }
 
         $image->move($directory, $filename);
 
@@ -326,12 +415,19 @@ class ArtistController extends Controller
     {
         $filename = trim((string) $value);
 
-        // Delete only files generated by this admin controller.
+        // Accept only an image filename without directory paths.
+        if (!preg_match(
+            '/\A[a-z0-9_-]+\.(jpg|jpeg|png|webp|gif)\z/i',
+            $filename
+        )) {
+            return;
+        }
+
+        // Keep images still referenced by another artist or listing.
         if (
-            !preg_match(
-                '~^admin-artist-[a-f0-9]{24}\.(jpg|jpeg|png|webp|gif)$~i',
-                $filename
-            )
+            DB::table('artists')->where('img', $filename)->exists()
+            || DB::table('listings')->where('cover_url', $filename)->exists()
+            || DB::table('albums')->where('cover_url', $filename)->exists()
         ) {
             return;
         }

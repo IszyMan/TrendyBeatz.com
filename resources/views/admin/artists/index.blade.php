@@ -10,6 +10,37 @@
             + Add Artist
         </a>
     </div>
+    
+    <form
+        class="admin-artist-search"
+        method="GET"
+        action="{{ route('admin.artists.index') }}"
+    >
+        <label class="admin-field" for="artist-search">
+            Search artists
+    
+            <input
+                id="artist-search"
+                type="search"
+                name="search"
+                value="{{ request('search') }}"
+                placeholder="Search artist name or ID..."
+            >
+        </label>
+    
+        <button class="admin-button" type="submit">
+            Search
+        </button>
+    
+        @if (filled(request('search')))
+            <a
+                class="admin-button"
+                href="{{ route('admin.artists.index') }}"
+            >
+                Clear
+            </a>
+        @endif
+    </form>
 
     <div class="admin-panel">
         <div class="admin-table-wrap">

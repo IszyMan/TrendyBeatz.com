@@ -41,7 +41,7 @@
             >
                 <div class="tb-home-blog-thumb">
                     <span class="tb-home-blog-placeholder" aria-hidden="true">
-                        TrendyNews
+                        {{ $placeholder ?? 'TrendyNews' }}
                     </span>
 
                     @if ($imageUrl)
@@ -55,8 +55,8 @@
                 </div>
 
                 <div class="tb-home-blog-info">
-                    <span class="tb-home-blog-category {{ $category['class'] }}">
-                        {{ $category['name'] }}
+                    <span class="tb-home-blog-category {{ !empty($badge) ? 'tb-cat-music-reviews' : $category['class'] }}">
+                        {{ $badge ?? $category['name'] }}
                     </span>
 
                     <h3 class="tb-home-blog-title">
@@ -71,8 +71,8 @@
                     </p>
 
                     <div class="tb-home-blog-meta">
-                        <time datetime="{{ date('Y-m-d', strtotime($blog->created_at)) }}">
-                            {{ date('d M Y', strtotime($blog->created_at)) }}
+                        <time datetime="{{ date('Y-m-d', strtotime($blog->updated_at)) }}">
+                            {{ date('d M Y', strtotime($blog->updated_at)) }}
                         </time>
 
                         <span class="tb-home-blog-read">

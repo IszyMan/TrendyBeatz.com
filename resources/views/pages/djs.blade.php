@@ -33,13 +33,13 @@
     <section class="tb-artists-page tb-djs-page">
         <header class="tb-artists-header">
             <h1 class="section-heading">
-               Discover Nigerian, Ghanaian and African DJ Profiles & Mixes
+               Discover Nigerian, Ghanaian and African DJ Profiles & Their Mixes
             </h1>
 
           <!--  <p class="tb-artists-intro">
                 Discover your favourite DJs and explore their mixtapes
                 on TrendyBeatz. Open a DJ’s profile to read about them,
-                browse their releases and find listening and download
+                browse their releases and find listening and legal download
                 options.
             </p>-->
 

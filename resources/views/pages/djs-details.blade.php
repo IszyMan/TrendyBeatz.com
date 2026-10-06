@@ -5,7 +5,7 @@
 
     $pageNumber = $mixes->currentPage();
 
-    $pageTitle = 'Download Latest ' . $djName
+    $pageTitle = 'Discover and Stream Latest ' . $djName
         . ' Mix, DJ Mixtape, and Read Biography';
 
     if ($pageNumber > 1) {
@@ -15,7 +15,7 @@
     $description = 'Explore ' . $djName
         . ' mixtapes on TrendyBeatz. Browse recent DJ mixes, '
         . 'discover releases and open each mixtape for listening '
-        . 'and available downloads.';
+        . 'and available legal downloads.';
 
     $keywords = $djName . ' mixes, '
         . $djName . ' mixtapes, '
@@ -72,7 +72,7 @@
     <article class="tb-dj-detail">
         <header class="tb-dj-detail-heading">
             <h1 class="section-heading">
-                {{ $djName }} Mixtapes and DJ Profile
+                Discover {{ $djName }} Latest Mixtapes and DJ Profile
             </h1>
         </header>
 
@@ -162,7 +162,7 @@
                             </strong>
 
                             <span class="tb-dj-mixtape-action">
-                                Listen / Download →
+                                Discover & Stream →
                             </span>
                         </span>
                     </a>

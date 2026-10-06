@@ -3,7 +3,7 @@
 @php
     $pageNumber = $songs->currentPage();
 
-    $pageTitle = 'Download Latest Top Rated Songs Here';
+    $pageTitle = 'Discover Latest Top Rated Songs Here';
 
     if ($pageNumber > 1) {
         $pageTitle .= ' - Page ' . $pageNumber;
@@ -11,7 +11,7 @@
 
     $description = 'Discover top rated songs on TrendyBeatz. '
         . 'Browse popular Nigerian music and Afrobeats tracks, '
-        . 'and open each song to stream or download.';
+        . 'and open each song to stream or legally download.';
 
     $keywords = 'top rated songs, latest top rated songs, '
         . 'top rated Nigerian songs, best Naija music, '
@@ -37,7 +37,7 @@
     <article class="tb-top-rated-songs-page">
         <header>
             <h1 class="section-heading">
-                Download Latest Top Rated Songs
+                Discover Latest Top Rated Songs
             </h1>
 
             <p class="home-date">

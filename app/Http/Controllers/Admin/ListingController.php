@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Support\ActivityLogger;
 
 class ListingController extends Controller
 {
@@ -201,7 +202,22 @@ class ListingController extends Controller
                 $insert['cover_url'] = $newCover;
             }
 
+            $id = DB::transaction(function () use ($insert) {
             $id = DB::table('listings')->insertGetId($insert);
+        
+            $type = (int) $insert['listing_type'] === 1
+                ? 'song'
+                : 'video';
+        
+            ActivityLogger::record(
+                (int) $insert['is_published'] === 1 ? 'published' : 'created',
+                $type,
+                $id,
+                $insert['track_title']
+            );
+        
+            return $id;
+        });
         } catch (\Throwable $exception) {
             if ($newCover !== null) {
                 File::delete(public_path('images/' . $newCover));
@@ -219,6 +235,8 @@ class ListingController extends Controller
         Request $request,
         int $listing
     ): RedirectResponse {
+        
+         
         $existing = DB::table('listings')
             ->where('id', $listing)
             ->firstOrFail();
@@ -249,9 +267,52 @@ class ListingController extends Controller
             }
 
             // Keep the original user_id, posted_by and created_at.
-            DB::table('listings')
-                ->where('id', $existing->id)
-                ->update($values);
+            DB::transaction(function () use ($existing, $values) {
+                $before = DB::table('listings')
+                    ->where('id', $existing->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            
+                // Compare saved fields, excluding the update timestamp.
+                $changed = false;
+            
+                foreach ($values as $field => $value) {
+                    if ($field === 'updated_at') {
+                        continue;
+                    }
+            
+                    if ((string) ($before->{$field} ?? '') !== (string) ($value ?? '')) {
+                        $changed = true;
+                        break;
+                    }
+                }
+            
+                DB::table('listings')
+                    ->where('id', $before->id)
+                    ->update($values);
+            
+                $type = (int) $values['listing_type'] === 1
+                    ? 'song'
+                    : 'video';
+            
+                if ($changed) {
+                    $publicationChanged =
+                        (int) $before->is_published !== (int) $values['is_published'];
+            
+                    $action = $publicationChanged
+                        ? ((int) $values['is_published'] === 1
+                            ? 'published'
+                            : 'unpublished')
+                        : 'updated';
+            
+                    ActivityLogger::record(
+                        $action,
+                        $type,
+                        $before->id,
+                        $values['track_title']
+                    );
+                }
+            });
         } catch (\Throwable $exception) {
             if ($newCover !== null) {
                 File::delete(public_path('images/' . $newCover));
@@ -281,6 +342,13 @@ class ListingController extends Controller
             DB::table('listings')
                 ->where('id', $row->id)
                 ->delete();
+                
+            ActivityLogger::record(
+                'deleted',
+                (int) $row->listing_type === 1 ? 'song' : 'video',
+                $row->id,
+                $row->track_title
+            );    
         });
 
         return redirect()
@@ -513,8 +581,26 @@ class ListingController extends Controller
 
         File::ensureDirectoryExists($directory);
 
-        $filename = 'listing-' . Str::uuid()
-            . '.' . $file->extension();
+        $originalName = pathinfo(
+            $file->getClientOriginalName(),
+            PATHINFO_FILENAME
+        );
+
+        $baseName = Str::limit(
+            Str::slug($originalName) ?: 'image',
+            140,
+            ''
+        );
+
+        $extension = $file->extension();
+        $filename = $baseName . '.' . $extension;
+        $counter = 1;
+
+        // Avoid overwriting an existing image with the same name.
+        while (File::exists($directory . DIRECTORY_SEPARATOR . $filename)) {
+            $filename = $baseName . '-' . $counter . '.' . $extension;
+            $counter++;
+        }
 
         $file->move($directory, $filename);
 

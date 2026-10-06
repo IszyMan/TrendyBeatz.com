@@ -9,12 +9,12 @@
 
     $pageTitle = $isCategoryPage
         ? $heading . ' - Latest Stories | TrendyBeatz'
-        : 'Music News - Top Naija Celebrity News, Entertainment Gists & Updates | TrendyBeatz';
+        : 'Latest and Top Naija Celebrity News, Entertainment Gists & Updates | TrendyBeatz';
 
     $pageDescription = $isCategoryPage
         ? 'Explore the latest ' . $selectedCategory->name
             . ' stories, updates and articles on TrendyBeatz.'
-        : 'Read the latest Nigerian music news, celebrity stories, entertainment updates, music reviews and trending conversations on TrendyBeatz.';
+        : 'Read the latest Nigerian music news, celebrity stories, entertainment updates, music reviews, hot gists, sports, football and trending conversations on TrendyBeatz.';
 
     $baseUrl = $isCategoryPage
         ? route('blogs.category', $selectedCategory->slug)
@@ -73,16 +73,7 @@
         @php
             $currentDate = now();
 
-            $categoryClasses = [
-                'sport-news' => 'tb-blog-sport',
-                'celebrity-news' => 'tb-blog-celebrity',
-                'hot-gists' => 'tb-blog-gists',
-                'networth' => 'tb-blog-networth',
-                'music-reviews' => 'tb-blog-reviews',
-                'education' => 'tb-blog-education',
-                'articles' => 'tb-blog-articles',
-                'news' => 'tb-blog-news',
-            ];
+            
         @endphp
 
         <p class="home-date">
@@ -91,34 +82,31 @@
             </time>
         </p>
 
-        <nav class="tb-blog-categories" aria-label="Blog categories">
+        <nav class="tb-article-categories" aria-label="Blog categories">
             <a
                 href="{{ route('blogs.index') }}"
                 @class([
-                    'tb-blog-category-button',
-                    'tb-blog-all',
+                    'tb-article-category-link',
                     'active' => !$isCategoryPage,
                 ])
                 @if (!$isCategoryPage) aria-current="page" @endif
             >
                 All Posts
             </a>
-
+        
             @foreach ($categories as $category)
+                @php
+                    $isActive = $isCategoryPage
+                        && (int) $selectedCategory->id === (int) $category->id;
+                @endphp
+        
                 <a
                     href="{{ route('blogs.category', $category->slug) }}"
                     @class([
-                        'tb-blog-category-button',
-                        $categoryClasses[$category->slug] ?? 'tb-blog-news',
-                        'active' => $isCategoryPage
-                            && $selectedCategory->id === $category->id,
+                        'tb-article-category-link',
+                        'active' => $isActive,
                     ])
-                    @if (
-                        $isCategoryPage
-                        && $selectedCategory->id === $category->id
-                    )
-                        aria-current="page"
-                    @endif
+                    @if ($isActive) aria-current="page" @endif
                 >
                     {{ $category->name }}
                 </a>

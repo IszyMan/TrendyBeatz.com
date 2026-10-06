@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Download Latest Nigerian Highlife Music / Ghana Highlife Songs/Music Mp3 Here | Trendybeatz';
+    $pageTitle = 'Discover Latest Nigerian Highlife Music / Ghana Highlife Songs/Music Here | Trendybeatz';
 
-    $pageDescription = 'Download Latest and Popular Highlife Music in Nigeria, Ghana and Africa. HighLife Music and Songs can be gotten here first-hand, Download only the latest';
+    $pageDescription = 'Discover, Stream and Download Latest and Popular Highlife Music in Nigeria, Ghana and Africa. HighLife Music and Songs can be gotten here first-hand, Legally Download only the latest';
 
     $pageKeywords = 'download highlife songs, download highlife music, highlife music, highlife songs, download naija highlife songs, download ghana highlife songs, download african highlife songs';
 
@@ -58,8 +58,8 @@
 <section class="tb-highlife-page">
 
     <h1 class="section-heading">
-        Download Latest Nigerian Highlife Music,
-        Ghana Highlife and African High Life Songs Mp3
+        Discover Latest Nigerian Highlife Music,
+        Ghana Highlife and African High Life Songs
     </h1>
 
     @php

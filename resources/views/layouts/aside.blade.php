@@ -1,3 +1,4 @@
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6353967042876840" crossorigin="anonymous"></script>
 @php
     $trendingArtistes = [
         '2Baba', 'Burna Boy', 'Joeboy', 'Davido',
@@ -11,7 +12,7 @@
 
     $topArtistes = [
         'Adekunle Gold', 'Ayo Maff', 'Famous Pluto', 'Jeriq',
-        'Ladipoe', 'Asake', 'Asa', 'Mavo',
+        'Ladipoe', 'Asake', 'Asa', 'Blaqbonez',
         'Buju BNXN', 'Odumodublvck', 'Timaya', 'DJ Tunez',
         'DJ Frenzy', 'Qing Madi', 'Ayra Starr', 'Yung6ix',
     ];
@@ -98,7 +99,8 @@
             'blog.id',
             'blog.slug',
             'blog.title',
-            'blog.intro'
+            'blog.intro',
+            'blog.photo'
         )
         ->where('blog.Is_published', 1)
         ->whereNotNull('blog.slug')
@@ -188,8 +190,18 @@
             class="album-card aside-media-card"
             href="{{ \App\Support\AlbumUrl::detail($album) }}"
         >
-            <span class="aside-image-placeholder" aria-hidden="true">
-                <span>TB</span>
+            <span class="aside-album-image">
+                <span class="aside-album-fallback" aria-hidden="true">TB</span>
+            
+                @if (filled($album->cover_url))
+                    <img
+                        src="{{ asset('images/' . basename($album->cover_url)) }}"
+                        alt="{{ $album->artist_name }} - {{ $album->title }} cover"
+                        loading="lazy"
+                        onload="this.previousElementSibling.hidden = true; this.style.opacity = '1';"
+                        onerror="this.remove()"
+                    >
+                @endif
             </span>
 
             <span class="aside-media-details">
@@ -223,8 +235,18 @@
             class="album-card aside-media-card"
             href="{{ \App\Support\MusicUrl::detail($song) }}"
         >
-            <span class="aside-image-placeholder" aria-hidden="true">
-                <span>TB</span>
+            <span class="aside-album-image">
+                <span class="aside-album-fallback" aria-hidden="true">TB</span>
+
+                @if (filled($song->cover_url ?? null))
+                    <img
+                        src="{{ asset('images/' . basename($song->cover_url)) }}"
+                        alt="{{ $song->artist_name }} - {{ $song->track_title }} cover"
+                        loading="lazy"
+                        onload="this.previousElementSibling.hidden = true; this.style.opacity = '1';"
+                        onerror="this.remove()"
+                    >
+                @endif
             </span>
 
             <span class="aside-media-details">
@@ -258,8 +280,18 @@
             class="album-card aside-media-card"
             href="{{ route('blogs.show', ['slug' => $blog->slug]) }}"
         >
-            <span class="aside-image-placeholder" aria-hidden="true">
-                <span>TB</span>
+            <span class="aside-album-image">
+                <span class="aside-album-fallback" aria-hidden="true">TB</span>
+
+                @if (filled($blog->photo ?? null))
+                    <img
+                        src="{{ asset('images/blog/' . basename($blog->photo)) }}"
+                        alt="{{ $blog->title }}"
+                        loading="lazy"
+                        onload="this.previousElementSibling.hidden = true; this.style.opacity = '1';"
+                        onerror="this.remove()"
+                    >
+                @endif
             </span>
 
             <span class="aside-media-details">
@@ -293,30 +325,50 @@
 <section class="aside-panel aside-social">
     <h2 class="aside-title">TrendyBeatz Social Media</h2>
 
-    <a
-        class="aside-link"
-        href="https://facebook.com/Trendybeatzmedia"
-        target="_blank"
-        rel="noopener noreferrer nofollow"
-    >
-        TrendyBeatz Official Facebook Page
-    </a>
+    <div class="tb-green-button-group">
+        <a
+            class="tb-green-button"
+            href="https://facebook.com/Trendybeatzmedia"
+            target="_blank"
+            rel="nofollow"
+        >
+            TrendyBeatz Official Facebook Page
+        </a>
 
-    <a
-        class="aside-link"
-        href="https://www.instagram.com/trendybeatzmedia/"
-        target="_blank"
-        rel="noopener noreferrer nofollow"
-    >
-        TrendyBeatz Official Instagram Page
-    </a>
+        <a
+            class="tb-green-button"
+            href="https://www.instagram.com/trendybeatzmedia/"
+            target="_blank"
+            rel="nofollow"
+        >
+            TrendyBeatz Official Instagram Page
+        </a>
 
-    <a
-        class="aside-link"
-        href="https://twitter.com/trendybeatzng"
-        target="_blank"
-        rel="noopener noreferrer nofollow"
-    >
-        TrendyBeatz Official Twitter Page
-    </a>
+        <a
+            class="tb-green-button"
+            href="https://twitter.com/trendybeatzng"
+            target="_blank"
+            rel="nofollow"
+        >
+            TrendyBeatz Official Twitter Page
+        </a>
+        
+         <a
+            class="tb-green-button"
+            href="https://wa.me/2349076131844"
+            target="_blank"
+            rel="nofollow"
+        >
+            TrendyBeatz Business WhatsApp 
+        </a>
+
+        <a
+            class="tb-green-button"
+            href="https://wa.me/2347067455144"
+            target="_blank"
+            rel="nofollow"
+        >
+            TrendyBeatz Business WhatsApp 2
+        </a>
+    </div>
 </section>

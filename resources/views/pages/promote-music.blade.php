@@ -238,16 +238,25 @@
 
                 <p>
                     <strong>Call and WhatsApp internationally:</strong>
-                    <a href="tel:+2349076131844">+2349076131844</a>
+                    <a href="tel:+2349076131844">+2349076131844, +2347067455144</a>
                 </p>
 
                 <a
                     class="tb-static-button"
                     href="https://wa.me/2349076131844"
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="nofollow"
                 >
                     Contact the Advert Team on WhatsApp
+                </a>
+                
+                <a
+                    class="tb-static-button"
+                    href="https://wa.me/2347067455144"
+                    target="_blank"
+                    rel="nofollow"
+                >
+                    Contact the Advert Team on WhatsApp 2
                 </a>
             </section>
 

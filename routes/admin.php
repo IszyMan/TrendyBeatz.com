@@ -11,6 +11,8 @@ use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\FeaturedController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ActivityLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -113,7 +115,7 @@ Route::prefix('admin')
             Route::middleware('admin.role:administrator,standard,editor')
                 ->group(function () {
                     Route::resource('blogs', BlogController::class)
-                        ->except(['show', 'destroy'])
+                        ->except(['destroy'])
                         ->names('blogs');
                 });
     });
@@ -191,6 +193,15 @@ Route::prefix('admin')
         )
             ->whereNumber('blog')
             ->name('blogs.destroy');
+            
+        Route::resource('users', UserController::class)
+            ->except(['show'])
+            ->whereNumber('user'); 
+            
+        Route::get(
+            '/activity-logs',
+            [ActivityLogController::class, 'index']
+        )->name('activity-logs.index');    
     });
 
 /*

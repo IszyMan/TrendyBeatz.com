@@ -155,6 +155,19 @@
         .admin-page-head h1 {
             margin: 0;
         }
+        
+        .admin-artist-search {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .admin-artist-search .admin-field {
+            flex: 1 1 250px;
+            margin: 0;
+        }
 
         .admin-button {
             display: inline-block;
@@ -528,6 +541,40 @@ a.tb-pagination-link:hover,
     object-fit: contain;
 }
 
+
+/* Keep the sidebar visible while the content scrolls */
+.admin-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Line below each main menu item */
+.admin-menu > .admin-menu-link,
+.admin-menu > details > summary {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+}
+
+/* Line below each submenu item */
+.admin-menu details a {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Allow the sidebar to scroll normally on smaller screens */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        position: static;
+        height: auto;
+        overflow-y: visible;
+    }
+}
+
+
+
+
  
 
 
@@ -770,7 +817,34 @@ a.tb-pagination-link:hover,
                     @endif
                 </a>
 
-                <span class="admin-menu-link">Settings — coming next</span>
+                <details
+                    @if (
+                        request()->routeIs('admin.users.*')
+                        || request()->routeIs('admin.activity-logs.*')
+                    )
+                        open
+                    @endif
+                >
+                    <summary>Settings</summary>
+                
+                    <a
+                        @class([
+                            'active' => request()->routeIs('admin.users.*'),
+                        ])
+                        href="{{ route('admin.users.index') }}"
+                    >
+                        Users
+                    </a>
+                
+                    <a
+                        @class([
+                            'active' => request()->routeIs('admin.activity-logs.*'),
+                        ])
+                        href="{{ route('admin.activity-logs.index') }}"
+                    >
+                        Activity Logs
+                    </a>
+                </details>
             @endif
         </nav>
 

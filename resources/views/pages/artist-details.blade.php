@@ -3,8 +3,8 @@
 @php
     $artistSlug = \Illuminate\Support\Str::slug($artistName);
 
-    $pageTitle = 'Download Latest ' . $artistName
-        . ' Songs, Music, Albums, Biography, Profile, All Music, Videos'
+    $pageTitle = 'Discover Latest ' . $artistName
+        . ' Songs, Music, Albums, Biography, Profile, All Music, Videos for Legal Download'
         . ' - TrendyBeatz';
 
     $pageDescription = 'Explore ' . $artistName
@@ -34,7 +34,7 @@
 @section('title', $pageTitle)
 @section('meta_description', $pageDescription)
 @section('canonical', $canonicalUrl)
-@section('social_title', $artistName . ' Songs, Albums and Videos | TrendyBeatz')
+@section('social_title', $artistName . ' Songs, Albums and Videos for Legal Download | TrendyBeatz')
 @section('social_description', $pageDescription)
 
 @if ($photoUrl !== '')
@@ -45,7 +45,7 @@
     <article class="tb-artist-detail">
         <header class="tb-artist-detail-heading">
             <h1 class="section-heading">
-                Download Latest {{ $artistName }} Songs, Albums,
+                Discover Latest {{ $artistName }} Songs, Albums,
                 Biography, All Music, and Videos Here on TrendyBeatz
             </h1>
 
@@ -137,7 +137,7 @@
         @endif
 
         <h2 class="tb-artist-detail-intro">
-            Download All {{ $artistName }} Latest Songs, Albums
+            Discover All {{ $artistName }} Latest Songs, Albums
             and Videos Below
         </h2>
 
@@ -234,6 +234,22 @@
                                                 <a href="{{ \App\Support\MusicUrl::detail($song) }}">
                                                     <span class="tb-artist-album-track-number">
                                                         {{ $loop->iteration }}.
+                                                    </span>
+                                                    
+                                                    <span class="tb-album-tracklist-coverart">
+                                                        <span
+                                                            class="tb-album-tracklist-placeholder"
+                                                            aria-hidden="true"
+                                                        >TB</span>
+                                                    
+                                                        @if (filled($coverUrl))
+                                                            <img
+                                                                src="{{ $coverUrl }}"
+                                                                alt="{{ $song->artist_name ?? $artistName }} - {{ $song->track_title }} cover art"
+                                                                loading="lazy"
+                                                                onerror="this.remove()"
+                                                            >
+                                                        @endif
                                                     </span>
 
                                                     <span class="tb-artist-album-track-text">
@@ -442,7 +458,7 @@
                 <a class="a2a_button_x"></a>
                 <a class="a2a_button_email"></a>
                 <a class="a2a_button_pinterest"></a>
-                <a class="a2a_button_linkedin"></a>
+                <a class="a2a_button_telegram"></a>
                 <a class="a2a_button_whatsapp"></a>
             </div>
 
@@ -452,7 +468,7 @@
 
         <p class="tb-home-view-all">
             <a href="{{ route('artists.index') }}">
-                ← Browse All Artists
+                ← Browse All Artists on TrendyBeatz.com
             </a>
         </p>
 

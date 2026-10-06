@@ -2,14 +2,14 @@
 
 @php
     $pageTitle = $year
-        . ' Songs - Download Latest Music Released in '
+        . ' Songs - Discover Latest Music Released in '
         . $year
         . ' | TrendyBeatz';
 
     $pageDescription = 'Discover songs released in '
         . $year
         . ' on TrendyBeatz. Browse Naija, Ghanaian and African music, '
-        . 'find your favourite artists, and stream or download '
+        . 'find your favourite artists, and stream or legally download '
         . $year
         . ' songs.';
 

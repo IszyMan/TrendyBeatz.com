@@ -22,7 +22,11 @@ class AdminAuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (!Auth::attempt($credentials)) {
+        if (!Auth::attempt([
+            'email' => $credentials['email'],
+            'password' => $credentials['password'],
+            'is_active' => 1,
+        ])) {
             return back()
                 ->withErrors(['email' => 'These credentials do not match our records.'])
                 ->onlyInput('email');

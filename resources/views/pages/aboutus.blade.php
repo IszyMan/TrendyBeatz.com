@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'About Us - TrendyBeatz.com - Naija Music Museum - Download and Stream Online Free, latest Nigerian Music Mp3 Mp4 - Top Celebrity News - Free Music Upload and Promotion for UpComing Artists';
+    $pageTitle = 'About Us - TrendyBeatz.com - Naija Music Museum - Discover and Stream Music Legally Online, latest Nigerian Music - Top Celebrity News - Free Music Upload and Promotion for UpComing Artists';
 
-    $metaDescription = 'About TrendyBeatz Music streaming and download platform, trendybeatz owners and CEOs';
+    $metaDescription = 'About TrendyBeatz Music Discovery and stream platform, trendybeatz owners and CEOs';
 
     $metaKeywords = 'about Trendybeatz, about trendybeatz music platform, ceos of trendybeatz, owners of trendybeatz';
 @endphp
@@ -134,19 +134,32 @@
 
         <div class="tb-about-content">
             <p>
-                TrendyBeatz is the #1 Music Download and Streaming
+                TrendyBeatz is the #1 Entertainment and Music Discovery
                 Platform in Nigeria and Africa, serving every nook
                 and cranny of the continent with good music.
                 Since our inception in 2019, we have grown to become
                 a music powerhouse, helping artists reach a very
-                large audience of music lovers and delivering music
+                large audience of music lovers and delivering music legally
                 to people who appreciate good music.
             </p>
 
             <p>
-                Our music uploads are for promotional purposes only,
-                as we help artists break grounds with their music
+                At TrendyBeatz, we operate as a Music Museum that helps music Lovers discover Latest music and videos across continents, write reviews and provide them with Legal Links and Embeds to Legal Music Streaming Platforms only so that they can proceed to stream the music Legally. We are like a bridge between Music Lovers and Artists. We help artists reach a wider audience, and keep music lovers who love discovering lovely sounds before they even become popular updated. We DO NOT upload or provide free mp3 or mp4 file of any music or video on our website.
+                
+                We help artists break grounds with their music
                 and reach everyone who might appreciate their crafts.
+            </p>
+            
+                        <p>
+                We are respecters of Intellectual Property Laws and that's why we frown upon the unauthorized filesharing of audio and audiovisuals of copyrighted materials. We truely understand and appreciate the enormous work and efforts being put into the creation of intellectual property, and that solidifies our strong belief that owners and creators of an Intellectual Property deserves to fully benefit and exploit their creation without an undue interference or diversion.
+                
+                We DO NOT provide audio or video files for download unless the creator, copyright holder or record label with copyright over the said material contacts us expressly, and in writing permits us to and provide the files, before we can proceed with making the file available for download. In the absence of express copyright permission and approval, we only Embed and Link to Legal Music Streaming Platforms for users to go and listen to them there.
+            </p>
+            
+                                    <p>
+                On TrendyBeatz, you can also read high-quality and accurate News, Entertainment Gists, Music Reviews, Sports and other interesting updates happening around the world. 
+                
+                
             </p>
 
             <section class="tb-about-section">
@@ -164,7 +177,7 @@
 
                 <p>
                     Our vision is to become the Number 1 Music
-                    Download Platform, delivering good music to
+                    Discovery Platform, delivering good music to
                     the general populace and covering everything
                     in the music industry.
                 </p>
@@ -181,7 +194,7 @@
                 </p>
 
                 <p>
-                    TrendyBeatz is an online music store for all your
+                    TrendyBeatz is an online music Discovery Platform for all your
                     favourite trending songs from Nigeria, Ghana,
                     Tanzania, South Africa and Africa as a whole.
                 </p>
@@ -193,7 +206,7 @@
                 <p>
                     In our artist profiles, you can find everything
                     about an artist, including their biographies,
-                    complete albums, singles and download links.
+                    complete albums, singles and Legal download links.
                 </p>
             </section>
 

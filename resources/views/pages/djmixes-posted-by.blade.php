@@ -3,14 +3,14 @@
 @php
     $posterName = $poster->name;
 
-    $pageTitle = 'Dj Mix - Download Latest DJ Mix Posted By '
+    $pageTitle = 'Dj Mix - Discover Latest DJ Mix Posted By '
         . $posterName
         . ' | TrendyBeatz';
 
     $pageDescription = 'Discover DJ mixes posted by '
         . $posterName
         . ' on TrendyBeatz. Listen to the latest Naija mixtapes, '
-        . 'Afrobeats DJ mixes and new releases, or find a mix to download.';
+        . 'Afrobeats DJ mixes and new releases, or find a mix to download legally.';
 
     $baseUrl = route('mixes.posted_by', $posterSlug);
 
@@ -61,7 +61,7 @@
 @section('content')
     <section class="tb-day-page">
         <h1 class="section-heading">
-            DjMix - Download Latest Dj Mixtapes Posted by
+            DjMix - Discover Latest Dj Mixtapes Posted by
             {{ $posterName }}
         </h1>
 

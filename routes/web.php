@@ -6,6 +6,26 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\SitemapController;
+
+
+Route::get('/sitemap-style.xsl', [SitemapController::class, 'style'])->name('sitemaps.style');
+
+Route::get('/sitemaps.xml', [SitemapController::class, 'index'])->name('sitemaps.index');
+
+Route::get('/{type}-sitemap.xml', [SitemapController::class, 'show'])
+    ->where('type', 'music|video|naija-music|ghana-music|african-music|album|blog|dj-mix|artists|dj|song-of-the-day|song-of-the-week')
+    ->defaults('page', '1')
+    ->name('sitemaps.first');
+
+Route::get('/{type}-sitemap{page}.xml', [SitemapController::class, 'show'])
+    ->where('type', 'music|video|naija-music|ghana-music|african-music|album|blog|dj-mix|artists|dj|song-of-the-day|song-of-the-week')
+    ->where('page', '(?:[2-9]|[1-9][0-9]{1,8})')
+    ->name('sitemaps.page');
+    
+    
+    
+
 
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
@@ -130,7 +150,13 @@ Route::get('/search', [SearchController::class, 'index'])
     ->name('search');
 
 Route::post('/comments', [CommentController::class, 'store'])->middleware('throttle:5,1')
-    ->name('comments.store');    
+    ->name('comments.store');  
+    
+Route::post('/comments/{comment}/like', [\App\Http\Controllers\CommentController::class, 'like',])
+    ->whereNumber('comment')
+    ->middleware('throttle:60,1')
+    ->name('comments.like');    
+    
 
 
 Route::controller(StaticPageController::class)->group(function () {
@@ -153,5 +179,12 @@ Route::controller(StaticPageController::class)->group(function () {
 
 
 
-require __DIR__ . '/admin.php';    
+
+
+    
+    
+    
+    
+
+require __DIR__ . '/admin.php';   
 

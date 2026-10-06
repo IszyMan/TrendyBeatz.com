@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Support\ActivityLogger;
 
 class DjController extends Controller
 {
@@ -83,7 +84,18 @@ class DjController extends Controller
             $values['created_at'] = now();
             $values['updated_at'] = now();
 
-            DB::table('djs')->insertGetId($values);
+            DB::transaction(function () use ($values) {
+                $id = DB::table('djs')->insertGetId($values);
+            
+                if ((int) $values['is_published'] === 1) {
+                    ActivityLogger::record(
+                        'published',
+                        'dj',
+                        $id,
+                        $values['name']
+                    );
+                }
+            });
         } catch (\Throwable $exception) {
             if ($filename !== null) {
                 File::delete(public_path('images/' . $filename));
@@ -140,9 +152,47 @@ class DjController extends Controller
 
             // Preserve the creator, public author, creation date,
             // and existing image when no replacement is uploaded.
-            DB::table('djs')
-                ->where('id', $row->id)
-                ->update($values);
+            DB::transaction(function () use ($row, $values) {
+                $before = DB::table('djs')
+                    ->where('id', $row->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            
+                $changed = false;
+            
+                foreach ($values as $field => $value) {
+                    if ($field === 'updated_at') {
+                        continue;
+                    }
+            
+                    if ((string) ($before->{$field} ?? '') !== (string) ($value ?? '')) {
+                        $changed = true;
+                        break;
+                    }
+                }
+            
+                DB::table('djs')
+                    ->where('id', $before->id)
+                    ->update($values);
+            
+                if ($changed) {
+                    $publicationChanged =
+                        (int) $before->is_published !== (int) $values['is_published'];
+            
+                    $action = $publicationChanged
+                        ? ((int) $values['is_published'] === 1
+                            ? 'published'
+                            : 'unpublished')
+                        : 'updated';
+            
+                    ActivityLogger::record(
+                        $action,
+                        'dj',
+                        $before->id,
+                        $values['name']
+                    );
+                }
+            });
         } catch (\Throwable $exception) {
             if ($filename !== null) {
                 File::delete(public_path('images/' . $filename));
@@ -179,9 +229,20 @@ class DjController extends Controller
             ]);
         }
 
-        DB::table('djs')
-            ->where('id', $row->id)
-            ->delete();
+        DB::transaction(function () use ($row) {
+            $deleted = DB::table('djs')
+                ->where('id', $row->id)
+                ->delete();
+        
+            if ($deleted) {
+                ActivityLogger::record(
+                    'deleted',
+                    'dj',
+                    $row->id,
+                    $row->name
+                );
+            }
+        });
 
         $this->deleteUploadedImage($row->profile_img);
 
@@ -304,10 +365,26 @@ class DjController extends Controller
 
         File::ensureDirectoryExists($directory);
 
-        $filename = 'admin-dj-'
-            . bin2hex(random_bytes(12))
-            . '.'
-            . $image->extension();
+        $originalName = pathinfo(
+            $image->getClientOriginalName(),
+            PATHINFO_FILENAME
+        );
+
+        $baseName = Str::limit(
+            Str::slug($originalName) ?: 'image',
+            140,
+            ''
+        );
+
+        $extension = $image->extension();
+        $filename = $baseName . '.' . $extension;
+        $counter = 1;
+
+        // Avoid overwriting an existing image.
+        while (File::exists($directory . DIRECTORY_SEPARATOR . $filename)) {
+            $filename = $baseName . '-' . $counter . '.' . $extension;
+            $counter++;
+        }
 
         $image->move($directory, $filename);
 

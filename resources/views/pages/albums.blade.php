@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Album Download - Download Latest Music Albums Mp3'
+    $pageTitle = 'Discover and Stream Latest Music Albums/EPs - Naija Music Albums, Ghana and African'
         . ' » TrendyBeatz';
 
-    $pageDescription = 'Discover the latest Nigerian, Ghanaian and'
+    $pageDescription = 'Discover, Stream and Legally Download the latest Nigerian, Ghanaian and'
         . ' African music albums and EPs on TrendyBeatz. Browse album'
         . ' covers, release dates and tracklists, then explore songs'
         . ' from your favorite artists.';
@@ -60,7 +60,7 @@
 @section('content')
     <section class="tb-day-page">
         <h1 class="section-heading">
-            Download Latest Music Albums, Nigerian Music Albums,
+            Discover Latest Music Albums/EPs, Nigerian Music Albums,
             Ghana Music Albums, and African Albums
         </h1>
 

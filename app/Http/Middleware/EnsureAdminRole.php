@@ -16,6 +16,17 @@ class EnsureAdminRole
         $user = $request->user();
 
         abort_unless($user, 403);
+        
+        if (!(bool) $user->is_active) {
+            \Illuminate\Support\Facades\Auth::logout();
+        
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        
+            return redirect()->route('login')->withErrors([
+                'email' => 'Your account has been deactivated.',
+            ]);
+        }
 
         $allowedIds = array_map(
             fn (string $role): int => (int) config('admin.' . $role),

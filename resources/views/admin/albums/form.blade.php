@@ -25,6 +25,29 @@
         </p>
     @endif
 
+    @if (!$editing)
+        <label class="admin-field">
+            Album ID (optional)
+
+            <input
+                type="number"
+                name="album_id"
+                min="1"
+                step="1"
+                value="{{ old('album_id') }}"
+                placeholder="Leave blank for automatic ID"
+            >
+
+            <small>
+                Enter an unused ID, or leave blank to assign one automatically.
+            </small>
+
+            @error('album_id')
+                <small style="color: #b91c1c;">{{ $message }}</small>
+            @enderror
+        </label>
+    @endif
+
    <!-- <label class="admin-field admin-field-wide">
         Search artists
 
@@ -113,6 +136,22 @@
             name="description"
             rows="8"
         >{{ old('description', $album->description ?? '') }}</textarea>
+    </label>
+    
+    <label class="admin-field admin-field-wide">
+        Digital Store URL
+    
+        <input
+            type="url"
+            name="buy_song"
+            maxlength="2048"
+            value="{{ old('buy_song', $album->buy_song ?? '') }}"
+            placeholder="https://..."
+        >
+    
+        @error('buy_song')
+            <small style="color: #b91c1c;">{{ $message }}</small>
+        @enderror
     </label>
 
     <label class="admin-field admin-field-wide">

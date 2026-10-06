@@ -8,17 +8,18 @@
     $metaDjName = trim((string) ($mix->dj_name ?: 'TrendyBeatz DJ'));
     $metaMixTitle = trim((string) $mix->mix_title);
 
-    $pageTitle = 'Download Mix: '
+    $pageTitle = 'Stream Mix: '
         . $metaDjName
         . ' - '
         . $metaMixTitle
-        . ' Mix';
+        . 'Mix | Legal Download';
+        
 
     $descriptionText = trim(strip_tags(
         (string) ($mix->details ?: $mix->description1 ?: '')
     ));
 
-    $pageDescription = 'Download '
+    $pageDescription = 'Stream '
         . $metaDjName
         . ' '
         . $metaMixTitle
@@ -97,7 +98,7 @@
             $coverUrl = asset(
                 str_starts_with($coverPath, 'images/')
                     ? $coverPath
-                    : 'images/dj/' . basename($coverPath)
+                    : 'images/' . basename($coverPath)
             );
         }
 
@@ -118,7 +119,7 @@
     <article class="tb-music-detail tb-music-detail-primary tb-mix-detail">
         <header class="tb-music-detail-header">
             <h1>
-                {{ $displayTitle }} | Download Mix MP3
+                {{ $displayTitle }} | Stream Mix
             </h1>
 
             <div class="tb-music-detail-cover tb-mix-detail-cover">
@@ -177,13 +178,13 @@
 
                 @if (filled($mix->released_year))
                     <p>
-                        <strong>Year:</strong>
+                        <strong>Recorded:</strong>
                         <a
                             class="tb-music-detail-green"
                             href="{{ route('mixes.year', $mix->released_year) }}"
                             style="text-decoration: none;"
                         >
-                            {{ $mix->released_year }}
+                            {{ $mix->released_year }} DJ Mix
                         </a>
                     </p>
                 @endif
@@ -201,31 +202,73 @@
             </div>
         </section>
 
-        @if (
-            filled($mix->details)
-            || filled($mix->details2)
-            || filled($mix->description1)
-            || filled($mix->description2)
-        )
+        @php
+            $aboutParagraphs = collect([
+                $mix->introduction ?? '',
+                $mix->details ?? '',
+                $mix->details2 ?? '',
+                $mix->description1 ?? '',
+                $mix->description2 ?? '',
+            ])
+                ->map(fn ($text) => trim(strip_tags((string) $text)))
+                ->filter(fn ($text) => $text !== '');
+        @endphp
+        
+        @if ($aboutParagraphs->isNotEmpty())
             <section class="tb-music-detail-section">
                 <h2 class="tb-music-detail-heading">
                     About This DJ Mix
                 </h2>
-
+        
                 <div class="tb-music-detail-description">
-                    @foreach ([
-                        $mix->details,
-                        $mix->details2,
-                        $mix->description1,
-                        $mix->description2,
-                    ] as $paragraph)
-                        @if (filled($paragraph))
-                            <p>
-                                {{ trim(strip_tags((string) $paragraph)) }}
-                            </p>
-                        @endif
+                    @foreach ($aboutParagraphs as $paragraph)
+                        <p>{{ $paragraph }}</p>
                     @endforeach
+                    
+                    
+                    <p class="tb-artist-discovery-note">
+                        <em>
+                            Discover and Stream Latest {{ $djName }} Mixtapes here On TrendyBeatz.
+                        </em>
+                    </p>
                 </div>
+            </section>
+        @endif
+        
+        <div class="tb-green-button-group">
+        <a
+            class="tb-green-button"
+            href="https://t.me/+TodwxcYXdmu-P5Mh"
+            target="_blank"
+            rel="nofollow"
+        >
+            Join Our Telegram Group For Latest Music
+        </a>
+    
+        <a
+            class="tb-green-button"
+            href="https://trendybeatz.com/blog/why-you-should-stop-downloading-music-and-start-streaming-instead"
+            target="_blank"
+        >
+            Read: Why You Should Stop Downloading Music and Start Streaming Instead
+        </a>
+    </div>
+        
+        @if (filled($mix->audiomack_embed_url ?? null))
+            <section class="tb-music-detail-section">
+                <h3 style="color:green; text-align:center">
+                    Stream {{ $displayTitle }} Legally on TrendyBeatz Below:
+                </h3>
+        
+                <iframe
+                    src="{{ $mix->audiomack_embed_url }}"
+                    title="{{ $displayTitle }} on Audiomack"
+                    width="100%"
+                    height="252"
+                    scrolling="no"
+                    loading="lazy"
+                    style="border: 0; display: block;"
+                ></iframe>
             </section>
         @endif
 
@@ -236,9 +279,8 @@
                 <div class="tb-music-detail-audio">
                     <p class="tb-music-copyright-notice">
                         <strong>Copyright Notice:</strong>
-                        This song and its audio materials were published upon
-                        express request and direct permission from the
-                        copyright holder.
+                        This DJ Mixtape and its audio material is published upon
+                        express request and direct permission of the Mixtape License Holder.
                     </p>
 
                     <audio controls preload="none">
@@ -252,7 +294,7 @@
                     href="{{ $trackUrl }}"
                     download
                 >
-                    Download {{ $displayTitle }} Mix
+                    Download {{ $displayTitle }} Mix mp3 Legally
                 </a>
             </section>
         @endif
@@ -263,7 +305,7 @@
 
     <section class="tb-share-card">
         <p class="tb-share-heading">
-            🔗 Share {{ $displayTitle }} Music with others on
+            🔗 Share {{ $displayTitle }} DJ Mixtape with others on
         </p>
 
         <div class="tb-share-row">
@@ -278,7 +320,7 @@
                 <a class="a2a_button_x"></a>
                 <a class="a2a_button_email"></a>
                 <a class="a2a_button_pinterest"></a>
-                <a class="a2a_button_linkedin"></a>
+                <a class="a2a_button_telegram"></a>
                 <a class="a2a_button_whatsapp"></a>
             </div>
 
@@ -290,7 +332,7 @@
     <section class="tb-music-detail tb-music-detail-related tb-mix-detail-related">
         <section class="tb-music-detail-discovery">
             <h2 class="tb-music-detail-heading">
-                Download Latest &amp; Other Mixes By {{ $djName }}
+                Discover Latest &amp; Other Mixes By {{ $djName }}
             </h2>
 
             <div class="tb-mix-detail-list">
@@ -319,7 +361,7 @@
                             $otherCoverUrl = asset(
                                 str_starts_with($otherPath, 'images/')
                                     ? $otherPath
-                                    : 'images/dj/' . basename($otherPath)
+                                    : 'images/' . basename($otherPath)
                             );
                         }
                     @endphp
@@ -342,7 +384,7 @@
                             <strong>{{ $otherMix->dj_name }}</strong>
                             <span><b>{{ $otherMix->mix_title }}</b></span>
 
-                            <small>Listen & Download</small>
+                            <small>Discover & Stream</small>
                         </span>
                     </a>
                 @empty
@@ -376,7 +418,7 @@
                             $djImageUrl = asset(
                                 str_starts_with($djImagePath, 'images/')
                                     ? $djImagePath
-                                    : 'images/dj/' . basename($djImagePath)
+                                    : 'images/' . basename($djImagePath)
                             );
                         }
                     @endphp
@@ -398,7 +440,7 @@
                         <span class="tb-mix-detail-item-text">
                             <strong>{{ $otherDj->dj_name }}</strong>
                             <span><b>{{ $otherDj->mix_title }}</b></span>
-                            <small>Listen & Download</small>
+                            <small>Discover & Stream</small>
                         </span>
                     </a>
                 @empty

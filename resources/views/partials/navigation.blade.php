@@ -92,7 +92,7 @@
         </button>
 
         <div class="dropdown-content" id="musicDropdown" hidden>
-            <a href="{{ route('music.all') }}">All Music</a>
+            <a href="{{ route('music.download') }}">All Music</a>
             <a href="{{ route('albums.index') }}">Albums/EP</a>
             <a href="{{ route('music.naija') }}">Naija Music</a>
             <a href="{{ route('music.ghana') }}">Ghana Music</a>

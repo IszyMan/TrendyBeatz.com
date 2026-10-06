@@ -5,10 +5,10 @@
     $albumTitle = trim((string) $album->title);
     $displayTitle = $artistName . ' - ' . $albumTitle;
 
-    $pageTitle = 'DOWNLOAD: ' . $displayTitle
-        . ' » TrendyBeatz';
+    $pageTitle = 'Stream: ' . $displayTitle
+        . ' Â» TrendyBeatz';
 
-    $descriptionStart = 'Download '
+    $descriptionStart = 'Stream '
         . $artistName . ' ' . $albumTitle . ':';
 
     $albumWriteUp = trim(
@@ -43,10 +43,7 @@
         'TrendyBeatz album downloads',
     ]);
 
-    $canonicalUrl = route('albums.show', [
-        $album->id,
-        $correctSlug,
-    ]);
+    $canonicalUrl = \App\Support\AlbumUrl::detail($album);
 
     $cover = trim((string) $album->cover_url);
 
@@ -122,7 +119,7 @@
                     <strong>{{ $album->posted_by_name }}</strong>
                 </a>
 
-                <span aria-hidden="true">•</span>
+                <span aria-hidden="true"></span>
             @endif
 
                 <time datetime="{{ $currentDate->toDateString() }}">
@@ -151,6 +148,37 @@
                     <strong>Title:</strong>
                   <span class="tb-music-detail-green">  {{ $albumTitle }}</span>
                 </p>
+                
+                
+                @if (filled($album->featuring))
+                    @php
+                        $featuredArtists = collect(
+                            preg_split(
+                                '/\s*[,;&]\s*/u',
+                                trim((string) $album->featuring),
+                                -1,
+                                PREG_SPLIT_NO_EMPTY
+                            )
+                        )->map(fn ($name) => trim($name))
+                         ->filter()
+                         ->values();
+                    @endphp
+                
+                    <p>
+                        <strong>Featuring:</strong>
+                
+                        <span class="tb-music-detail-blue">
+                            @foreach ($featuredArtists as $featuredArtist)
+                                <a
+                                    href="{{ route('artists.show', [
+                                        'slug' => \Illuminate\Support\Str::slug($featuredArtist),
+                                    ]) }}"
+                                    style="text-decoration: none;"
+                                >{{ $featuredArtist }}</a>@if (! $loop->last), @endif
+                            @endforeach
+                        </span>
+                    </p>
+                @endif
 
                 @if ($releaseDate)
                     <p>
@@ -218,8 +246,33 @@
                         songs below.
                     </p>
                 @endif
+                
+                
+                <p class="tb-artist-discovery-note">
+                    <em>
+                        Discover Latest {{ $artistName }} Albums/EP's, Songs / Music
+                         &amp; Videos right here On TrendyBeatz.
+                    </em>
+                </p>
             </div>
         </section>
+        
+        
+        {{-- Digital store --}}
+        @if (!empty($digitalStoreUrl))
+            <div class="tb-music-detail-digital">
+                <a
+                    class="tb-music-detail-store"
+                    href="{{ $digitalStoreUrl }}"
+                    target="_blank"
+                    rel="noopener nofollow"
+                >
+                    Stream {{ $displayTitle }} on Digital Store
+                </a>
+            </div>
+        @endif
+        
+        <br>
 
         <section class="tb-music-detail-section" id="album-tracklist">
             <h2 class="tb-music-detail-heading">
@@ -234,29 +287,39 @@
                     <span class="tb-album-detail-track-number">
                         {{ $loop->iteration }}.
                     </span>
-
+            
+                    <span class="tb-album-tracklist-coverart">
+                        <span
+                            class="tb-album-tracklist-placeholder"
+                            aria-hidden="true"
+                        >TB</span>
+            
+                        @if ($coverUrl !== '')
+                            <img
+                                src="{{ $coverUrl }}"
+                                alt="{{ $song->artist_name ?? $artistName }} - {{ $song->track_title }} cover art"
+                                loading="lazy"
+                                onerror="this.remove()"
+                            >
+                        @endif
+                    </span>
+            
                     <span class="tb-album-detail-track-info">
-                        <strong>
-                            {{ $song->track_title }}
-                        </strong>
-
+                        <strong>{{ $song->track_title }}</strong>
+            
                         @if (filled($song->featuring))
                             <small>
                                 <b>feat. {{ $song->featuring }}</b>
                             </small>
                         @endif
-
+            
                         <small>Tap to Stream</small>
                     </span>
-
-                    
-
+            
                     <span
                         class="tb-album-detail-track-arrow"
                         aria-hidden="true"
-                    >
-                        →
-                    </span>
+                    >→</span>
                 </a>
             @empty
                 <p class="tb-album-detail-empty">
@@ -271,7 +334,7 @@
 
     <section class="tb-share-card">
         <p class="tb-share-heading">
-            🔗 Share {{ $displayTitle }} with others on
+            Share {{ $displayTitle }} with others on
         </p>
 
         <div class="tb-share-row">
@@ -286,7 +349,7 @@
                 <a class="a2a_button_x"></a>
                 <a class="a2a_button_email"></a>
                 <a class="a2a_button_pinterest"></a>
-                <a class="a2a_button_linkedin"></a>
+                <a class="a2a_button_telegram"></a>
                 <a class="a2a_button_whatsapp"></a>
             </div>
 
@@ -298,40 +361,64 @@
         @if ($otherAlbums->isNotEmpty())
             <section class="tb-music-detail-discovery">
                 <h2 class="tb-music-detail-heading">
-                    More Albums by {{ $artistName }}
+                    More Albums and EPs by {{ $artistName }}
                 </h2>
-
+        
                 <div class="tb-music-detail-discovery-list">
                     @foreach ($otherAlbums as $otherAlbum)
                         @php
+                            $otherTitle = $artistName . ' - ' . $otherAlbum->title;
+        
                             $otherSlug = \Illuminate\Support\Str::slug(
                                 $artistName . ' ' . $otherAlbum->title
                             );
+        
+                            $otherCover = trim((string) ($otherAlbum->cover_url ?? ''));
+        
+                            if ($otherCover === '') {
+                                $otherCoverUrl = '';
+                            } elseif (preg_match('~^https?://~i', $otherCover)) {
+                                $otherCoverUrl = $otherCover;
+                            } else {
+                                $otherCoverPath = ltrim($otherCover, '/');
+        
+                                $otherCoverUrl = asset(
+                                    str_starts_with($otherCoverPath, 'images/')
+                                        ? $otherCoverPath
+                                        : 'images/' . $otherCoverPath
+                                );
+                            }
                         @endphp
-
+        
                         <a
+                            class="tb-album-related-link"
                             href="{{ route('albums.show', [
                                 $otherAlbum->id,
                                 $otherSlug,
                             ]) }}"
                         >
-                            <span
-                                class="tb-music-detail-icon"
-                                aria-hidden="true"
-                            >
-                                ♫
+                            <span class="tb-album-related-coverart">
+                                <span
+                                    class="tb-album-related-placeholder"
+                                    aria-hidden="true"
+                                >TB</span>
+        
+                                @if ($otherCoverUrl !== '')
+                                    <img
+                                        src="{{ $otherCoverUrl }}"
+                                        alt="{{ $otherTitle }} album cover"
+                                        loading="lazy"
+                                        onerror="this.remove()"
+                                    >
+                                @endif
                             </span>
-
+        
                             <span class="tb-music-detail-discovery-text">
-                                <strong>
-                                    {{ $artistName }} -
-                                    {{ $otherAlbum->title }}
-                                </strong>
-
+                                <strong>{{ $otherTitle }}</strong>
+        
                                 @if (filled($otherAlbum->released_year))
                                     <small>
-                                        Released in
-                                        {{ $otherAlbum->released_year }}
+                                        Released in {{ $otherAlbum->released_year }}
                                     </small>
                                 @endif
                             </span>
@@ -343,7 +430,7 @@
 
         <p class="tb-home-view-all">
             <a href="{{ route('albums.index') }}">
-                Browse All Albums →
+                Browse All Albums on TrendyBeatz.com
             </a>
         </p>
     </div>

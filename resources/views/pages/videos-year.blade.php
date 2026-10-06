@@ -3,7 +3,7 @@
 @php
     $pageNumber = $videos->currentPage();
 
-    $pageTitle = 'Download ' . $year
+    $pageTitle = 'Discover ' . $year
         . ' Music Videos - Nigerian & African Videos';
 
     if ($pageNumber > 1) {
@@ -12,7 +12,7 @@
 
     $description = 'Watch ' . $year
         . ' Nigerian, Ghanaian and African music videos on TrendyBeatz. '
-        . 'Explore top notch Mp4, discover artists and find available video.';
+        . 'Explore top notch, discover artists and find available video.';
 
     $keywords = $year . ' music videos, '
         . $year . ' Nigerian music videos, '
@@ -39,7 +39,7 @@
     <section class="tb-videos-year">
         <header class="tb-videos-year-header">
             <h1 class="section-heading">
-                Download {{ $year }} Music Videos
+                Discover {{ $year }} Music Videos
             </h1>
 
             <p class="tb-videos-year-description">

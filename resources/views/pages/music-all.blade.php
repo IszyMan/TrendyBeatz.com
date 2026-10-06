@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Download Latest Music Mp3 Here | TrendyBeatz';
+    $pageTitle = 'Discover Latest Music Here - Legal Download | TrendyBeatz';
 
     $pageDescription = 'Explore the latest music on TrendyBeatz.'
         . ' Discover published songs from Nigerian, Ghanaian and'
         . ' other African artists, highlife & gospel, browse new releases, and find'
-        . ' tracks to stream or download.';
+        . ' tracks to stream or legally download.';
 
     $baseUrl = route('music.all');
 
@@ -59,7 +59,7 @@
 @section('content')
     <section class="tb-day-page">
         <h1 class="section-heading">
-            Download Latest Music Mp3
+            Discover & Stream Latest Music
         </h1>
 
         @php

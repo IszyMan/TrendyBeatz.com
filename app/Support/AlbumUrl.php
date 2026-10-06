@@ -22,12 +22,24 @@ class AlbumUrl
             ?? ''
         ));
 
-        return Str::slug(trim($artist . ' ' . $title));
+        // Song records need the album's featuring, not the song's.
+        $featuring = trim((string) (
+            isset($item->album_id)
+                ? ($item->album_featuring ?? '')
+                : ($item->featuring ?? $item->Featuring ?? '')
+        ));
+
+        $name = trim($artist . ' ' . $title);
+
+        if ($featuring !== '') {
+            $name .= ' ft ' . $featuring;
+        }
+
+        return Str::slug($name);
     }
 
     public static function detail(object $item): string
     {
-        // Songs contain album_id; album records contain id.
         $albumId = $item->album_id ?? $item->id;
 
         return route('albums.show', [

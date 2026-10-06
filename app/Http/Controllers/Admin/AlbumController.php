@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Support\ActivityLogger;
 
 class AlbumController extends Controller
 {
@@ -81,8 +82,24 @@ class AlbumController extends Controller
 
     public function store(Request $request)
     {
+        $idData = $request->validate([
+            'album_id' => [
+                'nullable',
+                'integer',
+                'min:1',
+                Rule::unique('albums', 'id'),
+            ],
+        ], [
+            'album_id.unique' => 'This Album ID already exists. Choose another ID.',
+        ]);
+
         $data = $this->validated($request);
         $values = $this->albumValues($data);
+
+        if (filled($idData['album_id'] ?? null)) {
+            $values['id'] = (int) $idData['album_id'];
+        }
+
         $filename = null;
 
         try {
@@ -104,10 +121,32 @@ class AlbumController extends Controller
             $values['created_at'] = now();
             $values['updated_at'] = now();
 
-            DB::table('albums')->insert($values);
+            DB::transaction(function () use ($values) {
+                $albumId = DB::table('albums')->insertGetId($values);
+            
+                if ((int) $values['is_published'] === 1) {
+                    ActivityLogger::record(
+                        'published',
+                        'album',
+                        $albumId,
+                        $values['title']
+                    );
+                }
+            });
         } catch (\Throwable $exception) {
             if ($filename !== null) {
                 File::delete(public_path('images/' . $filename));
+            }
+
+            if (
+                $exception instanceof \Illuminate\Database\QueryException
+                && (int) ($exception->errorInfo[1] ?? 0) === 1062
+                && isset($values['id'])
+                && DB::table('albums')->where('id', $values['id'])->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'album_id' => 'This Album ID already exists. Choose another ID.',
+                ]);
             }
 
             throw $exception;
@@ -178,9 +217,42 @@ class AlbumController extends Controller
 
             // Preserve user_id, posted_by and created_at.
             // With no new upload, preserve the existing cover.
-            DB::table('albums')
-                ->where('id', $row->id)
-                ->update($values);
+            DB::transaction(function () use ($row, $values) {
+                $before = DB::table('albums')
+                    ->where('id', $row->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+            
+                $changed = false;
+            
+                foreach ($values as $field => $value) {
+                    if ($field === 'updated_at') {
+                        continue;
+                    }
+            
+                    if ((string) ($before->{$field} ?? '') !== (string) ($value ?? '')) {
+                        $changed = true;
+                        break;
+                    }
+                }
+            
+                DB::table('albums')
+                    ->where('id', $before->id)
+                    ->update($values);
+            
+                if ($changed) {
+                    $newlyPublished =
+                        (int) $before->is_published !== 1
+                        && (int) $values['is_published'] === 1;
+            
+                    ActivityLogger::record(
+                        $newlyPublished ? 'published' : 'updated',
+                        'album',
+                        $before->id,
+                        $values['title']
+                    );
+                }
+            });
         } catch (\Throwable $exception) {
             if ($filename !== null) {
                 File::delete(public_path('images/' . $filename));
@@ -219,10 +291,17 @@ class AlbumController extends Controller
             DB::table('album_populars')
                 ->where('album_id', $row->id)
                 ->delete();
-
+        
             DB::table('albums')
                 ->where('id', $row->id)
                 ->delete();
+        
+            ActivityLogger::record(
+                'deleted',
+                'album',
+                $row->id,
+                $row->title
+            );
         });
 
         $this->deleteUploadedImage($row->cover_url);
@@ -286,6 +365,7 @@ class AlbumController extends Controller
                 'required',
                 Rule::in(['YES', 'NO']),
             ],
+            'buy_song' => ['nullable', 'url:http,https', 'max:2048'],
             'cover_image' => [
                 'nullable',
                 'image',
@@ -326,6 +406,9 @@ class AlbumController extends Controller
             ),
             'featuring' => $data['featuring'] ?? null,
             'description' => $data['description'] ?? null,
+            'buy_song' => filled($data['buy_song'] ?? null)
+                ? trim($data['buy_song'])
+                : null,
             'released_year' => $data['released_year'],
             'released_date' => $data['released_date'] ?? null,
             'is_published' => $data['IsPublished'] === 'YES'
@@ -340,10 +423,26 @@ class AlbumController extends Controller
 
         File::ensureDirectoryExists($directory);
 
-        $filename = 'admin-album-'
-            . bin2hex(random_bytes(12))
-            . '.'
-            . $image->extension();
+        $originalName = pathinfo(
+            $image->getClientOriginalName(),
+            PATHINFO_FILENAME
+        );
+
+        $baseName = Str::limit(
+            Str::slug($originalName) ?: 'image',
+            140,
+            ''
+        );
+
+        $extension = $image->extension();
+        $filename = $baseName . '.' . $extension;
+        $counter = 1;
+
+        // Avoid overwriting an existing image.
+        while (File::exists($directory . DIRECTORY_SEPARATOR . $filename)) {
+            $filename = $baseName . '-' . $counter . '.' . $extension;
+            $counter++;
+        }
 
         $image->move($directory, $filename);
 
@@ -354,11 +453,20 @@ class AlbumController extends Controller
     {
         $filename = trim((string) $value);
 
-        // Delete only images generated by this controller.
+        // Accept only an image filename without directory paths.
         if (!preg_match(
-            '~^admin-album-[a-f0-9]{24}\.(jpg|jpeg|png|webp|gif)$~i',
+            '/\A[a-z0-9_-]+\.(jpg|jpeg|png|webp|gif)\z/i',
             $filename
         )) {
+            return;
+        }
+
+        // Keep images still used by an album, artist or listing.
+        if (
+            DB::table('albums')->where('cover_url', $filename)->exists()
+            || DB::table('artists')->where('img', $filename)->exists()
+            || DB::table('listings')->where('cover_url', $filename)->exists()
+        ) {
             return;
         }
 

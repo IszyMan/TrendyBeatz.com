@@ -19,7 +19,7 @@
                     $coverUrl = asset(
                         str_starts_with($coverPath, 'images/')
                             ? $coverPath
-                            : 'images/dj/' . basename($coverPath)
+                            : 'images/' . basename($coverPath)
                     );
                 }
             @endphp

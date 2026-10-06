@@ -61,7 +61,7 @@ class HomeController extends Controller
             )
             ->orderByDesc('featured.latest_feature_id')
             ->orderByDesc('song.id')
-            ->limit(5)
+            ->limit(10)
             ->get();
     }
 
@@ -70,7 +70,7 @@ class HomeController extends Controller
         return $this->publishedAudio()
             ->where('song.country_id', $countryId)
             ->orderByDesc('song.id')
-            ->limit(5)
+            ->limit(10)
             ->get();
     }
 
@@ -79,7 +79,7 @@ class HomeController extends Controller
         return $this->publishedAudio()
             ->where('song.is_gospel', 1)
             ->orderByDesc('song.id')
-            ->limit(5)
+            ->limit(10)
             ->get();
     }
 
@@ -88,7 +88,7 @@ class HomeController extends Controller
         return $this->publishedAudio()
             ->where('song.is_high_life', 1)
             ->orderByDesc('song.id')
-            ->limit(5)
+            ->limit(10)
             ->get();
     }
 
@@ -97,7 +97,7 @@ class HomeController extends Controller
         return $this->publishedTracks()
             ->where('song.listing_type', 2)
             ->orderByDesc('song.id')
-            ->limit(4)
+            ->limit(5)
             ->get();
     }
 
@@ -134,7 +134,7 @@ class HomeController extends Controller
             )
             ->where('album.is_published', 1)
             ->orderByDesc('album.id')
-            ->limit(5)
+            ->limit(10)
             ->get();
     }
 
@@ -160,7 +160,7 @@ class HomeController extends Controller
             ->whereNotNull('mix.title')
             ->where('mix.title', '<>', '')
             ->orderByDesc('mix.id')
-            ->limit(3)
+            ->limit(10)
             ->get();
     }
 
@@ -174,7 +174,8 @@ class HomeController extends Controller
                 'blog.title',
                 'blog.intro',
                 'blog.photo',
-                'blog.created_at'
+                'blog.created_at',
+                'blog.updated_at'
             )
             ->where('blog.Is_published', 1)
             ->whereNotNull('blog.slug')

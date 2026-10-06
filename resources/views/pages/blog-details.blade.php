@@ -98,11 +98,6 @@
             ?? 'tb-blog-news';
     
         
-
-        $lastUpdated = filled($post->created_at)
-            ? \Illuminate\Support\Carbon::parse($post->created_at)
-            : null;    
-
         $imageUrl = function ($value) {
             $image = trim((string) $value);
 
@@ -200,17 +195,19 @@
         <nav class="tb-article-breadcrumbs" aria-label="Breadcrumb">
             <a href="{{ route('home') }}">Home</a>
             <span aria-hidden="true">→</span>
-
+        
             <a href="{{ route('blogs.index') }}">Blog</a>
-            <span aria-hidden="true">→</span>
-
+        
             @if ($post->category_slug)
+                <span aria-hidden="true">→</span>
+        
                 <a href="{{ route('blogs.category', $post->category_slug) }}">
                     {{ $post->category_name }}
                 </a>
-                <span aria-hidden="true">→</span>
             @endif
-
+        
+            <span class="tb-article-title-separator" aria-hidden="true">→</span>
+        
             <span aria-current="page">
                 {{ $post->title }}
             </span>
@@ -242,11 +239,13 @@
                 <span class="tb-article-placeholder" aria-hidden="true">
                     TrendyBlog
                 </span>
-
-                @if ($socialImage !== '')
+            
+                @if (filled($socialImage))
                     <img
                         src="{{ $socialImage }}"
                         alt="{{ $post->title }}"
+                        style="opacity: 0;"
+                        onload="this.previousElementSibling.hidden = true; this.parentElement.classList.add('has-image'); this.style.opacity = '1';"
                         onerror="this.remove()"
                     >
                 @endif
@@ -297,14 +296,14 @@
                     {{ $commentCount === 1 ? 'comment' : 'comments' }}
                 </span>
 
-                @if ($lastUpdated)
+              
                     <span class="tb-article-meta-item tb-article-meta-updated">
                         Last updated:
-                        <time datetime="{{ $lastUpdated->toIso8601String() }}">
-                            {{ $lastUpdated->format('d M Y') }}
+                        <time datetime="{{ now()->toDateString() }}">
+                            {{ now()->format('M d, Y') }}
                         </time>
                     </span>
-                @endif
+              
             </div>
 
             <h1>{{ $post->title }}</h1>
@@ -334,18 +333,9 @@
                                 </figure>
                             @endif
                         @else
-                            @php
-                                $paragraphs = preg_split(
-                                    '/\R\s*\R/',
-                                    trim(strip_tags((string) $value))
-                                );
-                            @endphp
-
-                            @foreach ($paragraphs as $paragraph)
-                                @if (trim($paragraph) !== '')
-                                    <p>{{ trim($paragraph) }}</p>
-                                @endif
-                            @endforeach
+                            <div class="tb-article-rich-text">
+                                {!! $value !!}
+                            </div>
                         @endif
                     @endif
                 @endforeach
@@ -364,7 +354,7 @@
 
     <section class="tb-share-card">
         <p class="tb-share-heading">
-            🔗 Share {{ $post->title }} Article with others on
+            🔗 Share this Article with others on
         </p>
 
         <div class="tb-share-row">
@@ -379,7 +369,7 @@
                 <a class="a2a_button_x"></a>
                 <a class="a2a_button_email"></a>
                 <a class="a2a_button_pinterest"></a>
-                <a class="a2a_button_linkedin"></a>
+                <a class="a2a_button_telegram"></a>
                 <a class="a2a_button_whatsapp"></a>
             </div>
 

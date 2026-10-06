@@ -3,7 +3,7 @@
 @php
     $pageNumber = $albums->currentPage();
 
-    $pageTitle = 'Download Latest ' . $year . ' Albums Here';
+    $pageTitle = 'Discover Latest ' . $year . ' Albums Here';
 
     if ($pageNumber > 1) {
         $pageTitle .= ' - Page ' . $pageNumber;
@@ -11,7 +11,7 @@
 
     $description = 'Explore ' . $year
         . ' Nigerian, Ghanaian and African music albums on TrendyBeatz. '
-        . 'Browse tracklists, discover artists and find available album downloads.';
+        . 'Browse tracklists, discover artists and find available album legal downloads.';
 
     $keywords = $year . ' albums, '
         . $year . ' Naija albums, '
@@ -38,7 +38,7 @@
     <section class="tb-albums-year">
         <header>
             <h1 class="section-heading">
-                Download {{ $year }} Music Albums
+                Discover {{ $year }} Music Albums
             </h1>
 
             <p>
@@ -47,17 +47,15 @@
             </p>
         </header>
 
-        @include('partials.home-albums', [
+        @include('partials.home.albums', [
             'items' => $albums,
             'id' => 'albums-' . $year,
             'heading' => $year . ' Albums',
             'more' => null,
         ])
 
-        @if ($albums->hasPages())
-            <div class="ts-list-pagination">
-                {{ $albums->links() }}
-            </div>
-        @endif
+        @include('partials.pagination', [
+            'paginator' => $albums,
+        ])
     </section>
 @endsection

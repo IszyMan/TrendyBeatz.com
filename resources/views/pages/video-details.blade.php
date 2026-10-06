@@ -12,11 +12,11 @@
         $featuring !== ''
         && !preg_match('/\b(?:ft|feat|featuring)\.?\s/i', $trackTitle)
     ) {
-        $displayTitle .= ' feat. ' . $featuring;
+        $displayTitle .= ' ft. ' . $featuring;
         $keywordTitle .= ' feat. ' . $featuring;
     }
 
-    $pageTitle = $displayTitle . ' | Download Video MP4 » TrendyBeatz';
+    $pageTitle = $displayTitle . ' | Watch Video » TrendyBeatz';
 
     $metaKeywords = implode(', ', [
         $keywordTitle . ' video',
@@ -37,7 +37,7 @@
         ->implode(' ');
 
     if ($description === '') {
-        $description = 'Watch and download ' . $displayTitle
+        $description = 'Discover and Watch ' . $displayTitle
             . ' music video on TrendyBeatz.';
     }
 
@@ -99,13 +99,40 @@
          */
         $youtubeEmbed = null;
 
-        if (preg_match(
-            '~(?:youtube\.com/(?:watch\?v=|embed/)|youtu\.be/)([A-Za-z0-9_-]{11})~i',
-            (string) $video->scriptUrl,
-            $youtubeMatch
-        )) {
-            $youtubeEmbed = 'https://www.youtube-nocookie.com/embed/'
-                . $youtubeMatch[1];
+        foreach ([
+            $video->youtube_embed_url ?? '',
+            $video->scriptUrl ?? '',
+        ] as $youtubeValue) {
+            $youtubeValue = html_entity_decode(
+                (string) $youtubeValue,
+                ENT_QUOTES | ENT_HTML5,
+                'UTF-8'
+            );
+        
+            if (preg_match(
+                '~(?:youtube(?:-nocookie)?\.com/(?:watch\?(?:[^"\s<>]*&)?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])~i',
+                $youtubeValue,
+                $youtubeMatch
+            )) {
+                $youtubeEmbed = 'https://www.youtube-nocookie.com/embed/'
+                    . $youtubeMatch[1];
+        
+                break;
+            }
+        }
+        
+        
+        $digitalStoreUrl = trim((string) ($video->buy_song ?? ''));
+
+        if (
+            !filter_var($digitalStoreUrl, FILTER_VALIDATE_URL)
+            || !in_array(
+                strtolower((string) parse_url($digitalStoreUrl, PHP_URL_SCHEME)),
+                ['http', 'https'],
+                true
+            )
+        ) {
+            $digitalStoreUrl = null;
         }
 
         $videoLink = function ($item) use ($video): string {
@@ -126,7 +153,7 @@
     {{-- Main video panel --}}
     <article class="tb-music-detail tb-music-detail-primary tb-video-detail">
         <header class="tb-music-detail-header">
-            <h1>{{ $displayTitle }} </h1>
+            <h1>{{ $displayTitle }} Video</h1>
 
             <div class="tb-music-detail-cover">
                 <span class="tb-music-detail-placeholder" aria-hidden="true">
@@ -281,44 +308,89 @@
                             <p>{{ strip_tags($paragraph) }}</p>
                         @endif
                     @endforeach
+                    
+                    <p class="tb-artist-discovery-note">
+                        <em>
+                            Discover Latest {{ $artistName }} Videos, Songs/Music &amp; Albums/EP's right here On TrendyBeatz.
+                        </em>
+                    </p>
                 </div>
             </section>
         @endif
+        
+        <div class="tb-green-button-group">
+        <a
+            class="tb-green-button"
+            href="https://t.me/+TodwxcYXdmu-P5Mh"
+            target="_blank"
+            rel="nofollow"
+        >
+            Join Our Telegram Group For Latest Music
+        </a>
+    
+        <a
+            class="tb-green-button"
+            href="https://trendybeatz.com/blog/why-you-should-stop-downloading-music-and-start-streaming-instead"
+            target="_blank"
+        >
+            Read: Why You Should Stop Downloading Music and Start Streaming Instead
+        </a>
+    </div>
 
-        @if ($youtubeEmbed || $videoUrl)
+        @if ($youtubeEmbed)
             <section class="tb-music-detail-listening">
-                <h2>Watch {{ $displayTitle }}</h2>
-
-                @if ($youtubeEmbed)
-                    <div class="tb-music-detail-youtube">
-                        <iframe
-                            src="{{ $youtubeEmbed }}"
-                            title="{{ $displayTitle }} video"
-                            loading="lazy"
-                            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen
-                        ></iframe>
-                    </div>
-                @elseif ($videoUrl)
-                    <video
-                        class="tb-video-detail-player"
-                        controls
-                        preload="metadata"
-                        @if ($socialImage !== '') poster="{{ $socialImage }}" @endif
-                    >
-                        <source src="{{ $videoUrl }}">
-                        Your browser does not support video playback.
-                    </video>
-                @endif
-
-                @if ($videoUrl)
+                <h2>Legally Watch and Stream {{ $displayTitle }} on TrendyBeatz Below:</h2>
+        
+                <div class="tb-music-detail-youtube">
+                    <iframe
+                        src="{{ $youtubeEmbed }}"
+                        title="{{ $displayTitle }} video"
+                        loading="lazy"
+                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen
+                    ></iframe>
+                </div>
+            </section>
+        @endif
+        
+        
+        {{-- Digital store --}}
+            @if ($digitalStoreUrl)
+                <div class="tb-music-detail-digital">
                     <a
-                        class="tb-music-detail-download"
-                        href="{{ $videoUrl }}"
+                        class="tb-music-detail-store"
+                        href="{{ $digitalStoreUrl }}"
+                        target="_blank"
+                        rel="nofollow"
                     >
-                        Download {{ $displayTitle }} MP4
+                        Stream {{ $displayTitle }} on Digital Store
                     </a>
-                @endif
+                </div>
+            @endif
+        
+        
+        
+        
+        @if ($videoUrl)
+            <section class="tb-music-detail-listening">
+                <h2>Watch {{ $displayTitle }} Legally on TrendyBeatz Below:</h2>
+        
+                <video
+                    class="tb-video-detail-player"
+                    controls
+                    preload="metadata"
+                    @if ($socialImage !== '') poster="{{ $socialImage }}" @endif
+                >
+                    <source src="{{ $videoUrl }}">
+                    Your browser does not support video playback.
+                </video>
+        
+                <a
+                    class="tb-music-detail-download"
+                    href="{{ $videoUrl }}"
+                >
+                    Download {{ $displayTitle }} Video mp4 Legally
+                </a>
             </section>
         @endif
     </article>
@@ -342,7 +414,7 @@
                 <a class="a2a_button_x"></a>
                 <a class="a2a_button_email"></a>
                 <a class="a2a_button_pinterest"></a>
-                <a class="a2a_button_linkedin"></a>
+                <a class="a2a_button_telegram"></a>
                 <a class="a2a_button_whatsapp"></a>
             </div>
 
@@ -392,7 +464,7 @@
         @if ($artistSongs->isNotEmpty())
             <section class="tb-music-detail-discovery">
                 <h2 class="tb-music-detail-heading">
-                    Discover &amp; Stream {{ $artistName }} Songs
+                    Discover &amp; Stream {{ $artistName }} Other Songs
                 </h2>
 
                 <div class="tb-music-detail-discovery-list">
@@ -432,7 +504,7 @@
 
         <section class="tb-music-detail-discovery">
             <h2 class="tb-music-detail-heading">
-                Discover Latest Music MP3 &amp; Videos
+                Discover Latest Music &amp; Videos
             </h2>
 
             <div class="tb-music-detail-discovery-list">

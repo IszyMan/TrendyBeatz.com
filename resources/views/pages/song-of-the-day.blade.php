@@ -3,7 +3,7 @@
 @php
     $pageTitle = 'Popular Songs Of The Day - Latest Naija Songs Trending Today | TrendyBeatz';
 
-    $pageDescription = 'Download latest Naija, Ghana and African Songs and Music Trending Today, popular song of day, popular naija music, popular songs of the day,download latest popular songs, music of the day, Musics of the Day mp3, song of day mp3, Latest Naija Music Trending Today';
+    $pageDescription = 'Discover & Legally Download latest Naija, Ghana and African Songs and Music Trending Today, popular song of day, popular naija music, popular songs of the day,download latest popular songs, music of the day, Musics of the Day mp3, song of day mp3, Latest Naija Music Trending Today';
 
     $pageKeywords = 'song of day, songs of the day, music of the day, popular music, popular songs, Musics of the Day mp3, song of day mp3, latest naija music mp3 download ,naija music mp3 audio,naija latest music mp3 audio,download latest naija music mp3 audio,naija afro music mp3,all naija music mp3 download,all latest naija music mp3,naija music mp3 bullet,new naija music mp3 bullet,latest naija music mp3,best naija music mp3,best naija music mp3 download,best naija music mp3 free download';
 
