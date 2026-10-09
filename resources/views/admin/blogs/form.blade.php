@@ -32,10 +32,26 @@
                 <input
                     type="text"
                     name="title"
+                    id="blog-title-input"
                     value="{{ old('title', $blog->title ?? '') }}"
                     required
                 >
             </label>
+            
+            @if (!$editing)
+                <label class="admin-field">
+                    Blog slug
+                    <input
+                        type="text"
+                        id="blog-slug-preview"
+                        value="{{ \Illuminate\Support\Str::slug(old('title', '')) }}"
+                        placeholder="Slug will appear as you type the title"
+                        readonly
+                        style="background: #f3f4f6; color: #555;"
+                    >
+                    <small>Automatically generated from the post title.</small>
+                </label>
+            @endif
 
             <label class="admin-field">
                 Category
@@ -107,16 +123,53 @@
 
     <section class="blog-section">
         <div class="blog-section-heading">Embed Code (optional)</div>
-
+    
         <div class="blog-section-body">
             <label class="admin-field">
                 YouTube, Audiomack or SoundCloud iframe
+    
                 <textarea
                     name="scriptUrl"
                     rows="6"
+                    data-blog-embed
+                    data-preview="blog-embed-preview"
                     placeholder='<iframe src="https://..."></iframe>'
-                >{{ old('scriptUrl', $blog->scriptUrl ?? '') }}</textarea>
+                >{{ old('scriptUrl', $blog->scriptUrl ?? $blog->script_url ?? '') }}</textarea>
             </label>
+    
+            <div
+                id="blog-embed-preview"
+                class="admin-blog-embed-preview"
+                hidden
+            ></div>
+        </div>
+    </section>
+    
+    <section class="blog-section">
+        <div class="blog-section-heading">Second Embed Code (optional)</div>
+    
+        <div class="blog-section-body">
+            <label class="admin-field">
+                YouTube, Audiomack or SoundCloud iframe
+    
+                <textarea
+                    name="script_url2"
+                    rows="6"
+                    data-blog-embed
+                    data-preview="blog-second-embed-preview"
+                    placeholder='<iframe src="https://..."></iframe>'
+                >{{ old('script_url2', $blog->script_url2 ?? '') }}</textarea>
+    
+                @error('script_url2')
+                    <small style="color: #b91c1c;">{{ $message }}</small>
+                @enderror
+            </label>
+    
+            <div
+                id="blog-second-embed-preview"
+                class="admin-blog-embed-preview"
+                hidden
+            ></div>
         </div>
     </section>
 
@@ -150,3 +203,104 @@
         <a href="{{ route('admin.blogs.index') }}">Cancel</a>
     </div>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const titleInput = document.getElementById('blog-title-input');
+    const slugPreview = document.getElementById('blog-slug-preview');
+    
+    if (titleInput && slugPreview) {
+        const generateSlug = (title) => {
+            return title
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/@/g, ' at ')
+                .toLowerCase()
+                .replace(/[^a-z0-9\s_-]/g, '')
+                .replace(/[\s_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        };
+    
+        titleInput.addEventListener('input', () => {
+            slugPreview.value = generateSlug(titleInput.value);
+        });
+    }
+    
+    document.querySelectorAll('[data-blog-embed]').forEach(input => {
+        const preview = document.getElementById(input.dataset.preview);
+        let timer;
+
+        const renderPreview = () => {
+            preview.replaceChildren();
+            preview.hidden = true;
+
+            const documentHtml = new DOMParser().parseFromString(
+                input.value,
+                'text/html'
+            );
+
+            const original = documentHtml.querySelector('iframe');
+
+            if (!original) {
+                return;
+            }
+
+            let url;
+
+            try {
+                url = new URL(original.getAttribute('src'));
+            } catch {
+                return;
+            }
+
+            const allowedHosts = [
+                'youtube.com',
+                'youtube-nocookie.com',
+                'audiomack.com',
+                'soundcloud.com'
+            ];
+
+            const allowed = url.protocol === 'https:' &&
+                allowedHosts.some(host =>
+                    url.hostname === host ||
+                    url.hostname.endsWith('.' + host)
+                );
+
+            if (!allowed) {
+                return;
+            }
+
+            const iframe = document.createElement('iframe');
+
+            iframe.src = url.href;
+            iframe.title = original.getAttribute('title') || 'Embed preview';
+
+            const height = parseInt(original.getAttribute('height'), 10);
+            iframe.height = Number.isFinite(height) && height > 0
+                ? Math.min(height, 1000)
+                : 315;
+
+            iframe.setAttribute(
+                'allow',
+                'autoplay; encrypted-media; fullscreen; picture-in-picture'
+            );
+
+            iframe.setAttribute('allowfullscreen', '');
+            iframe.setAttribute(
+                'sandbox',
+                'allow-scripts allow-same-origin allow-popups allow-presentation'
+            );
+
+            preview.appendChild(iframe);
+            preview.hidden = false;
+        };
+
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(renderPreview, 500);
+        });
+
+        renderPreview();
+    });
+});
+</script>

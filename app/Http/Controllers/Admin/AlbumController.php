@@ -121,7 +121,7 @@ class AlbumController extends Controller
             $values['created_at'] = now();
             $values['updated_at'] = now();
 
-            DB::transaction(function () use ($values) {
+            $albumId = DB::transaction(function () use ($values) {
                 $albumId = DB::table('albums')->insertGetId($values);
             
                 if ((int) $values['is_published'] === 1) {
@@ -132,6 +132,8 @@ class AlbumController extends Controller
                         $values['title']
                     );
                 }
+            
+                return $albumId;
             });
         } catch (\Throwable $exception) {
             if ($filename !== null) {
@@ -153,8 +155,8 @@ class AlbumController extends Controller
         }
 
         return redirect()
-            ->route('admin.albums.index')
-            ->with('success', 'Album created.');
+            ->route('admin.albums.edit', ['album' => $albumId])
+            ->with('success', 'Album created Successfully.');
     }
 
     public function edit(int $album)
@@ -266,8 +268,8 @@ class AlbumController extends Controller
         }
 
         return redirect()
-            ->route('admin.albums.index')
-            ->with('success', 'Album updated.');
+            ->route('admin.albums.edit', ['album' => $album])
+            ->with('success', 'Album updated Successfully.');
     }
 
     public function destroy(int $album)

@@ -13,7 +13,7 @@
     <div class="blog-page">
         <div class="admin-page-head">
             <h1>Add Blog Post</h1>
-            <a href="{{ route('admin.blogs.index') }}">← All Blogs</a>
+            <a class="admin-button" href="{{ route('admin.blogs.index') }}">← All Blogs</a>
         </div>
 
         @include('admin.blogs.form')

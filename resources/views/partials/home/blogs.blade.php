@@ -1,10 +1,16 @@
 @php
-    $blogCategories = [
-        1 => ['name' => 'Sports News', 'class' => 'tb-cat-sports-news'],
-        2 => ['name' => 'Celebrity News', 'class' => 'tb-cat-celebrity-news'],
-        6 => ['name' => 'Hot Topics', 'class' => 'tb-cat-hot-topics'],
-        7 => ['name' => 'Net Worth', 'class' => 'tb-cat-net-worth'],
-        8 => ['name' => 'Music Reviews', 'class' => 'tb-cat-music-reviews'],
+    $blogCategoryNames = \Illuminate\Support\Facades\DB::table('blog_types')
+        ->pluck('name', 'id');
+
+    $blogCategoryClasses = [
+        'sports-news' => 'tb-cat-sports-news',
+        'celebrity-news' => 'tb-cat-celebrity-news',
+        'hot-topics' => 'tb-cat-hot-topics',
+        'hot-gists' => 'tb-cat-hot-topics',
+        'net-worth' => 'tb-cat-net-worth',
+        'music-reviews' => 'tb-cat-music-reviews',
+        'education' => 'tb-cat-education',
+        'articles' => 'tb-cat-articles',
     ];
 @endphp
 
@@ -15,8 +21,15 @@
     <div class="tb-home-blog-grid">
         @forelse ($items as $blog)
             @php
-                $category = $blogCategories[(int) $blog->category_id]
-                    ?? ['name' => 'News', 'class' => 'tb-cat-news'];
+                $categoryId = (int) (
+                    $blog->blog_type ?? $blog->category_id ?? 0
+                );
+                
+                $categoryName = $blogCategoryNames->get($categoryId) ?? 'News';
+                
+                $categoryClass = $blogCategoryClasses[
+                    \Illuminate\Support\Str::slug($categoryName)
+                ] ?? 'tb-cat-news';
 
                 $photo = trim((string) $blog->photo);
 
@@ -55,8 +68,8 @@
                 </div>
 
                 <div class="tb-home-blog-info">
-                    <span class="tb-home-blog-category {{ !empty($badge) ? 'tb-cat-music-reviews' : $category['class'] }}">
-                        {{ $badge ?? $category['name'] }}
+                    <span class="tb-home-blog-category {{ $categoryClass }}">
+                        {{ $categoryName }}
                     </span>
 
                     <h3 class="tb-home-blog-title">

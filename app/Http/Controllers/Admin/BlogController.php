@@ -83,7 +83,7 @@ class BlogController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($request, $data) {
+            $blogId = DB::transaction(function () use ($request, $data) {
                 $lastAuthor = DB::table('blogs')
                     ->whereIn('posted_by', ['4', '5'])
                     ->orderByDesc('id')
@@ -108,6 +108,8 @@ class BlogController extends Controller
                         $data['title']
                     );
                 }
+                
+                return $id;
             });
         } catch (\Throwable $e) {
             if ($filename) {
@@ -122,8 +124,8 @@ class BlogController extends Controller
         }
 
         return redirect()
-            ->route('admin.blogs.index')
-            ->with('success', 'Blog post created.');
+            ->route('admin.blogs.edit', ['blog' => $blogId])
+            ->with('success', 'Blog post created Successfully.');
     }
 
     public function edit(int $blog)
@@ -222,8 +224,8 @@ class BlogController extends Controller
         }
 
         return redirect()
-            ->route('admin.blogs.index')
-            ->with('success', 'Blog post updated.');
+            ->route('admin.blogs.edit', ['blog' => $blog])
+            ->with('success', 'Blog post updated Successfully.');
     }
 
     public function destroy(int $blog)
@@ -274,6 +276,7 @@ class BlogController extends Controller
             'intro' => ['required', 'string'],
             'description' => ['required', 'string'],
             'scriptUrl' => ['nullable', 'string'],
+            'script_url2' => ['nullable', 'string'],
             'IsPublished' => ['required', Rule::in(['YES', 'NO'])],
             'photo_upload' => [
                 'nullable',
@@ -285,6 +288,7 @@ class BlogController extends Controller
 
         $data['blog_type'] = $data['category_id'];
         $data['script_url'] = $data['scriptUrl'] ?? null;
+        $data['script_url2'] = $data['script_url2'] ?? null;
         $data['Is_published'] = $data['IsPublished'] === 'YES' ? 1 : 0;
 
         unset(

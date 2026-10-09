@@ -342,6 +342,18 @@
 
 
             </div>
+            
+            @if (filled($post->script_url ?? ''))
+                <div class="tb-blog-embed">
+                    {!! $post->script_url !!}
+                </div>
+            @endif
+            
+            @if (filled($post->script_url2 ?? ''))
+                <div class="tb-blog-embed">
+                    {!! $post->script_url2 !!}
+                </div>
+            @endif
 
             <p class="tb-article-source">
                 <strong>Source:</strong>

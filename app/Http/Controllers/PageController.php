@@ -1860,6 +1860,10 @@ class PageController extends Controller
 
         abort_unless($mix, 404);
         
+        $mix->back_cover = DB::table('dj_mixs')
+            ->where('id', $mix->id)
+            ->value('back_cover');
+        
         $mix->audiomack_embed_url = DB::table('dj_mixs')
             ->where('id', $mix->id)
             ->value('audiomack_embed_url');
@@ -2275,6 +2279,10 @@ class PageController extends Controller
             ->first();
 
         abort_unless($post, 404);
+        
+        $post->script_url2 = DB::table('blogs')
+            ->where('id', $post->id)
+            ->value('script_url2');
 
         $categories = DB::table('blog_types')
             ->select('id', 'name', 'slug')

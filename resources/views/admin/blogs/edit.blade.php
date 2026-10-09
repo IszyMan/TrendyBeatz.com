@@ -13,7 +13,16 @@
     <div class="blog-page">
         <div class="admin-page-head">
             <h1>Edit Blog Post #{{ $blog->id }}</h1>
-            <a href="{{ route('admin.blogs.index') }}">← All Blogs</a>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <a class="admin-button" href="{{ route('admin.blogs.create') }}">
+                    + Add Blog Post
+                </a>
+
+                <a class="admin-button" href="{{ route('admin.blogs.index') }}">
+                    ← All Blogs
+                </a>
+            </div>
         </div>
 
         @include('admin.blogs.form')
@@ -23,4 +32,3 @@
 @push('scripts')
     @include('admin.blogs.editor-script')
 @endpush
-

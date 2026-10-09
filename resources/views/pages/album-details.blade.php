@@ -231,13 +231,13 @@
                     {{ $descriptionStart }}
                 </p>
 
-                @if ($albumWriteUp !== '')
+               @if ($albumWriteUp !== '')
                     @foreach (
                         preg_split('/\R{2,}/', trim((string) $album->description))
                         as $paragraph
                     )
                         @if (filled(strip_tags($paragraph)))
-                            <p>{{ strip_tags($paragraph) }}</p>
+                            <p>{!! nl2br(e(strip_tags($paragraph))) !!}</p>
                         @endif
                     @endforeach
                 @else

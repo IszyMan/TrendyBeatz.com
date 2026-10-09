@@ -130,7 +130,7 @@
                 </h2>
 
                 @if (filled($artist->Place_Birth))
-                    <p>{{ strip_tags($artist->Place_Birth) }}</p>
+                    <p>{!! nl2br(e(strip_tags((string) $artist->Place_Birth))) !!}</p>
                 @endif
 
             </section>

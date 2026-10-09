@@ -6,7 +6,7 @@
     <div class="admin-page-head">
         <h1>Add Listing</h1>
 
-        <a href="{{ route('admin.listings.index') }}">
+        <a class="admin-button" href="{{ route('admin.listings.index') }}">
             ← All Listings
         </a>
     </div>

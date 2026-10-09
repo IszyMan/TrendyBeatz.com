@@ -99,6 +99,17 @@ class SitemapController extends Controller
 
         $seen = [];
 
+        $indexUrl = $this->categoryIndexUrl($type);
+        
+        $seen[$indexUrl] = true;
+        
+        $xml .= '<url>';
+        $xml .= '<loc>' . $this->escape($indexUrl) . '</loc>';
+        $xml .= '<changefreq>daily</changefreq>';
+        $xml .= '<priority>1.0</priority>';
+        $xml .= '<lastmod>' . $date . '</lastmod>';
+        $xml .= '</url>';
+
         foreach ($items as $item) {
             $location = $this->itemUrl($type, $item);
 
@@ -309,6 +320,30 @@ class SitemapController extends Controller
             default:
                 abort(404);
         }
+    }
+    
+    private function categoryIndexUrl(string $type): string
+    {
+        return match ($type) {
+            'music' => url('/musics'),
+            'naija-music' => url('/musics/naija'),
+            'ghana-music' => url('/musics/ghana'),
+            'african-music' => url('/musics/african'),
+    
+            'video' => route('videos.index'),
+            'album' => route('albums.index'),
+            'blog' => route('blogs.index'),
+            'dj-mix' => route('mixes.index'),
+            'artists' => route('artists.index'),
+    
+            // Uses the DJ mixes listing as the DJ directory entry.
+            'dj' => route('mixes.index'),
+    
+            'song-of-the-day' => route('songs.day'),
+            'song-of-the-week' => route('songs.week'),
+    
+            default => abort(404),
+        };
     }
 
     private function pageUrl(string $type, int $page): string

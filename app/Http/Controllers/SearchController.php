@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use App\Support\DjMixUrl;
+use App\Support\AlbumUrl;
 
 class SearchController extends Controller
 {
@@ -319,21 +321,17 @@ class SearchController extends Controller
 
             'video' => VideoUrl::detail($listing),
 
-            'mix' => route('mixes.show', [
+            'mix' => DjMixUrl::detail((object) [
                 'id' => $result->id,
-                'slug' => trim(
-                    (string) $result->slug,
-                    " \t\n\r\0\x0B/"
-                ) ?: Str::slug(
-                    $result->artist_name . ' ' . $result->title
-                ),
+                'dj_name' => $result->artist_name,
+                'mix_title' => $result->title,
             ]),
 
-            'album' => route('albums.show', [
+            'album' => AlbumUrl::detail((object) [
                 'id' => $result->id,
-                'slug' => Str::slug(
-                    $result->artist_name . ' ' . $result->title
-                ),
+                'artist_name' => $result->artist_name,
+                'title' => $result->title,
+                'featuring' => $result->featuring,
             ]),
 
             'blog' => route('blogs.show', [

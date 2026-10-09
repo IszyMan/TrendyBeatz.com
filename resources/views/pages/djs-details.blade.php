@@ -111,10 +111,20 @@
                 <h2 class="sub-section-heading">
                     About {{ $djName }}
                 </h2>
-
-                @foreach (preg_split('/\R\s*\R/', $biography) as $paragraph)
+        
+                @php
+                    $biographyText = preg_replace(
+                        '/<br\s*\/?>/i',
+                        "\n",
+                        (string) $biography
+                    );
+        
+                    $biographyText = trim(strip_tags($biographyText));
+                @endphp
+        
+                @foreach (preg_split('/\R\s*\R/', $biographyText) as $paragraph)
                     @if (trim($paragraph) !== '')
-                        <p>{{ $paragraph }}</p>
+                        <p>{!! nl2br(e(trim($paragraph))) !!}</p>
                     @endif
                 @endforeach
             </section>

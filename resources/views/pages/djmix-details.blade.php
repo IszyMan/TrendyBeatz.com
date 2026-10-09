@@ -111,6 +111,17 @@
         } else {
             $trackUrl = asset(ltrim($track, '/'));
         }
+        
+        
+        $backCover = trim((string) ($mix->back_cover ?? ''));
+
+        if ($backCover === '') {
+            $backCoverUrl = null;
+        } elseif (preg_match('~^https?://~i', $backCover)) {
+            $backCoverUrl = $backCover;
+        } else {
+            $backCoverUrl = asset('images/' . basename($backCover));
+        }
 
         $currentDate = now();
     @endphp
@@ -222,7 +233,7 @@
         
                 <div class="tb-music-detail-description">
                     @foreach ($aboutParagraphs as $paragraph)
-                        <p>{{ $paragraph }}</p>
+                        <p>{!! nl2br(e($paragraph)) !!}</p>
                     @endforeach
                     
                     
@@ -234,6 +245,8 @@
                 </div>
             </section>
         @endif
+        
+      
         
         <div class="tb-green-button-group">
         <a
@@ -253,6 +266,24 @@
             Read: Why You Should Stop Downloading Music and Start Streaming Instead
         </a>
     </div>
+    
+    
+    @if ($backCoverUrl)
+        <section class="tb-music-detail-section">
+            <h2 style="text-align:center">
+                Mixtape Back Cover
+            </h2>
+    
+            <div class="tb-music-detail-cover tb-mix-detail-cover">
+                <img
+                    src="{{ $backCoverUrl }}"
+                    alt="{{ $displayTitle }} back cover"
+                    loading="lazy"
+                    onerror="this.parentElement.remove()"
+                >
+            </div>
+        </section>
+    @endif
         
         @if (filled($mix->audiomack_embed_url ?? null))
             <section class="tb-music-detail-section">

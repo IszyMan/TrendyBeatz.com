@@ -305,7 +305,17 @@
 
                     @foreach ([$video->TrackInfo, $video->trackinfo1, $video->trackinfo2] as $paragraph)
                         @if (filled($paragraph))
-                            <p>{{ strip_tags($paragraph) }}</p>
+                            @php
+                                $text = preg_replace(
+                                    '/<br\s*\/?>/i',
+                                    "\n",
+                                    (string) $paragraph
+                                );
+                    
+                                $text = trim(strip_tags($text));
+                            @endphp
+                    
+                            <p>{!! nl2br(e($text)) !!}</p>
                         @endif
                     @endforeach
                     

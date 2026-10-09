@@ -84,7 +84,7 @@ class DjController extends Controller
             $values['created_at'] = now();
             $values['updated_at'] = now();
 
-            DB::transaction(function () use ($values) {
+            $djId = DB::transaction(function () use ($values) {
                 $id = DB::table('djs')->insertGetId($values);
             
                 if ((int) $values['is_published'] === 1) {
@@ -95,6 +95,8 @@ class DjController extends Controller
                         $values['name']
                     );
                 }
+            
+                return $id;
             });
         } catch (\Throwable $exception) {
             if ($filename !== null) {
@@ -107,8 +109,8 @@ class DjController extends Controller
         }
 
         return redirect()
-            ->route('admin.djs.index')
-            ->with('success', 'DJ created.');
+            ->route('admin.djs.edit', ['dj' => $djId])
+            ->with('success', 'DJ created Successfully.');
     }
 
     public function edit(int $dj)
@@ -208,8 +210,8 @@ class DjController extends Controller
         }
 
         return redirect()
-            ->route('admin.djs.index')
-            ->with('success', 'DJ updated.');
+            ->route('admin.djs.edit', ['dj' => $dj])
+            ->with('success', 'DJ updated Successfully.');
     }
 
     public function destroy(int $dj)

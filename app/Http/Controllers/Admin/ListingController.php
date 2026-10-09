@@ -323,7 +323,7 @@ class ListingController extends Controller
 
         return redirect()
             ->route('admin.listings.edit', $existing->id)
-            ->with('success', 'Listing updated.');
+            ->with('success', 'Listing updated Successfully.');
     }
 
     public function destroy(int $listing): RedirectResponse

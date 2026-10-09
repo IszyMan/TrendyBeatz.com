@@ -87,7 +87,7 @@ class ArtistController extends Controller
             $values['updated_at'] = now();
 
             // MySQL assigns the numeric primary key automatically.
-            DB::transaction(function () use ($values) {
+            $artistId = DB::transaction(function () use ($values) {
                 $id = DB::table('artists')->insertGetId($values);
             
                 DB::table('artists')
@@ -109,6 +109,8 @@ class ArtistController extends Controller
                         $values['stage_name']
                     );
                 }
+            
+                return $id;
             });
         } catch (\Throwable $exception) {
             if ($filename !== null) {
@@ -121,8 +123,8 @@ class ArtistController extends Controller
         }
 
         return redirect()
-            ->route('admin.artists.index')
-            ->with('success', 'Artist created.');
+            ->route('admin.artists.edit', ['artist' => $artistId])
+            ->with('success', 'Artist created Successfully.');
     }
 
     public function edit(int $artist)
@@ -222,8 +224,8 @@ class ArtistController extends Controller
         }
 
         return redirect()
-            ->route('admin.artists.index')
-            ->with('success', 'Artist updated.');
+            ->route('admin.artists.edit', ['artist' => $artist])
+            ->with('success', 'Artist updated Successfully.');
     }
 
     public function destroy(int $artist)

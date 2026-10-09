@@ -185,6 +185,15 @@
                     @endforeach
                 </p>
             @endif
+            
+            @if (trim((string) ($song->producedby ?? '')) !== '')
+                <p>
+                    <strong>Produced by:</strong>
+                    <span class="tb-music-detail-green">
+                        {{ $song->producedby }}
+                    </span>
+                </p>
+            @endif
 
             @if (trim((string) $song->YearOfRelease) !== '')
                 <p>

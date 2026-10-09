@@ -1006,6 +1006,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     background: #dd086c;
 }
 
+.tb-cat-education {
+    color: #fff;
+    background: #087986;
+}
+
+.tb-cat-articles {
+    color: #fff;
+    background: #495a70;
+}
+
 .tb-cat-hot-topics {
     color: #fff;
     background: #eb2816;
@@ -2945,6 +2955,38 @@ a.tb-blog-badge:hover {
     font-size: 12px;
     font-style: normal;
     font-weight: 800;
+}
+
+.tb-blog-embed {
+    width: 100%;
+    max-width: 700px;
+    margin: 24px auto;
+    display: flex;
+    justify-content: center;
+}
+
+.tb-blog-embed iframe {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    border: 0;
+}
+
+.admin-blog-embed-preview {
+    width: 100%;
+    max-width: 700px;
+    margin: 20px auto 0;
+}
+
+.admin-blog-embed-preview[hidden] {
+    display: none;
+}
+
+.admin-blog-embed-preview iframe {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    border: 0;
 }
 
 .tb-article-source {
@@ -5137,33 +5179,31 @@ a.tb-pagination-link:hover {
     /* ]]> */
     </script>
     
-    <script data-cfasync="false" type="text/javascript" id="clever-core">
+<script data-cfasync="false" type="text/javascript" id="clever-core">
     /* <![CDATA[ */
-        (function (document, window) {
-            var a, c = document.createElement("script"), f = window.frameElement;
-    
-            c.id = "CleverCoreLoader103071";
-            c.src = "https://scripts.cleverwebserver.com/b5e54b8379a1cec1ea981e47bfb5ada1.js";
-    
-            c.async = !0;
-            c.type = "text/javascript";
-            c.setAttribute("data-target", window.name || (f && f.getAttribute("id")));
-            c.setAttribute("data-callback", "put-your-callback-function-here");
-            c.setAttribute("data-callback-url-click", "put-your-click-macro-here");
-            c.setAttribute("data-callback-url-view", "put-your-view-macro-here");
-    
-            try {
-                a = parent.document.getElementsByTagName("script")[0] || document.getElementsByTagName("script")[0];
-            } catch (e) {
-                a = !1;
-            }
-    
-            a || (a = document.getElementsByTagName("head")[0] || document.getElementsByTagName("body")[0]);
-            a.parentNode.insertBefore(c, a);
-        })(document, window);
+    (function (document, window) {
+        var a, c = document.createElement("script"), f = window.frameElement;
+
+        c.id= "CleverCoreLoader107791";
+        c.src = "https://scripts.cleverwebserver.com/a25d2cf952aaed65f0c9bf09a2924f24.js";
+        c.async = !0;
+        c.type = "text/javascript";
+        c.setAttribute("data-target",window.name|| (f && f.getAttribute("id")));
+        c.setAttribute("data-callback", "put-your-callback-function-here");
+        c.setAttribute("data-callback-url-click", "put-your-click-macro-here");
+        c.setAttribute("data-callback-url-view", "put-your-view-macro-here");
+        try {
+            a = parent.document.getElementsByTagName("script")[0] || document.getElementsByTagName("script")[0];
+        } catch (e) {
+            a = !1;
+        }
+        a || (a = document.getElementsByTagName("head")[0] || document.getElementsByTagName("body")[0]);
+        a.parentNode.insertBefore(c, a);
+    })(document, window);
     /* ]]> */
-    </script>
-    
+</script>
+<div class="clever-core-ads"></div>
+
     <script type="text/javascript">
   window._taboola = window._taboola || [];
   _taboola.push({flush: true});

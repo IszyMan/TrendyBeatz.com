@@ -123,7 +123,7 @@ class DjMixController extends Controller
             }
 
             // Numeric ID and counters use their database defaults.
-            DB::transaction(function () use ($values) {
+            $mixId = DB::transaction(function () use ($values) {
                 $id = DB::table('dj_mixs')->insertGetId($values);
             
                 if ((int) $values['is_published'] === 1) {
@@ -134,6 +134,8 @@ class DjMixController extends Controller
                         $values['title']
                     );
                 }
+            
+                return $id;
             });
         } catch (\Throwable $exception) {
             foreach ($uploaded as $filename) {
@@ -156,8 +158,8 @@ class DjMixController extends Controller
         }
 
         return redirect()
-            ->route('admin.dj-mixes.index')
-            ->with('success', 'DJ mix created.');
+            ->route('admin.dj-mixes.edit', ['dj_mix' => $mixId])
+            ->with('success', 'DJ mix created Successfully.');
     }
 
     public function edit(int $dj_mix)
@@ -272,8 +274,8 @@ class DjMixController extends Controller
         }
 
         return redirect()
-            ->route('admin.dj-mixes.index')
-            ->with('success', 'DJ mix updated.');
+            ->route('admin.dj-mixes.edit', ['dj_mix' => $dj_mix])
+            ->with('success', 'DJ mix updated Successfully.');
     }
 
     public function destroy(int $dj_mix)
