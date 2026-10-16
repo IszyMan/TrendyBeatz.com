@@ -277,6 +277,7 @@ class BlogController extends Controller
             'description' => ['required', 'string'],
             'scriptUrl' => ['nullable', 'string'],
             'script_url2' => ['nullable', 'string'],
+            'hide_from_source' => ['nullable', 'boolean'],
             'IsPublished' => ['required', Rule::in(['YES', 'NO'])],
             'photo_upload' => [
                 'nullable',
@@ -285,6 +286,8 @@ class BlogController extends Controller
                 'max:4096',
             ],
         ]);
+
+        $data['hide_from_source'] = $request->boolean('hide_from_source') ? 1 : 0;
 
         $data['blog_type'] = $data['category_id'];
         $data['script_url'] = $data['scriptUrl'] ?? null;

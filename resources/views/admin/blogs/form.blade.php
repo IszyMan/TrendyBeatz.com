@@ -173,27 +173,64 @@
         </div>
     </section>
 
+    
+
     <section class="blog-section">
-        <div class="blog-section-heading">Publish now or later</div>
+        <div class="blog-section-heading">
+            Publishing options
+        </div>
 
         <div class="blog-section-body">
-            
-
             <input type="hidden" name="IsPublished" value="NO">
+            <input type="hidden" name="hide_from_source" value="0">
 
-            <div class="blog-publish">
+            <div
+                class="blog-publish"
+                style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;"
+            >
                 <label>
                     <input
                         type="checkbox"
                         name="IsPublished"
                         value="YES"
-                        @checked(old('IsPublished', $blog->IsPublished ?? 'NO') === 'YES')
-                    >
-                    Publish immediately
-                </label>
+                        @checked(
+                            old('IsPublished', $blog->IsPublished ?? 'NO') === 'YES'
+                            )
+                        >
+
+                        Publish immediately
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="hide_from_source"
+                            value="1"
+                            role="switch"
+                            @checked(
+                                (int) old(
+                                    'hide_from_source',
+                                    $blog->hide_from_source ?? 0
+                                ) === 1
+                            )
+                        >
+
+                        Hide from Source
+                    </label>
+                </div>
+
+                <small style="display: block; margin-top: 10px; color: #666;">
+                    When the hide from source is enabled, the description loads separately for visitors.
+                    The initial page source shows “Loading…” instead.
+                </small>
+
+                @error('hide_from_source')
+                    <small style="color: #b91c1c;">
+                        {{ $message }}
+                    </small>
+                @enderror
             </div>
-        </div>
-    </section>
+        </section>
 
     <div class="blog-actions">
         <button class="admin-button" type="submit">

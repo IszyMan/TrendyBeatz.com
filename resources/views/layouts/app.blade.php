@@ -65,26 +65,61 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <link rel="next" href="@yield('next_url')">
     @endif
 
-    <meta property="og:type" content="website">
+    
+    @php
+        $socialTitle = trim($__env->yieldContent(
+            'social_title',
+            $metaTitle
+        ));
+
+        $socialDescription = trim($__env->yieldContent(
+            'social_description',
+            $metaDescription
+        ));
+
+        $socialType = trim($__env->yieldContent(
+            'social_type',
+            'website'
+        ));
+
+        $socialImageWidth = trim(
+            $__env->yieldContent('social_image_width')
+        );
+
+        $socialImageHeight = trim(
+            $__env->yieldContent('social_image_height')
+        );
+    @endphp
+
+    <meta property="og:type" content="{{ $socialType }}">
     <meta property="og:site_name" content="TrendyBeatz">
-    <meta property="og:title" content="{{ $metaTitle }}">
-    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:title" content="{{ $socialTitle }}">
+    <meta property="og:description" content="{{ $socialDescription }}">
     <meta property="og:url" content="{{ $canonicalUrl }}">
 
     @if ($socialImage !== '')
         <meta property="og:image" content="{{ $socialImage }}">
+        <meta property="og:image:alt" content="{{ $socialTitle }}">
+
+        @if ($socialImageWidth !== '' && $socialImageHeight !== '')
+            <meta property="og:image:width" content="{{ $socialImageWidth }}">
+            <meta property="og:image:height" content="{{ $socialImageHeight }}">
+        @endif
     @endif
 
     <meta
         name="twitter:card"
         content="{{ $socialImage !== '' ? 'summary_large_image' : 'summary' }}"
     >
-    <meta name="twitter:title" content="{{ $metaTitle }}">
-    <meta name="twitter:description" content="{{ $metaDescription }}">
+    <meta name="twitter:title" content="{{ $socialTitle }}">
+    <meta name="twitter:description" content="{{ $socialDescription }}">
 
     @if ($socialImage !== '')
         <meta name="twitter:image" content="{{ $socialImage }}">
+        <meta name="twitter:image:alt" content="{{ $socialTitle }}">
     @endif
+
+
     <link rel="stylesheet" href="{{ asset('css/trendybeatz.css') }}">
     <link rel="stylesheet" href="{{ asset('css/trendybeatz-nav.css') }}">
     <link rel="icon" type="image/png" href="{{ asset('images/faviconn.png') }}">
@@ -93,7 +128,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 
 <style>
-
 
 /* Logo */
 
@@ -5105,6 +5139,7 @@ a.tb-pagination-link:hover {
         font-size: 18px;
     }
 }
+
 
     
 </style>

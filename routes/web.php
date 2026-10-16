@@ -124,6 +124,10 @@ Route::get('/djmix/posted-by/{slug}', [PageController::class, 'mixesPostedBy'])
 Route::get('/djmix/{id}/{slug}', [PageController::class, 'mixDetails'])
     ->whereNumber('id')->name('mixes.show');
 
+Route::get('/blog/{id}/description',[PageController::class, 'blogDescription'])
+    ->whereNumber('id')
+    ->name('blogs.description');    
+
 Route::get('/blogs', [PageController::class, 'blogs'])
     ->name('blogs.index');
 

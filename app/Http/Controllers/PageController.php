@@ -15,22 +15,24 @@ class PageController extends Controller
 {
     private function tracks(): Builder
     {
-        return DB::table('listings as l')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'a',
-                'a.id',
+        return DB::table('listings as listing')
+            ->leftJoin(
+                'artists as artist',
+                'artist.id',
                 '=',
-                'l.artist_id'
+                'listing.artist_id'
             )
-            ->select('l.*', 'a.stage_name as artist_name')
-            ->where('l.is_published', 1);
+            ->select(
+                'listing.*',
+                'artist.stage_name as artist_name'
+            )
+            ->where('listing.is_published', 1);
     }
 
     private function audio(): Builder
     {
         return $this->tracks()
-            ->where('l.listing_type', 1);
+            ->where('listing.listing_type', 1);
     }
 
     private function category(string $category, int $limit = 60)
@@ -38,9 +40,9 @@ class PageController extends Controller
         $query = $this->audio();
 
         if ($category === 'gospel') {
-            $query->where('l.is_gospel', 1);
+            $query->where('listing.is_gospel', 1);
         } elseif ($category === 'highlife') {
-            $query->where('l.is_high_life', 1);
+            $query->where('listing.is_high_life', 1);
         } else {
             $countryId = match ($category) {
                 'naija' => 1,
@@ -50,13 +52,13 @@ class PageController extends Controller
             };
 
             $query
-                ->where('l.country_id', $countryId)
-                ->where('l.is_gospel', 0)
-                ->where('l.is_high_life', 0);
+                ->where('listing.country_id', $countryId)
+                ->where('listing.is_gospel', 0)
+                ->where('listing.is_high_life', 0);
         }
 
         return $query
-            ->orderByDesc('l.id')
+            ->orderByDesc('listing.id')
             ->limit($limit)
             ->get();
     }
@@ -76,19 +78,23 @@ class PageController extends Controller
     ): View|RedirectResponse {
         $artistNameSql = "
             COALESCE(
-                NULLIF(artist.Stage_Name, ''),
-                NULLIF(artist.ArtistsName, ''),
+                NULLIF(artist.stage_name, ''),
                 'TrendyBeatz'
-            ) as artist_name
+            ) AS artist_name
         ";
 
-        $song = self::recoveryTable('listing as song')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
+        $song = DB::table('listings as song')
+            ->leftJoin(
+                'artists as artist',
+                'artist.id',
                 '=',
-                'song.Artists_Id'
+                'song.artist_id'
+            )
+            ->leftJoin(
+                'albums as album',
+                'album.id',
+                '=',
+                'song.album_id'
             )
             ->leftJoin(
                 'users as poster',
@@ -96,27 +102,46 @@ class PageController extends Controller
                 '=',
                 'song.posted_by'
             )
-            ->leftJoinSub(
-                self::recoverySource('albums'),
-                'album',
-                'album.id',
-                '=',
-                'song.album_id'
-            )
             ->select(
                 'song.*',
+                'song.artist_id as Artists_Id',
+                'song.track_title as TrackTitle',
+                'song.featuring as Featuring',
+                'song.released_year as YearOfRelease',
+                'song.track_url as TrackUrl',
+                'song.cover_url as CoverUrl',
+                'song.track_info as TrackInfo',
+                'song.track_info1 as trackinfo1',
+                'song.track_info2 as trackinfo2',
+                'song.script_url as scriptUrl',
+                'song.produced_by as producedby',
+                'song.directed_by as directedby',
+                'song.is_gospel as isgospel',
+                'song.is_high_life as ishighlife',
                 'album.title as album_name',
+                'album.featuring as album_featuring',
                 'artist.id as artist_record_id',
-                DB::raw($artistNameSql),
                 'poster.name as posted_by_name'
             )
+            ->selectRaw($artistNameSql)
+            ->selectRaw("
+                CASE song.country_id
+                    WHEN '1' THEN 'naija'
+                    WHEN '2' THEN 'ghana'
+                    WHEN '3' THEN 'african'
+                    ELSE song.country_id
+                END AS country_id
+            ")
             ->where('song.id', $id)
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
+            ->where('song.listing_type', 1)
+            ->where('song.is_published', 1)
             ->first();
 
         abort_unless($song, 404);
 
+        /*
+        * Keep the existing canonical URL behavior.
+        */
         $canonicalSlug = \App\Support\MusicUrl::slug($song);
 
         if ($slug !== $canonicalSlug) {
@@ -126,8 +151,12 @@ class PageController extends Controller
             );
         }
 
+        /*
+        * Match featured artistes to published artist profiles.
+        * Only link a name when exactly one profile matches.
+        */
         $featuredNames = collect(
-            explode(',', (string) ($song->Featuring ?? ''))
+            explode(',', (string) ($song->featuring ?? ''))
         )
             ->map(fn ($name) => trim($name))
             ->filter(fn ($name) => $name !== '')
@@ -145,20 +174,13 @@ class PageController extends Controller
         $profiles = collect();
 
         if ($namesToMatch !== []) {
-            $profiles = self::recoveryTable('artists')
-                ->select('Stage_Name', 'ArtistsName')
-                ->where('IsPublished', 'YES')
-                ->where(function ($query) use ($namesToMatch) {
-                    $query
-                        ->whereIn(
-                            DB::raw('LOWER(TRIM(Stage_Name))'),
-                            $namesToMatch
-                        )
-                        ->orWhereIn(
-                            DB::raw('LOWER(TRIM(ArtistsName))'),
-                            $namesToMatch
-                        );
-                })
+            $profiles = DB::table('artists')
+                ->select('id', 'stage_name')
+                ->where('is_published', 1)
+                ->whereIn(
+                    DB::raw('LOWER(TRIM(stage_name))'),
+                    $namesToMatch
+                )
                 ->get();
         }
 
@@ -166,25 +188,16 @@ class PageController extends Controller
             function ($name) use ($profiles, $normalizeName) {
                 $matches = $profiles->filter(
                     fn ($artist) =>
-                        $normalizeName($artist->Stage_Name)
-                            === $normalizeName($name)
-                        || $normalizeName($artist->ArtistsName)
+                        $normalizeName($artist->stage_name)
                             === $normalizeName($name)
                 );
 
                 $profileSlug = null;
 
                 if ($matches->count() === 1) {
-                    $artist = $matches->first();
-                    $profileName = trim((string) $artist->Stage_Name);
-
-                    if ($profileName === '') {
-                        $profileName = trim(
-                            (string) $artist->ArtistsName
-                        );
-                    }
-
-                    $profileSlug = Str::slug($profileName);
+                    $profileSlug = Str::slug(
+                        trim((string) $matches->first()->stage_name)
+                    );
                 }
 
                 return [
@@ -194,45 +207,60 @@ class PageController extends Controller
             }
         );
 
-        $relatedListings = static function () use ($artistNameSql) {
-            return self::recoveryTable('listing as related')
-                ->leftJoinSub(
-                    self::recoverySource('artists'),
-                    'artist',
-                    'artist.Artists_Id',
+        /*
+        * Shared query for related songs and videos.
+        * A fresh query is created for each section.
+        */
+        $relatedListings = static function () use ($artistNameSql): Builder {
+            return DB::table('listings as related')
+                ->leftJoin(
+                    'artists as artist',
+                    'artist.id',
                     '=',
-                    'related.Artists_Id'
+                    'related.artist_id'
                 )
                 ->select(
                     'related.id',
-                    'related.TrackTitle as track_title',
-                    'related.Featuring as featuring',
-                    'related.CoverUrl as cover_url',
-                    'related.ListingType as listing_type',
-                    DB::raw($artistNameSql)
+                    'related.track_title',
+                    'related.featuring',
+                    'related.cover_url'
                 )
-                ->where('related.IsPublished', 'YES');
+                ->selectRaw("
+                    CASE related.listing_type
+                        WHEN '1' THEN 'Audio'
+                        WHEN '2' THEN 'Video'
+                        ELSE NULL
+                    END AS listing_type
+                ")
+                ->selectRaw($artistNameSql)
+                ->where('related.is_published', 1);
         };
 
         $artistSongs = $relatedListings()
-            ->where('related.Artists_Id', $song->Artists_Id)
+            ->where('related.artist_id', $song->artist_id)
             ->where('related.id', '<>', $song->id)
-            ->where('related.ListingType', 'Audio')
+            ->where('related.listing_type', 1)
             ->orderByDesc('related.id')
             ->limit(6)
             ->get();
 
         $artistVideos = $relatedListings()
-            ->where('related.Artists_Id', $song->Artists_Id)
-            ->whereRaw('LOWER(related.ListingType) = ?', ['video'])
+            ->where('related.artist_id', $song->artist_id)
+            ->where('related.listing_type', 2)
             ->orderByDesc('related.id')
             ->limit(3)
             ->get();
 
-        $artistAlbums = self::recoveryTable('albums')
-            ->select('id', 'title', 'cover_url', 'released_year')
-            ->where('artist_id', $song->Artists_Id)
-            ->where('IsPublished', 'YES')
+        $artistAlbums = DB::table('albums')
+            ->select(
+                'id',
+                'title',
+                'featuring',
+                'cover_url',
+                'released_year'
+            )
+            ->where('artist_id', $song->artist_id)
+            ->where('is_published', 1)
             ->orderByDesc('id')
             ->limit(5)
             ->get()
@@ -243,10 +271,10 @@ class PageController extends Controller
             });
 
         $collaborations = $relatedListings()
-            ->where('related.Artists_Id', '<>', $song->Artists_Id)
-            ->where('related.ListingType', 'Audio')
+            ->where('related.artist_id', '<>', $song->artist_id)
+            ->where('related.listing_type', 1)
             ->where(
-                'related.Featuring',
+                'related.featuring',
                 'like',
                 '%' . addcslashes($song->artist_name, '%_\\') . '%'
             )
@@ -256,15 +284,15 @@ class PageController extends Controller
 
         $latestMusic = $relatedListings()
             ->where('related.id', '<>', $song->id)
-            ->whereIn(
-                'related.ListingType',
-                ['Audio', 'video', 'Video']
-            )
+            ->whereIn('related.listing_type', [1, 2])
             ->orderByDesc('related.id')
             ->limit(6)
             ->get();
 
-        $trackPath = trim((string) ($song->TrackUrl ?? ''));
+        /*
+        * Build the audio URL without changing stored filenames.
+        */
+        $trackPath = trim((string) ($song->track_url ?? ''));
 
         $cdnAudioUrl = rtrim(
             trim((string) config('cdn.audio_url')),
@@ -300,6 +328,9 @@ class PageController extends Controller
             }
         }
 
+        /*
+        * Preserve the existing cached CDN availability check.
+        */
         if ($trackUrl !== null) {
             $hasAudioFile = Cache::remember(
                 'audio-file-available:v2:' . sha1($trackUrl),
@@ -321,22 +352,18 @@ class PageController extends Controller
                             )[0]
                         ));
 
-                        $isAudio = str_starts_with(
-                            $contentType,
-                            'audio/'
-                        ) || in_array(
-                            $contentType,
-                            [
-                                'application/octet-stream',
-                                'binary/octet-stream',
-                                'application/mp3',
-                            ],
-                            true
-                        );
+                        $isAudio = str_starts_with($contentType, 'audio/')
+                            || in_array(
+                                $contentType,
+                                [
+                                    'application/octet-stream',
+                                    'binary/octet-stream',
+                                    'application/mp3',
+                                ],
+                                true
+                            );
 
-                        $contentLength = $response->header(
-                            'Content-Length'
-                        );
+                        $contentLength = $response->header('Content-Length');
 
                         return $isAudio
                             && (
@@ -363,41 +390,51 @@ class PageController extends Controller
         ));
     }
 
-    public function songOfTheDay(): View
+    private function publishedAudioQuery(): Builder
     {
-        $songs = self::recoveryTable('featured_rated as featured')
-            ->joinSub(
-                self::recoverySource('listing'),
-                'song',
-                'song.id',
+        return DB::table('listings as song')
+            ->leftJoin(
+                'artists as artist',
+                'artist.id',
                 '=',
-                'featured.listing_id'
-            )
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
+                'song.artist_id'
             )
             ->select(
                 'song.id',
                 'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
+                'song.track_title',
+                'song.cover_url',
+                'song.featuring',
+                'song.track_url',
                 'song.created_at',
-                'featured.rate_no',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
+                'song.released_year'
             )
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
+            ->selectRaw("
+                COALESCE(
+                    NULLIF(artist.stage_name, ''),
+                    'TrendyBeatz'
+                ) AS artist_name
+            ")
+            ->where('song.listing_type', 1)
+            ->where('song.is_published', 1);
+    }
+
+    private function featuredAudioQuery(int $featureType): Builder
+    {
+        return $this->publishedAudioQuery()
+            ->join(
+                'listing_features as featured',
+                'featured.listing_id',
+                '=',
+                'song.id'
+            )
+            ->addSelect('featured.rating as rate_no')
+            ->where('featured.listing_feature_type', $featureType);
+    }
+
+    public function songOfTheDay(): View
+    {
+        $songs = $this->featuredAudioQuery(1)
             ->orderByDesc('featured.id')
             ->paginate(30);
 
@@ -408,39 +445,7 @@ class PageController extends Controller
 
     public function topRatedSongs(): View
     {
-        $songs = self::recoveryTable('featured_rated as featured')
-            ->joinSub(
-                self::recoverySource('listing'),
-                'song',
-                'song.id',
-                '=',
-                'featured.listing_id'
-            )
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.created_at',
-                'featured.rate_no',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
+        $songs = $this->featuredAudioQuery(1)
             ->orderByDesc('featured.id')
             ->paginate(30);
 
@@ -451,39 +456,7 @@ class PageController extends Controller
 
     public function topTrendingSongs(): View
     {
-        $songs = self::recoveryTable('featured_rated as featured')
-            ->joinSub(
-                self::recoverySource('listing'),
-                'song',
-                'song.id',
-                '=',
-                'featured.listing_id'
-            )
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.created_at',
-                'featured.rate_no',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
+        $songs = $this->featuredAudioQuery(1)
             ->orderByDesc('featured.id')
             ->paginate(30);
 
@@ -494,39 +467,7 @@ class PageController extends Controller
 
     public function songsOfTheWeek(): View
     {
-        $songs = self::recoveryTable('song_of_the_week as featured')
-            ->joinSub(
-                self::recoverySource('listing'),
-                'song',
-                'song.id',
-                '=',
-                'featured.listing_id'
-            )
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.TrackUrl as track_url',
-                'featured.rate_no',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
+        $songs = $this->featuredAudioQuery(2)
             ->whereNotNull('song.slug')
             ->where('song.slug', '<>', '')
             ->orderByDesc('featured.id')
@@ -541,36 +482,14 @@ class PageController extends Controller
             ->select('id', 'name')
             ->whereIn('id', [4, 5])
             ->get()
-            ->first(fn ($user) => Str::slug($user->name) === $slug);
+            ->first(
+                fn ($user) => Str::slug($user->name) === $slug
+            );
 
         abort_unless($poster, 404);
 
-        $songs = self::recoveryTable('listing as song')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
+        $songs = $this->publishedAudioQuery()
             ->where('song.posted_by', $poster->id)
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
             ->orderByDesc('song.id')
             ->paginate(24);
 
@@ -582,31 +501,7 @@ class PageController extends Controller
 
     private function musicDownloadAudio(): Builder
     {
-        return self::recoveryTable('listing as song')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES');
+        return $this->publishedAudioQuery();
     }
 
     private function musicDownloadCategory(
@@ -616,11 +511,18 @@ class PageController extends Controller
         $query = $this->musicDownloadAudio();
 
         if ($category === 'gospel') {
-            $query->where('song.isgospel', 1);
+            $query->where('song.is_gospel', 1);
         } elseif ($category === 'highlife') {
-            $query->where('song.ishighlife', 1);
+            $query->where('song.is_high_life', 1);
         } else {
-            $query->where('song.country_id', $category);
+            $countryId = match ($category) {
+                'naija' => 1,
+                'ghana' => 2,
+                'african' => 3,
+                default => abort(404),
+            };
+
+            $query->where('song.country_id', $countryId);
         }
 
         return $query
@@ -631,14 +533,7 @@ class PageController extends Controller
 
     private function musicDownloadDay()
     {
-        return $this->musicDownloadAudio()
-            ->joinSub(
-                self::recoverySource('featured_rated'),
-                'featured',
-                'featured.listing_id',
-                '=',
-                'song.id'
-            )
+        return $this->featuredAudioQuery(1)
             ->orderByDesc('featured.id')
             ->limit(10)
             ->get();
@@ -646,14 +541,7 @@ class PageController extends Controller
 
     private function musicDownloadWeek()
     {
-        return $this->musicDownloadAudio()
-            ->joinSub(
-                self::recoverySource('song_of_the_week'),
-                'featured',
-                'featured.listing_id',
-                '=',
-                'song.id'
-            )
+        return $this->featuredAudioQuery(2)
             ->orderByDesc('featured.id')
             ->limit(10)
             ->get();
@@ -661,11 +549,10 @@ class PageController extends Controller
 
     public function musicDownload(): View
     {
-        $albums = self::recoveryTable('albums as album')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
+        $albums = DB::table('albums as album')
+            ->leftJoin(
+                'artists as artist',
+                'artist.id',
                 '=',
                 'album.artist_id'
             )
@@ -673,16 +560,15 @@ class PageController extends Controller
                 'album.id',
                 'album.title',
                 'album.cover_url',
-                'album.released_year',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
+                'album.released_year'
             )
-            ->where('album.IsPublished', 'YES')
+            ->selectRaw("
+                COALESCE(
+                    NULLIF(artist.stage_name, ''),
+                    'TrendyBeatz'
+                ) AS artist_name
+            ")
+            ->where('album.is_published', 1)
             ->orderByDesc('album.id')
             ->limit(7)
             ->get();
@@ -701,32 +587,8 @@ class PageController extends Controller
 
     public function gospelSongs(): View
     {
-        $songs = self::recoveryTable('listing as song')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.isgospel', 1)
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
+        $songs = $this->publishedAudioQuery()
+            ->where('song.is_gospel', 1)
             ->orderByDesc('song.id')
             ->paginate(50);
 
@@ -737,32 +599,8 @@ class PageController extends Controller
 
     public function highlifeSongs(): View
     {
-        $songs = self::recoveryTable('listing as song')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.ishighlife', 1)
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
+        $songs = $this->publishedAudioQuery()
+            ->where('song.is_high_life', 1)
             ->orderByDesc('song.id')
             ->paginate(50);
 
@@ -799,32 +637,15 @@ class PageController extends Controller
 
         abort_unless(isset($pages[$country]), 404);
 
-        $songs = self::recoveryTable('listing as song')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.country_id', $country)
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
+        $countryId = match ($country) {
+            'naija' => 1,
+            'ghana' => 2,
+            'african' => 3,
+            default => abort(404),
+        };
+
+        $songs = $this->publishedAudioQuery()
+            ->where('song.country_id', $countryId)
             ->orderByDesc('song.id')
             ->paginate(50);
 
@@ -837,33 +658,8 @@ class PageController extends Controller
 
     public function songsByYear(int $year): View
     {
-        $songs = self::recoveryTable('listing as song')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.created_at',
-                'song.YearOfRelease as released_year',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('song.YearOfRelease', (string) $year)
-            ->where('song.ListingType', 'Audio')
-            ->where('song.IsPublished', 'YES')
+        $songs = $this->publishedAudioQuery()
+            ->where('song.released_year', (string) $year)
             ->orderByDesc('song.id')
             ->paginate(50);
 
@@ -873,33 +669,53 @@ class PageController extends Controller
         ]);
     }
 
-    public function latestVideos(): View
+    private function publishedVideoQuery(): Builder
     {
-        $videos = self::recoveryTable('listing as video')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
+        return DB::table('listings as video')
+            ->leftJoin(
+                'artists as artist',
+                'artist.id',
                 '=',
-                'video.Artists_Id'
+                'video.artist_id'
             )
             ->select(
-                'video.id',
-                'video.slug',
-                'video.TrackTitle as track_title',
-                'video.CoverUrl as cover_url',
-                'video.Featuring as featuring',
-                'video.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
+                'video.*',
+                'video.artist_id as Artists_Id',
+                'video.track_title as TrackTitle',
+                'video.featuring as Featuring',
+                'video.cover_url as CoverUrl',
+                'video.track_url as TrackUrl',
+                'video.released_year as YearOfRelease',
+                'video.track_info as TrackInfo',
+                'video.track_info1 as trackinfo1',
+                'video.track_info2 as trackinfo2',
+                'video.script_url as scriptUrl',
+                'video.directed_by as directedby',
+                'video.produced_by as producedby',
+                'video.is_gospel as isgospel',
+                'video.is_high_life as ishighlife'
             )
-            ->whereRaw('LOWER(video.ListingType) = ?', ['video'])
-            ->where('video.IsPublished', 'YES')
+            ->selectRaw("
+                COALESCE(
+                    NULLIF(artist.stage_name, ''),
+                    'TrendyBeatz'
+                ) AS artist_name
+            ")
+            ->selectRaw("
+                CASE video.country_id
+                    WHEN '1' THEN 'naija'
+                    WHEN '2' THEN 'ghana'
+                    WHEN '3' THEN 'african'
+                    ELSE video.country_id
+                END AS country_id
+            ")
+            ->where('video.listing_type', 2)
+            ->where('video.is_published', 1);
+    }
+
+    public function latestVideos(): View
+    {
+        $videos = $this->publishedVideoQuery()
             ->orderByDesc('video.id')
             ->paginate(24);
 
@@ -910,34 +726,15 @@ class PageController extends Controller
         int $id,
         string $slug
     ): View|RedirectResponse {
-        $video = self::recoveryTable('listing as video')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'video.Artists_Id'
-            )
+        $video = $this->publishedVideoQuery()
             ->leftJoin(
                 'users as poster',
                 'poster.id',
                 '=',
                 'video.posted_by'
             )
-            ->select(
-                'video.*',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                "),
-                'poster.name as posted_by_name'
-            )
+            ->addSelect('poster.name as posted_by_name')
             ->where('video.id', $id)
-            ->whereRaw('LOWER(video.ListingType) = ?', ['video'])
-            ->where('video.IsPublished', 'YES')
             ->first();
 
         abort_unless($video, 404);
@@ -951,8 +748,11 @@ class PageController extends Controller
             );
         }
 
+        /*
+        * Match featured artistes to published artist profiles.
+        */
         $featuredNames = collect(
-            explode(',', (string) $video->Featuring)
+            explode(',', (string) ($video->featuring ?? ''))
         )
             ->map(fn ($name) => trim($name))
             ->filter(fn ($name) => $name !== '')
@@ -970,20 +770,13 @@ class PageController extends Controller
         $profiles = collect();
 
         if ($namesToMatch !== []) {
-            $profiles = self::recoveryTable('artists')
-                ->select('Stage_Name', 'ArtistsName')
-                ->where('IsPublished', 'YES')
-                ->where(function ($query) use ($namesToMatch) {
-                    $query
-                        ->whereIn(
-                            DB::raw('LOWER(TRIM(Stage_Name))'),
-                            $namesToMatch
-                        )
-                        ->orWhereIn(
-                            DB::raw('LOWER(TRIM(ArtistsName))'),
-                            $namesToMatch
-                        );
-                })
+            $profiles = DB::table('artists')
+                ->select('id', 'stage_name')
+                ->where('is_published', 1)
+                ->whereIn(
+                    DB::raw('LOWER(TRIM(stage_name))'),
+                    $namesToMatch
+                )
                 ->get();
         }
 
@@ -991,129 +784,69 @@ class PageController extends Controller
             function ($name) use ($profiles, $normalizeName) {
                 $matches = $profiles->filter(
                     fn ($artist) =>
-                        $normalizeName($artist->Stage_Name)
-                            === $normalizeName($name)
-                        || $normalizeName($artist->ArtistsName)
+                        $normalizeName($artist->stage_name)
                             === $normalizeName($name)
                 );
 
-                $slug = null;
+                $profileSlug = null;
 
                 if ($matches->count() === 1) {
-                    $artist = $matches->first();
-                    $profileName = trim((string) $artist->Stage_Name);
-
-                    if ($profileName === '') {
-                        $profileName = trim(
-                            (string) $artist->ArtistsName
-                        );
-                    }
-
-                    $slug = Str::slug($profileName);
+                    $profileSlug = Str::slug(
+                        trim((string) $matches->first()->stage_name)
+                    );
                 }
 
                 return [
                     'name' => $name,
-                    'slug' => $slug,
+                    'slug' => $profileSlug,
                 ];
             }
         );
 
-        $otherVideos = self::recoveryTable('listing as item')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'item.Artists_Id'
-            )
-            ->select(
-                'item.*',
-                'item.TrackTitle as track_title',
-                'item.Featuring as featuring',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('item.Artists_Id', $video->Artists_Id)
-            ->where('item.id', '<>', $video->id)
-            ->whereRaw('LOWER(item.ListingType) = ?', ['video'])
-            ->where('item.IsPublished', 'YES')
-            ->orderByDesc('item.id')
+        /*
+        * Other videos by the same artiste.
+        */
+        $otherVideos = $this->publishedVideoQuery()
+            ->where('video.artist_id', $video->artist_id)
+            ->where('video.id', '<>', $video->id)
+            ->orderByDesc('video.id')
             ->limit(6)
             ->get();
 
-        $artistSongs = self::recoveryTable('listing as song')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
+        /*
+        * Songs by the same artiste.
+        *
+        * These aliases preserve the fields currently used
+        * by the video details Blade.
+        */
+        $artistSongs = $this->publishedAudioQuery()
+            ->addSelect(
+                'song.track_title as TrackTitle',
+                'song.featuring as Featuring'
             )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle',
-                'song.Featuring',
-                'artist.Stage_Name as artist_name'
-            )
-            ->where('song.Artists_Id', $video->Artists_Id)
-            ->whereRaw('LOWER(song.ListingType) = ?', ['audio'])
-            ->where('song.IsPublished', 'YES')
+            ->where('song.artist_id', $video->artist_id)
             ->orderByDesc('song.id')
             ->limit(6)
             ->get();
 
-        $latestSongs = self::recoveryTable('listing as song')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
+        /*
+        * Latest songs across all artistes.
+        */
+        $latestSongs = $this->publishedAudioQuery()
+            ->addSelect(
+                'song.track_title as TrackTitle',
+                'song.featuring as Featuring'
             )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle',
-                'song.Featuring',
-                'artist.Stage_Name as artist_name'
-            )
-            ->whereRaw('LOWER(song.ListingType) = ?', ['audio'])
-            ->where('song.IsPublished', 'YES')
             ->orderByDesc('song.id')
             ->limit(4)
             ->get();
 
-        $latestVideos = self::recoveryTable('listing as item')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'item.Artists_Id'
-            )
-            ->select(
-                'item.*',
-                'item.TrackTitle as track_title',
-                'item.Featuring as featuring',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->where('item.id', '<>', $video->id)
-            ->whereRaw('LOWER(item.ListingType) = ?', ['video'])
-            ->where('item.IsPublished', 'YES')
-            ->orderByDesc('item.id')
+        /*
+        * Latest videos, excluding the current video.
+        */
+        $latestVideos = $this->publishedVideoQuery()
+            ->where('video.id', '<>', $video->id)
+            ->orderByDesc('video.id')
             ->limit(4)
             ->get();
 
@@ -1134,36 +867,14 @@ class PageController extends Controller
             ->select('id', 'name')
             ->whereIn('id', [4, 5])
             ->get()
-            ->first(fn ($user) => Str::slug($user->name) === $slug);
+            ->first(
+                fn ($user) => Str::slug($user->name) === $slug
+            );
 
         abort_unless($poster, 404);
 
-        $videos = self::recoveryTable('listing as video')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'video.Artists_Id'
-            )
-            ->select(
-                'video.id',
-                'video.slug',
-                'video.TrackTitle as track_title',
-                'video.CoverUrl as cover_url',
-                'video.Featuring as featuring',
-                'video.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
+        $videos = $this->publishedVideoQuery()
             ->where('video.posted_by', $poster->id)
-            ->whereRaw('LOWER(video.ListingType) = ?', ['video'])
-            ->where('video.IsPublished', 'YES')
             ->orderByDesc('video.id')
             ->paginate(24);
 
@@ -1175,35 +886,15 @@ class PageController extends Controller
 
     public function videosByYear(string $year): View
     {
-        $videos = self::recoveryTable('listing as video')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'video.Artists_Id'
-            )
-            ->select(
-                'video.id',
-                'video.TrackTitle as track_title',
-                'video.Featuring as featuring',
-                'video.CoverUrl as cover_url',
-                'video.YearOfRelease as released_year',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->whereRaw('LOWER(video.ListingType) = ?', ['video'])
-            ->where('video.IsPublished', 'YES')
-            ->where('video.YearOfRelease', $year)
+        $videos = $this->publishedVideoQuery()
+            ->where('video.released_year', $year)
             ->orderByDesc('video.id')
             ->paginate(24);
 
-        return view('pages.videos-year', compact('videos', 'year'));
+        return view('pages.videos-year', compact(
+            'videos',
+            'year'
+        ));
     }
 
     public function countryVideos(string $country): View
@@ -1212,6 +903,12 @@ class PageController extends Controller
             in_array($country, ['naija', 'ghana', 'african'], true),
             404
         );
+
+        $countryId = match ($country) {
+            'naija' => 1,
+            'ghana' => 2,
+            'african' => 3,
+        };
 
         $countryName = match ($country) {
             'naija' => 'Naija',
@@ -1225,31 +922,8 @@ class PageController extends Controller
             'african' => 'Watch the latest African music videos on TrendyBeatz. Discover artists across Africa, explore new releases and find available music video downloads.',
         };
 
-        $videos = self::recoveryTable('listing as video')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'video.Artists_Id'
-            )
-            ->select(
-                'video.id',
-                'video.TrackTitle as track_title',
-                'video.Featuring as featuring',
-                'video.CoverUrl as cover_url',
-                'video.country_id',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->whereRaw('LOWER(video.ListingType) = ?', ['video'])
-            ->where('video.IsPublished', 'YES')
-            ->where('video.country_id', $country)
+        $videos = $this->publishedVideoQuery()
+            ->where('video.country_id', $countryId)
             ->orderByDesc('video.id')
             ->paginate(24);
 
@@ -1263,16 +937,37 @@ class PageController extends Controller
 
     private function publishedArtists(): Builder
     {
-        return self::recoveryTable('artists')
+        return DB::table('artists as artist')
             ->select(
-                'id',
-                'Artists_Id',
-                'ArtistsName',
-                'Stage_Name',
-                'ProfilePic',
-                'country_id'
+                'artist.*',
+                'artist.id as Artists_Id',
+                'artist.stage_name as ArtistsName',
+                'artist.stage_name as Stage_Name',
+                'artist.img as ProfilePic',
+                'artist.artist_profile as ArtistsProfile',
+                'artist.record_label as RecordLabel',
+                'artist.full_name as Fullname',
+                'artist.place_of_birth as Place_Birth',
+                'artist.genre as Genres',
+                'artist.award1 as Awards1',
+                'artist.award2 as Awards2',
+                'artist.award3 as Awards3',
+                'artist.endorsement1 as Endorsement1',
+                'artist.endorsement2 as Endorsement2',
+                'artist.artist_type as category_id',
+                'artist.is_also_comedian as Is_also_comedian',
+                'artist.posted_by as posteb_by'
             )
-            ->where('IsPublished', 'YES');
+            ->selectRaw("
+                CASE artist.country_id
+                    WHEN '1' THEN 'naija'
+                    WHEN '2' THEN 'ghana'
+                    WHEN '3' THEN 'african'
+                    ELSE artist.country_id
+                END AS country_id
+            ")
+            ->selectRaw("'YES' AS IsPublished")
+            ->where('artist.is_published', 1);
     }
 
     public function artists(): View
@@ -1287,18 +982,16 @@ class PageController extends Controller
         ];
 
         $popularArtists = $this->publishedArtists()
-            ->where(function (Builder $query) use ($popularNames) {
-                $query
-                    ->whereIn('Stage_Name', $popularNames)
-                    ->orWhereIn('ArtistsName', $popularNames);
-            })
+            ->whereIn('artist.stage_name', $popularNames)
             ->get()
             ->sortBy(function ($artist) use ($popularNames) {
-                $name = trim((string) (
-                    $artist->Stage_Name ?: $artist->ArtistsName
-                ));
+                $name = trim((string) $artist->stage_name);
 
-                $position = array_search($name, $popularNames, true);
+                $position = array_search(
+                    $name,
+                    $popularNames,
+                    true
+                );
 
                 return $position === false
                     ? count($popularNames)
@@ -1306,21 +999,30 @@ class PageController extends Controller
             })
             ->values();
 
+        $sections = [
+            'naija' => [
+                'id' => 1,
+                'heading' => 'Nigerian Artists',
+            ],
+            'ghana' => [
+                'id' => 2,
+                'heading' => 'Ghanaian Artists',
+            ],
+            'african' => [
+                'id' => 3,
+                'heading' => 'African Artists',
+            ],
+        ];
+
         $countries = [];
 
-        $headings = [
-            'naija' => 'Nigerian Artists',
-            'ghana' => 'Ghanaian Artists',
-            'african' => 'African Artists',
-        ];
-        
-        foreach ($headings as $country => $heading) {
+        foreach ($sections as $country => $section) {
             $countries[$country] = [
-                'heading' => $heading,
+                'heading' => $section['heading'],
                 'artists' => $this->filteredArtists()
-                    ->where('country_id', $country)
-                    ->orderBy('Stage_Name')
-                    ->orderBy('id')
+                    ->where('artist.country_id', $section['id'])
+                    ->orderBy('artist.stage_name')
+                    ->orderBy('artist.id')
                     ->paginate(18, ['*'], $country . '_page')
                     ->appends(request()->only('search', 'letter')),
             ];
@@ -1334,61 +1036,67 @@ class PageController extends Controller
 
     public function artistCountrySection(string $country): View
     {
-        abort_unless(
-            in_array($country, ['naija', 'ghana', 'african'], true),
-            404
-        );
-
-        $headings = [
-            'naija' => 'Nigerian Artists',
-            'ghana' => 'Ghanaian Artists',
-            'african' => 'African Artists',
+        $sections = [
+            'naija' => [
+                'id' => 1,
+                'heading' => 'Nigerian Artists',
+            ],
+            'ghana' => [
+                'id' => 2,
+                'heading' => 'Ghanaian Artists',
+            ],
+            'african' => [
+                'id' => 3,
+                'heading' => 'African Artists',
+            ],
         ];
 
+        abort_unless(isset($sections[$country]), 404);
+
+        $section = $sections[$country];
+
         $artists = $this->filteredArtists()
-            ->where('country_id', $country)
-            ->orderBy('Stage_Name')
-            ->orderBy('id')
+            ->where('artist.country_id', $section['id'])
+            ->orderBy('artist.stage_name')
+            ->orderBy('artist.id')
             ->paginate(18)
             ->appends(request()->only('search', 'letter'));
 
         return view('partials.artists.country-section', [
             'country' => $country,
-            'heading' => $headings[$country],
+            'heading' => $section['heading'],
             'artists' => $artists,
         ]);
     }
 
     public function artistDetails(string $slug): View
     {
-        $matchingArtist = self::recoveryTable('artists')
-            ->select('id', 'Stage_Name', 'ArtistsName')
-            ->where('IsPublished', 'YES')
+        /*
+        * Preserve existing profile URLs generated from stage names.
+        */
+        $matchingArtist = DB::table('artists')
+            ->select('id', 'stage_name')
+            ->where('is_published', 1)
             ->get()
             ->first(function ($row) use ($slug) {
-                $stageName = trim((string) $row->Stage_Name);
-                $artistName = trim((string) $row->ArtistsName);
+                $name = trim((string) $row->stage_name);
 
-                return (
-                    $stageName !== ''
-                    && Str::slug($stageName) === $slug
-                ) || (
-                    $artistName !== ''
-                    && Str::slug($artistName) === $slug
-                );
+                return $name !== ''
+                    && Str::slug($name) === $slug;
             });
 
         abort_unless($matchingArtist, 404);
 
-        $artist = self::recoveryTable('artists')
-            ->where('id', $matchingArtist->id)
+        $artist = $this->publishedArtists()
+            ->where('artist.id', $matchingArtist->id)
             ->firstOrFail();
 
-        $artistName = trim((string) (
-            $artist->Stage_Name ?: $artist->ArtistsName
-        ));
+        $artistName = trim((string) $artist->stage_name);
 
-        $albums = self::recoveryTable('albums')
+        /*
+        * Albums by this artiste.
+        */
+        $albums = DB::table('albums')
             ->select(
                 'id',
                 'title',
@@ -1396,50 +1104,56 @@ class PageController extends Controller
                 'released_year',
                 'released_date'
             )
-            ->where('artist_id', $artist->Artists_Id)
-            ->where('IsPublished', 'YES')
+            ->where('artist_id', $artist->id)
+            ->where('is_published', 1)
             ->orderByDesc('id')
             ->limit(12)
             ->get();
 
+        /*
+        * Published audio tracks belonging to the displayed albums.
+        */
         $albumTracks = $albums->isEmpty()
             ? collect()
-            : self::recoveryTable('listing as song')
+            : DB::table('listings as song')
                 ->select(
                     'song.id',
                     'song.album_id',
-                    'song.TrackTitle as track_title',
-                    'song.Featuring as featuring',
+                    'song.track_title',
+                    'song.featuring',
                     'song.track_number'
                 )
-                ->selectRaw('? as artist_name', [$artistName])
+                ->selectRaw('? AS artist_name', [$artistName])
                 ->whereIn(
                     'song.album_id',
                     $albums->pluck('id')->all()
                 )
-                ->where('song.Artists_Id', $artist->Artists_Id)
-                ->whereRaw('LOWER(song.ListingType) = ?', ['audio'])
-                ->where('song.IsPublished', 'YES')
+                ->where('song.artist_id', $artist->id)
+                ->where('song.listing_type', 1)
+                ->where('song.is_published', 1)
                 ->orderBy('song.album_id')
                 ->orderBy('song.track_number')
                 ->orderBy('song.id')
                 ->get()
                 ->groupBy('album_id');
 
-        $singles = self::recoveryTable('listing as song')
+        /*
+        * Singles without an assigned album.
+        */
+        $singles = DB::table('listings as song')
             ->select(
                 'song.id',
                 'song.slug',
-                'song.TrackTitle as track_title',
-                'song.Featuring as featuring',
-                'song.CoverUrl as cover_url',
+                'song.track_title',
+                'song.featuring',
+                'song.cover_url',
                 'song.created_at'
             )
-            ->selectRaw('? as artist_name', [$artistName])
-            ->where('song.Artists_Id', $artist->Artists_Id)
-            ->whereRaw('LOWER(song.ListingType) = ?', ['audio'])
-            ->where('song.IsPublished', 'YES')
-            ->where(function ($query) {
+            ->selectRaw('? AS artist_name', [$artistName])
+            ->where('song.artist_id', $artist->id)
+            ->where('song.listing_type', 1)
+            ->where('song.is_published', 1)
+            ->where(function (Builder $query) {
                 $query
                     ->whereNull('song.album_id')
                     ->orWhere('song.album_id', 0);
@@ -1448,19 +1162,22 @@ class PageController extends Controller
             ->limit(18)
             ->get();
 
-        $videos = self::recoveryTable('listing as video')
+        /*
+        * Videos by this artiste.
+        */
+        $videos = DB::table('listings as video')
             ->select(
                 'video.id',
                 'video.slug',
-                'video.TrackTitle as track_title',
-                'video.Featuring as featuring',
-                'video.CoverUrl as cover_url',
+                'video.track_title',
+                'video.featuring',
+                'video.cover_url',
                 'video.created_at'
             )
-            ->selectRaw('? as artist_name', [$artistName])
-            ->where('video.Artists_Id', $artist->Artists_Id)
-            ->whereRaw('LOWER(video.ListingType) = ?', ['video'])
-            ->where('video.IsPublished', 'YES')
+            ->selectRaw('? AS artist_name', [$artistName])
+            ->where('video.artist_id', $artist->id)
+            ->where('video.listing_type', 2)
+            ->where('video.is_published', 1)
             ->orderByDesc('video.id')
             ->limit(12)
             ->get();
@@ -1475,42 +1192,75 @@ class PageController extends Controller
         ));
     }
 
-    public function albums(): View
+    private function filteredArtists(): Builder
     {
-        $albums = self::recoveryTable('albums as album')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
+        $query = $this->publishedArtists();
+
+        $search = trim(
+            (string) request()->query('search', '')
+        );
+
+        $letter = strtoupper(trim(
+            (string) request()->query('letter', '')
+        ));
+
+        if ($search !== '') {
+            $query->where(
+                'artist.stage_name',
+                'like',
+                '%' . $search . '%'
+            );
+        }
+
+        if (preg_match('/^[A-Z]$/', $letter)) {
+            $query->whereRaw(
+                'TRIM(artist.stage_name) LIKE ?',
+                [$letter . '%']
+            );
+        }
+
+        return $query;
+    }
+
+    private function publishedAlbumQuery(): Builder
+    {
+        return DB::table('albums as album')
+            ->leftJoin(
+                'artists as artist',
+                'artist.id',
                 '=',
                 'album.artist_id'
             )
             ->select(
-                'album.id',
-                'album.title',
-                'album.cover_url',
-                'album.released_year',
-                'album.released_date',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
+                'album.*',
+                'album.album_type as category_id'
             )
+            ->selectRaw("
+                COALESCE(
+                    NULLIF(artist.stage_name, ''),
+                    'TrendyBeatz'
+                ) AS artist_name
+            ")
+            ->selectRaw("'YES' AS IsPublished")
+            ->where('album.is_published', 1);
+    }
+
+    private function albumTrackCountQuery(): Builder
+    {
+        return DB::table('listings as track')
+            ->selectRaw('COUNT(*)')
+            ->whereColumn('track.album_id', 'album.id')
+            ->where('track.listing_type', 1)
+            ->where('track.is_published', 1);
+    }
+
+    public function albums(): View
+    {
+        $albums = $this->publishedAlbumQuery()
             ->selectSub(
-                self::recoveryTable('listing as song')
-                    ->selectRaw('COUNT(*)')
-                    ->whereColumn('song.album_id', 'album.id')
-                    ->whereRaw(
-                        'LOWER(song.ListingType) = ?',
-                        ['audio']
-                    )
-                    ->where('song.IsPublished', 'YES'),
+                $this->albumTrackCountQuery(),
                 'track_count'
             )
-            ->where('album.IsPublished', 'YES')
             ->orderByDesc('album.id')
             ->paginate(20);
 
@@ -1523,43 +1273,27 @@ class PageController extends Controller
         int $id,
         string $slug
     ): View|RedirectResponse {
-        $album = self::recoveryTable('albums as album')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'album.artist_id'
-            )
+        $album = $this->publishedAlbumQuery()
             ->leftJoin(
                 'users as poster',
                 'poster.id',
                 '=',
                 'album.posted_by'
             )
-            ->select(
-                'album.*',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                "),
-                'poster.name as posted_by_name'
-            )
+            ->addSelect('poster.name as posted_by_name')
             ->where('album.id', $id)
-            ->where('album.IsPublished', 'YES')
             ->first();
 
         abort_unless($album, 404);
-        
-        $digitalStoreUrl = trim((string) DB::table('albums')
-            ->where('id', $album->id)
-            ->value('buy_song'));
+
+        /*
+        * The direct album query already includes buy_song.
+        */
+        $digitalStoreUrl = trim(
+            (string) ($album->buy_song ?? '')
+        );
 
         $correctSlug = \App\Support\AlbumUrl::slug($album);
-        
 
         if ($slug !== $correctSlug) {
             return redirect()->route(
@@ -1569,23 +1303,32 @@ class PageController extends Controller
             );
         }
 
-        $tracks = self::recoveryTable('listing as song')
+        /*
+        * Preserve the existing tracklist ordering.
+        */
+        $tracks = DB::table('listings as song')
             ->select(
                 'song.id',
-                'song.TrackTitle as track_title',
-                'song.Featuring as featuring',
+                'song.track_title',
+                'song.featuring',
                 'song.track_number',
                 'song.created_at'
             )
-            ->selectRaw('? as artist_name', [$album->artist_name])
+            ->selectRaw(
+                '? AS artist_name',
+                [$album->artist_name]
+            )
             ->where('song.album_id', $album->id)
-            ->whereRaw('LOWER(song.ListingType) = ?', ['audio'])
-            ->where('song.IsPublished', 'YES')
+            ->where('song.listing_type', 1)
+            ->where('song.is_published', 1)
             ->orderBy('song.track_number')
             ->orderBy('song.id')
             ->get();
 
-        $otherAlbums = self::recoveryTable('albums as other')
+        /*
+        * Include cover_url for the More Albums and EPs section.
+        */
+        $otherAlbums = DB::table('albums as other')
             ->select(
                 'other.id',
                 'other.title',
@@ -1594,7 +1337,7 @@ class PageController extends Controller
             )
             ->where('other.artist_id', $album->artist_id)
             ->where('other.id', '<>', $album->id)
-            ->where('other.IsPublished', 'YES')
+            ->where('other.is_published', 1)
             ->orderByDesc('other.id')
             ->limit(5)
             ->get();
@@ -1604,7 +1347,7 @@ class PageController extends Controller
             'tracks' => $tracks,
             'otherAlbums' => $otherAlbums,
             'correctSlug' => $correctSlug,
-            'digitalStoreUrl' => $digitalStoreUrl
+            'digitalStoreUrl' => $digitalStoreUrl,
         ]);
     }
 
@@ -1614,45 +1357,18 @@ class PageController extends Controller
             ->select('id', 'name')
             ->whereIn('id', [4, 5])
             ->get()
-            ->first(fn ($user) => Str::slug($user->name) === $slug);
+            ->first(
+                fn ($user) => Str::slug($user->name) === $slug
+            );
 
         abort_unless($poster, 404);
 
-        $albums = self::recoveryTable('albums as album')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'album.artist_id'
-            )
-            ->select(
-                'album.id',
-                'album.title',
-                'album.cover_url',
-                'album.released_year',
-                'album.released_date',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
+        $albums = $this->publishedAlbumQuery()
             ->selectSub(
-                self::recoveryTable('listing as song')
-                    ->selectRaw('COUNT(*)')
-                    ->whereColumn('song.album_id', 'album.id')
-                    ->whereRaw(
-                        'LOWER(song.ListingType) = ?',
-                        ['audio']
-                    )
-                    ->where('song.IsPublished', 'YES'),
+                $this->albumTrackCountQuery(),
                 'track_count'
             )
             ->where('album.posted_by', $poster->id)
-            ->where('album.IsPublished', 'YES')
             ->orderByDesc('album.id')
             ->paginate(20);
 
@@ -1664,96 +1380,46 @@ class PageController extends Controller
 
     public function albumsByYear(string $year): View
     {
-        $albums = self::recoveryTable('albums as album')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'album.artist_id'
+        $albums = $this->publishedAlbumQuery()
+            ->selectSub(
+                $this->albumTrackCountQuery(),
+                'track_count'
             )
-            ->select(
-                'album.*',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->selectSub(function ($query) {
-                $query
-                    ->fromSub(
-                        self::recoverySource('listing'),
-                        'track'
-                    )
-                    ->selectRaw('COUNT(*)')
-                    ->whereColumn('track.album_id', 'album.id')
-                    ->where('track.ListingType', 'Audio')
-                    ->where('track.IsPublished', 'YES');
-            }, 'track_count')
-            ->where('album.IsPublished', 'YES')
             ->where('album.released_year', $year)
             ->orderByDesc('album.id')
             ->paginate(20);
 
-        return view('pages.albums-year', compact('albums', 'year'));
+        return view('pages.albums-year', compact(
+            'albums',
+            'year'
+        ));
     }
 
     public function popularAlbums(): View
     {
-        $albums = self::recoveryTable('albums as album')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'album.artist_id'
+        $albums = $this->publishedAlbumQuery()
+            ->selectSub(
+                $this->albumTrackCountQuery(),
+                'track_count'
             )
-            ->select(
-                'album.*',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->selectSub(function ($query) {
+            ->selectSub(function (Builder $query) {
                 $query
-                    ->fromSub(
-                        self::recoverySource('listing'),
-                        'track'
-                    )
-                    ->selectRaw('COUNT(*)')
-                    ->whereColumn('track.album_id', 'album.id')
-                    ->whereRaw(
-                        'LOWER(track.ListingType) = ?',
-                        ['audio']
-                    )
-                    ->where('track.IsPublished', 'YES');
-            }, 'track_count')
-            ->selectSub(function ($query) {
-                $query
-                    ->fromSub(
-                        self::recoverySource('album_of_the_day'),
-                        'popular'
-                    )
+                    ->from('album_populars as popular')
                     ->selectRaw('MAX(popular.rate_no)')
-                    ->whereColumn('popular.album_id', 'album.id');
+                    ->whereColumn(
+                        'popular.album_id',
+                        'album.id'
+                    );
             }, 'popularity_rate')
-            ->whereExists(function ($query) {
+            ->whereExists(function (Builder $query) {
                 $query
                     ->selectRaw('1')
-                    ->fromSub(
-                        self::recoverySource('album_of_the_day'),
-                        'popular'
-                    )
-                    ->whereColumn('popular.album_id', 'album.id');
+                    ->from('album_populars as popular')
+                    ->whereColumn(
+                        'popular.album_id',
+                        'album.id'
+                    );
             })
-            ->where('album.IsPublished', 'YES')
             ->orderByDesc('popularity_rate')
             ->orderByDesc('album.id')
             ->paginate(20);
@@ -1763,32 +1429,7 @@ class PageController extends Controller
 
     public function allMusic(): View
     {
-        $songs = self::recoveryTable('listing as song')
-            ->leftJoinSub(
-                self::recoverySource('artists'),
-                'artist',
-                'artist.Artists_Id',
-                '=',
-                'song.Artists_Id'
-            )
-            ->select(
-                'song.id',
-                'song.slug',
-                'song.TrackTitle as track_title',
-                'song.CoverUrl as cover_url',
-                'song.Featuring as featuring',
-                'song.TrackUrl as track_url',
-                'song.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(artist.Stage_Name, ''),
-                        NULLIF(artist.ArtistsName, ''),
-                        'TrendyBeatz'
-                    ) as artist_name
-                ")
-            )
-            ->whereRaw('LOWER(song.ListingType) = ?', ['audio'])
-            ->where('song.IsPublished', 'YES')
+        $songs = $this->publishedAudioQuery()
             ->orderByDesc('song.id')
             ->paginate(24);
 
@@ -1797,32 +1438,56 @@ class PageController extends Controller
         ]);
     }
 
-    public function djMixes(): View
+    private function publishedMixQuery(): Builder
     {
-        $mixes = self::recoveryTable('dj_mixs as mix')
-            ->leftJoinSub(
-                self::recoverySource('dj'),
-                'dj',
+        return DB::table('dj_mixs as mix')
+            ->leftJoin(
+                'djs as dj',
                 'dj.id',
                 '=',
                 'mix.dj_id'
             )
             ->select(
-                'mix.id',
-                'mix.slug',
-                'mix.mix_title',
-                'mix.cover_url',
-                'mix.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(dj.dj_name, ''),
-                        'TrendyBeatz DJ'
-                    ) as dj_name
-                ")
+                'mix.*',
+                'mix.title as mix_title',
+                'dj.profile_img as dj_photo'
             )
-            ->where('mix.IsPublished', 'YES')
-            ->whereNotNull('mix.mix_title')
-            ->where('mix.mix_title', '<>', '')
+            ->selectRaw("
+                COALESCE(
+                    NULLIF(dj.name, ''),
+                    'TrendyBeatz DJ'
+                ) AS dj_name
+            ")
+            ->selectRaw("'YES' AS IsPublished")
+            ->where('mix.is_published', 1);
+    }
+
+    private function publishedDjQuery(): Builder
+    {
+        return DB::table('djs as dj')
+            ->select(
+                'dj.*',
+                'dj.name as dj_name',
+                'dj.full_name as fullname',
+                'dj.profile_img as photo'
+            )
+            ->selectRaw("
+                CASE dj.country_id
+                    WHEN '1' THEN 'naija'
+                    WHEN '2' THEN 'ghana'
+                    WHEN '3' THEN 'african'
+                    ELSE dj.country_id
+                END AS country_id
+            ")
+            ->selectRaw("'YES' AS IsPublished")
+            ->where('dj.is_published', 1);
+    }
+
+    public function djMixes(): View
+    {
+        $mixes = $this->publishedMixQuery()
+            ->whereNotNull('mix.title')
+            ->where('mix.title', '<>', '')
             ->orderByDesc('mix.id')
             ->paginate(24);
 
@@ -1835,105 +1500,97 @@ class PageController extends Controller
         int $id,
         string $slug
     ): View|RedirectResponse {
-        $mix = self::recoveryTable('dj_mixs as mix')
-            ->leftJoinSub(
-                self::recoverySource('dj'),
-                'dj',
-                'dj.id',
-                '=',
-                'mix.dj_id'
-            )
+        /*
+        * mix.* includes copyright_image, back_cover
+        * and audiomack_embed_url.
+        */
+        $mix = $this->publishedMixQuery()
             ->leftJoin(
                 'users as poster',
                 'poster.id',
                 '=',
                 'mix.posted_by'
             )
-            ->select(
-                'mix.*',
-                'dj.dj_name',
-                'dj.photo as dj_photo',
-                'poster.name as posted_by_name'
-            )
+            ->addSelect('poster.name as posted_by_name')
             ->where('mix.id', $id)
-            ->where('mix.IsPublished', 'YES')
             ->first();
 
         abort_unless($mix, 404);
-        
-        $mix->back_cover = DB::table('dj_mixs')
-            ->where('id', $mix->id)
-            ->value('back_cover');
-        
-        $mix->audiomack_embed_url = DB::table('dj_mixs')
-            ->where('id', $mix->id)
-            ->value('audiomack_embed_url');
+
+        /*
+        * Preserve the raw DJ name used by the existing details page
+        * and canonical URL helper.
+        */
+        $mix->dj_name = DB::table('djs')
+            ->where('id', $mix->dj_id)
+            ->value('name');
 
         $canonicalSlug = \App\Support\DjMixUrl::slug($mix);
 
-            if ($slug !== $canonicalSlug) {
-                return redirect(
-                    \App\Support\DjMixUrl::detail($mix),
-                    301
-                );
-            }
+        if ($slug !== $canonicalSlug) {
+            return redirect(
+                \App\Support\DjMixUrl::detail($mix),
+                301
+            );
+        }
 
-        $otherMixesByDj = self::recoveryTable('dj_mixs as mix')
-            ->leftJoinSub(
-                self::recoverySource('dj'),
-                'dj',
+        $otherMixesByDj = DB::table('dj_mixs as related')
+            ->leftJoin(
+                'djs as dj',
                 'dj.id',
                 '=',
-                'mix.dj_id'
+                'related.dj_id'
             )
             ->select(
-                'mix.id',
-                'mix.slug',
-                'mix.mix_title',
-                'mix.cover_url',
-                'dj.dj_name'
+                'related.id',
+                'related.slug',
+                'related.title as mix_title',
+                'related.cover_url',
+                'dj.name as dj_name'
             )
-            ->where('mix.dj_id', $mix->dj_id)
-            ->where('mix.id', '<>', $mix->id)
-            ->where('mix.IsPublished', 'YES')
-            ->orderByDesc('mix.id')
+            ->where('related.dj_id', $mix->dj_id)
+            ->where('related.id', '<>', $mix->id)
+            ->where('related.is_published', 1)
+            ->orderByDesc('related.id')
             ->limit(6)
             ->get();
 
-        $otherDjs = self::recoveryTable('dj_mixs as mix')
-            ->joinSub(
-                self::recoverySource('dj'),
-                'dj',
+        /*
+        * Latest published mix from each other published DJ.
+        */
+        $otherDjs = DB::table('dj_mixs as related')
+            ->join(
+                'djs as dj',
                 'dj.id',
                 '=',
-                'mix.dj_id'
+                'related.dj_id'
             )
             ->select(
-                'mix.id',
-                'mix.slug',
-                'mix.mix_title',
-                'mix.cover_url',
-                'dj.dj_name',
-                'dj.photo as dj_photo'
+                'related.id',
+                'related.slug',
+                'related.title as mix_title',
+                'related.cover_url',
+                'dj.name as dj_name',
+                'dj.profile_img as dj_photo'
             )
-            ->where('mix.dj_id', '<>', $mix->dj_id)
-            ->where('mix.IsPublished', 'YES')
-            ->where('dj.IsPublished', 'YES')
-            ->whereIn('mix.id', function ($query) use ($mix) {
+            ->where('related.dj_id', '<>', $mix->dj_id)
+            ->where('related.is_published', 1)
+            ->where('dj.is_published', 1)
+            ->whereIn('related.id', function (Builder $query) use ($mix) {
                 $query
-                    ->fromSub(
-                        self::recoverySource('dj_mixs'),
-                        'dj_mixs'
-                    )
-                    ->selectRaw('MAX(id)')
-                    ->where('IsPublished', 'YES')
-                    ->where('dj_id', '<>', $mix->dj_id)
-                    ->groupBy('dj_id');
+                    ->from('dj_mixs as latest')
+                    ->selectRaw('MAX(latest.id)')
+                    ->where('latest.is_published', 1)
+                    ->where('latest.dj_id', '<>', $mix->dj_id)
+                    ->groupBy('latest.dj_id');
             })
-            ->orderByDesc('mix.id')
+            ->orderByDesc('related.id')
             ->limit(6)
             ->get();
 
+        /*
+        * Preserve the CDN audio URL handling.
+        */
         $trackPath = trim((string) ($mix->track_url ?? ''));
 
         $cdnMixUrl = rtrim(
@@ -1970,6 +1627,9 @@ class PageController extends Controller
             }
         }
 
+        /*
+        * Preserve the five-minute audio availability cache.
+        */
         if ($trackUrl !== null) {
             $hasAudioFile = Cache::remember(
                 'djmix-audio-available:v1:' . sha1($trackUrl),
@@ -1991,22 +1651,18 @@ class PageController extends Controller
                             )[0]
                         ));
 
-                        $isAudio = str_starts_with(
-                            $contentType,
-                            'audio/'
-                        ) || in_array(
-                            $contentType,
-                            [
-                                'application/octet-stream',
-                                'binary/octet-stream',
-                                'application/mp3',
-                            ],
-                            true
-                        );
+                        $isAudio = str_starts_with($contentType, 'audio/')
+                            || in_array(
+                                $contentType,
+                                [
+                                    'application/octet-stream',
+                                    'binary/octet-stream',
+                                    'application/mp3',
+                                ],
+                                true
+                            );
 
-                        $contentLength = $response->header(
-                            'Content-Length'
-                        );
+                        $contentLength = $response->header('Content-Length');
 
                         return $isAudio
                             && (
@@ -2032,12 +1688,11 @@ class PageController extends Controller
 
     public function djs(): View
     {
-        $djs = self::recoveryTable('dj')
-            ->where('IsPublished', 'YES')
-            ->whereNotNull('dj_name')
-            ->where('dj_name', '<>', '')
-            ->orderBy('dj_name')
-            ->orderBy('id')
+        $djs = $this->publishedDjQuery()
+            ->whereNotNull('dj.name')
+            ->where('dj.name', '<>', '')
+            ->orderBy('dj.name')
+            ->orderBy('dj.id')
             ->paginate(20);
 
         return view('pages.djs', compact('djs'));
@@ -2045,14 +1700,13 @@ class PageController extends Controller
 
     public function djDetails(string $slug): View
     {
-        $dj = self::recoveryTable('dj')
-            ->where('IsPublished', 'YES')
+        $dj = $this->publishedDjQuery()
             ->get()
             ->first(function ($row) use ($slug) {
                 $djSlug = trim((string) ($row->slug ?? ''));
 
                 if ($djSlug === '') {
-                    $djSlug = Str::slug($row->dj_name);
+                    $djSlug = Str::slug((string) $row->name);
                 }
 
                 return $djSlug === $slug;
@@ -2060,17 +1714,17 @@ class PageController extends Controller
 
         abort_unless($dj, 404);
 
-        $mixes = self::recoveryTable('dj_mixs as mix')
+        $mixes = DB::table('dj_mixs as mix')
             ->select(
                 'mix.id',
                 'mix.slug',
-                'mix.mix_title',
+                'mix.title as mix_title',
                 'mix.cover_url'
             )
             ->where('mix.dj_id', $dj->id)
-            ->where('mix.IsPublished', 'YES')
-            ->whereNotNull('mix.mix_title')
-            ->where('mix.mix_title', '<>', '')
+            ->where('mix.is_published', 1)
+            ->whereNotNull('mix.title')
+            ->where('mix.title', '<>', '')
             ->orderByDesc('mix.id')
             ->paginate(20);
 
@@ -2087,35 +1741,16 @@ class PageController extends Controller
             ->select('id', 'name')
             ->whereIn('id', [4, 5])
             ->get()
-            ->first(fn ($user) => Str::slug($user->name) === $slug);
+            ->first(
+                fn ($user) => Str::slug($user->name) === $slug
+            );
 
         abort_unless($poster, 404);
 
-        $mixes = self::recoveryTable('dj_mixs as mix')
-            ->leftJoinSub(
-                self::recoverySource('dj'),
-                'dj',
-                'dj.id',
-                '=',
-                'mix.dj_id'
-            )
-            ->select(
-                'mix.id',
-                'mix.slug',
-                'mix.mix_title',
-                'mix.cover_url',
-                'mix.created_at',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(dj.dj_name, ''),
-                        'TrendyBeatz DJ'
-                    ) as dj_name
-                ")
-            )
+        $mixes = $this->publishedMixQuery()
             ->where('mix.posted_by', $poster->id)
-            ->where('mix.IsPublished', 'YES')
-            ->whereNotNull('mix.mix_title')
-            ->where('mix.mix_title', '<>', '')
+            ->whereNotNull('mix.title')
+            ->where('mix.title', '<>', '')
             ->orderByDesc('mix.id')
             ->paginate(24);
 
@@ -2128,45 +1763,27 @@ class PageController extends Controller
 
     public function mixesByYear(string $year): View
     {
-        $mixes = self::recoveryTable('dj_mixs as mix')
-            ->leftJoinSub(
-                self::recoverySource('dj'),
-                'dj',
-                'dj.id',
-                '=',
-                'mix.dj_id'
-            )
-            ->select(
-                'mix.id',
-                'mix.slug',
-                'mix.mix_title',
-                'mix.cover_url',
-                'mix.released_year',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(dj.dj_name, ''),
-                        'TrendyBeatz DJ'
-                    ) as dj_name
-                ")
-            )
-            ->where('mix.IsPublished', 'YES')
+        $mixes = $this->publishedMixQuery()
             ->where('mix.released_year', $year)
-            ->whereNotNull('mix.mix_title')
-            ->where('mix.mix_title', '<>', '')
+            ->whereNotNull('mix.title')
+            ->where('mix.title', '<>', '')
             ->orderByDesc('mix.id')
             ->paginate(24);
 
-        return view('pages.djmix-year', compact('mixes', 'year'));
+        return view('pages.djmix-year', compact(
+            'mixes',
+            'year'
+        ));
     }
 
-    private function blogListingQuery(): Builder
+    private function publishedBlogQuery(): Builder
     {
-        return self::recoveryTable('blogs as blog')
+        return DB::table('blogs as blog')
             ->leftJoin(
                 'blog_types as category',
                 'category.id',
                 '=',
-                'blog.category_id'
+                'blog.blog_type'
             )
             ->leftJoin(
                 'users as poster',
@@ -2174,29 +1791,41 @@ class PageController extends Controller
                 '=',
                 'blog.posted_by'
             )
+            ->where('blog.Is_published', 1);
+    }
+
+    private function blogPublisherSql(): string
+    {
+        return "
+            COALESCE(
+                NULLIF(poster.name, ''),
+                CASE
+                    WHEN blog.posted_by REGEXP '^[0-9]+$'
+                        THEN NULL
+                    ELSE NULLIF(blog.posted_by, '')
+                END
+            )
+        ";
+    }
+
+    private function blogListingQuery(): Builder
+    {
+        return $this->publishedBlogQuery()
             ->select(
                 'blog.id',
                 'blog.slug',
-                'blog.category_id',
+                'blog.blog_type as category_id',
                 'blog.title',
                 'blog.intro',
                 'blog.photo',
                 'blog.created_at',
                 'blog.updated_at',
                 'category.name as category_name',
-                'category.slug as category_slug',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(poster.name, ''),
-                        CASE
-                            WHEN blog.posted_by REGEXP '^[0-9]+$'
-                                THEN NULL
-                            ELSE NULLIF(blog.posted_by, '')
-                        END
-                    ) as posted_by_name
-                ")
+                'category.slug as category_slug'
             )
-            ->where('blog.IsPublished', 'YES');
+            ->selectRaw(
+                $this->blogPublisherSql() . ' AS posted_by_name'
+            );
     }
 
     public function blogs(): View
@@ -2234,7 +1863,7 @@ class PageController extends Controller
         abort_unless($selectedCategory, 404);
 
         $posts = $this->blogListingQuery()
-            ->where('blog.category_id', $selectedCategory->id)
+            ->where('blog.blog_type', $selectedCategory->id)
             ->orderByDesc('blog.id')
             ->paginate(12);
 
@@ -2247,43 +1876,28 @@ class PageController extends Controller
 
     public function blogDetails(string $slug): View
     {
-        $post = self::recoveryTable('blogs as blog')
-            ->leftJoin(
-                'blog_types as category',
-                'category.id',
-                '=',
-                'blog.category_id'
-            )
-            ->leftJoin(
-                'users as poster',
-                'poster.id',
-                '=',
-                'blog.posted_by'
-            )
+        /*
+        * blog.* includes the article paragraphs, images,
+        * description and both saved embed fields.
+        */
+        $post = $this->publishedBlogQuery()
             ->select(
                 'blog.*',
+                'blog.blog_type as category_id',
+                'blog.track_url as TrackUrl',
+                'blog.script_url as scriptUrl',
+                'blog.blog_album_id as album_id',
                 'category.name as category_name',
-                'category.slug as category_slug',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(poster.name, ''),
-                        CASE
-                            WHEN blog.posted_by REGEXP '^[0-9]+$'
-                                THEN NULL
-                            ELSE NULLIF(blog.posted_by, '')
-                        END
-                    ) as posted_by_name
-                ")
+                'category.slug as category_slug'
+            )
+            ->selectRaw("'YES' AS IsPublished")
+            ->selectRaw(
+                $this->blogPublisherSql() . ' AS posted_by_name'
             )
             ->where('blog.slug', $slug)
-            ->where('blog.IsPublished', 'YES')
             ->first();
 
         abort_unless($post, 404);
-        
-        $post->script_url2 = DB::table('blogs')
-            ->where('id', $post->id)
-            ->value('script_url2');
 
         $categories = DB::table('blog_types')
             ->select('id', 'name', 'slug')
@@ -2291,78 +1905,14 @@ class PageController extends Controller
             ->orderBy('name')
             ->get();
 
-        $relatedPosts = self::recoveryTable('blogs as blog')
-            ->leftJoin(
-                'blog_types as category',
-                'category.id',
-                '=',
-                'blog.category_id'
-            )
-            ->leftJoin(
-                'users as poster',
-                'poster.id',
-                '=',
-                'blog.posted_by'
-            )
-            ->select(
-                'blog.id',
-                'blog.slug',
-                'blog.title',
-                'blog.photo',
-                'blog.updated_at',
-                'category.name as category_name',
-                'category.slug as category_slug',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(poster.name, ''),
-                        CASE
-                            WHEN blog.posted_by REGEXP '^[0-9]+$'
-                                THEN NULL
-                            ELSE NULLIF(blog.posted_by, '')
-                        END
-                    ) as posted_by_name
-                ")
-            )
-            ->where('blog.IsPublished', 'YES')
+        $relatedPosts = $this->blogListingQuery()
             ->where('blog.id', '<>', $post->id)
-            ->where('blog.category_id', $post->category_id)
+            ->where('blog.blog_type', $post->category_id)
             ->orderByDesc('blog.id')
             ->limit(5)
             ->get();
 
-        $latestPosts = self::recoveryTable('blogs as blog')
-            ->leftJoin(
-                'blog_types as category',
-                'category.id',
-                '=',
-                'blog.category_id'
-            )
-            ->leftJoin(
-                'users as poster',
-                'poster.id',
-                '=',
-                'blog.posted_by'
-            )
-            ->select(
-                'blog.id',
-                'blog.slug',
-                'blog.title',
-                'blog.photo',
-                'blog.updated_at',
-                'category.name as category_name',
-                'category.slug as category_slug',
-                DB::raw("
-                    COALESCE(
-                        NULLIF(poster.name, ''),
-                        CASE
-                            WHEN blog.posted_by REGEXP '^[0-9]+$'
-                                THEN NULL
-                            ELSE NULLIF(blog.posted_by, '')
-                        END
-                    ) as posted_by_name
-                ")
-            )
-            ->where('blog.IsPublished', 'YES')
+        $latestPosts = $this->blogListingQuery()
             ->where('blog.id', '<>', $post->id)
             ->orderByDesc('blog.id')
             ->limit(5)
@@ -2372,7 +1922,7 @@ class PageController extends Controller
             ->where('post_type', 'blog')
             ->where('post_id', $post->id)
             ->where('is_allowed', 1)
-            ->count();    
+            ->count();
 
         return view('pages.blog-details', [
             'post' => $post,
@@ -2385,16 +1935,20 @@ class PageController extends Controller
 
     public function blogsPublishedBy(string $slug): View
     {
-        $publishers = DB::query()
-            ->fromSub(
-                $this->blogListingQuery(),
-                'published_posts'
+        /*
+        * Group by the displayed publisher name, preserving
+        * the existing publisher URL behavior.
+        */
+        $publishers = $this->publishedBlogQuery()
+            ->selectRaw(
+                $this->blogPublisherSql() . ' AS posted_by_name'
             )
-            ->select('posted_by_name')
-            ->whereNotNull('posted_by_name')
-            ->where('posted_by_name', '<>', '')
             ->distinct()
-            ->get();
+            ->get()
+            ->filter(
+                fn ($publisher) =>
+                    trim((string) $publisher->posted_by_name) !== ''
+            );
 
         $matches = $publishers->filter(
             fn ($publisher) =>
@@ -2405,13 +1959,12 @@ class PageController extends Controller
 
         $publisherName = $matches->first()->posted_by_name;
 
-        $posts = DB::query()
-            ->fromSub(
-                $this->blogListingQuery(),
-                'published_posts'
+        $posts = $this->blogListingQuery()
+            ->whereRaw(
+                '(' . $this->blogPublisherSql() . ') = ?',
+                [$publisherName]
             )
-            ->where('posted_by_name', $publisherName)
-            ->orderByDesc('id')
+            ->orderByDesc('blog.id')
             ->paginate(12);
 
         return view('pages.blogs-published-by', compact(
@@ -2420,390 +1973,29 @@ class PageController extends Controller
             'slug'
         ));
     }
-    
-    private function filteredArtists(): Builder
-    {
-        $query = $this->publishedArtists();
-    
-        $search = trim((string) request()->query('search', ''));
-        $letter = strtoupper(trim((string) request()->query('letter', '')));
-    
-        if ($search !== '') {
-            $query->where(function (Builder $query) use ($search) {
-                $query->where('Stage_Name', 'like', '%' . $search . '%')
-                    ->orWhere('ArtistsName', 'like', '%' . $search . '%');
-            });
-        }
-    
-        if (preg_match('/^[A-Z]$/', $letter)) {
-            $query->whereRaw(
-                "COALESCE(NULLIF(TRIM(Stage_Name), ''), TRIM(ArtistsName)) LIKE ?",
-                [$letter . '%']
-            );
-        }
-    
-        return $query;
-    }
 
-    /**
-     * Read the recovered schema while retaining the field names
-     * expected by existing Blade templates and URL helpers.
-     *
-     * Artists_Id below represents the numeric artists.id.
-     * These queries do not create or modify database records.
-     */
-    private static function recoveryTable(string $reference): Builder
+    public function blogDescription(int $id): \Illuminate\Http\Response
     {
-        $parts = explode(' as ', $reference, 2);
+        $post = DB::table('blogs')
+            ->select('description')
+            ->where('id', $id)
+            ->where('Is_published', 1)
+            ->where('hide_from_source', 1)
+            ->first();
 
-        return DB::query()->fromSub(
-            self::recoverySource($parts[0]),
-            $parts[1] ?? $parts[0]
+        abort_unless($post, 404);
+
+        return response(
+            (string) $post->description,
+            200,
+            [
+                'Content-Type' => 'text/html; charset=UTF-8',
+                'X-Robots-Tag' => 'noindex',
+                'Cache-Control' => 'no-store',
+                'X-Content-Type-Options' => 'nosniff',
+            ]
         );
     }
-
-    private static function recoverySource(string $table): Builder
-    {
-        [$physicalTable, $columns] = match ($table) {
-            'listing' => ['listings', [
-                "source.`id`",
-                "source.`artist_id`",
-                "source.`album_id`",
-                "source.`released_year`",
-                "source.`track_title`",
-                "source.`track_number`",
-                "source.`track_url`",
-                "source.`buy_song`",
-                "source.`cover_url`",
-                "source.`copyright_image`",
-                "source.`listing_type`",
-                "source.`track_info`",
-                "source.`track_page`",
-                "source.`clicks`",
-                "source.`track_info1`",
-                "source.`track_info2`",
-                "source.`script_url`",
-                "source.`posted_by`",
-                "source.`user_id`",
-                "source.`directed_by`",
-                "source.`produced_by`",
-                "source.`meta_keyword`",
-                "source.`is_video_comedy`",
-                "source.`is_published`",
-                "source.`slug`",
-                "source.`stream_count`",
-                "source.`country_order`",
-                "source.`introduction`",
-                "source.`additional_link_id`",
-                "source.`is_gospel`",
-                "source.`is_high_life`",
-                "source.`show_ads`",
-                "source.`created_at`",
-                "source.`updated_at`",
-                "source.`youtube_embed_url`",
-                "source.`audiomack_embed_url`",
-                "source.artist_id AS `Artists_Id`",
-                "source.featuring AS `Featuring`",
-                "source.released_year AS `YearOfRelease`",
-                "source.track_title AS `TrackTitle`",
-                "source.track_url AS `TrackUrl`",
-                "source.cover_url AS `CoverUrl`",
-                "
-                    CASE source.listing_type
-                        WHEN '1' THEN 'Audio'
-                        WHEN '2' THEN 'Video'
-                        ELSE NULL
-                    END AS `ListingType`
-                ",
-                "source.track_info AS `TrackInfo`",
-                "source.track_page AS `TrackPage`",
-                "source.track_info1 AS `trackinfo1`",
-                "source.track_info2 AS `trackinfo2`",
-                "source.script_url AS `scriptUrl`",
-                "source.directed_by AS `directedby`",
-                "source.produced_by AS `producedby`",
-                "
-                    CASE WHEN source.is_published = 1
-                        THEN 'YES' ELSE 'NO'
-                    END AS `IsPublished`
-                ",
-                "source.is_gospel AS `isgospel`",
-                "source.is_high_life AS `ishighlife`",
-                "
-                    CASE source.country_id
-                        WHEN '1' THEN 'naija'
-                        WHEN '2' THEN 'ghana'
-                        WHEN '3' THEN 'african'
-                        ELSE source.country_id
-                    END AS `country_id`
-                ",
-                "NULL AS `AlbumName`",
-            ]],
-
-            'artists' => ['artists', [
-                "source.`id`",
-                "source.`slug`",
-                "source.`artist_id`",
-                "source.`full_name`",
-                "source.`artist_profile`",
-                "source.`img`",
-                "source.`record_label`",
-                "source.`place_of_birth`",
-                "source.`genre`",
-                "source.`award1`",
-                "source.`award2`",
-                "source.`award3`",
-                "source.`networth_id`",
-                "source.`is_published`",
-                "source.`order_id`",
-                "source.`artist_type`",
-                "source.`is_popular`",
-                "source.`meta_keyword`",
-                "source.`show_ads`",
-                "source.`user_id`",
-                "source.`posted_by`",
-                "source.`created_at`",
-                "source.`updated_at`",
-                "source.id AS `Artists_Id`",
-                "source.stage_name AS `ArtistsName`",
-                "source.stage_name AS `Stage_Name`",
-                "source.img AS `ProfilePic`",
-                "source.artist_profile AS `ArtistsProfile`",
-                "source.record_label AS `RecordLabel`",
-                "source.full_name AS `Fullname`",
-                "source.place_of_birth AS `Place_Birth`",
-                "source.genre AS `Genres`",
-                "source.award1 AS `Awards1`",
-                "source.award2 AS `Awards2`",
-                "source.award3 AS `Awards3`",
-                "source.endorsement1 AS `Endorsement1`",
-                "source.endorsement2 AS `Endorsement2`",
-                "
-                    CASE WHEN source.is_published = 1
-                        THEN 'YES' ELSE 'NO'
-                    END AS `IsPublished`
-                ",
-                "
-                    CASE source.country_id
-                        WHEN '1' THEN 'naija'
-                        WHEN '2' THEN 'ghana'
-                        WHEN '3' THEN 'african'
-                        ELSE source.country_id
-                    END AS `country_id`
-                ",
-                "source.artist_type AS `category_id`",
-                "source.is_also_comedian AS `Is_also_comedian`",
-                "source.posted_by AS `posteb_by`",
-            ]],
-
-            'albums' => ['albums', [
-                "source.`id`",
-                "source.`artist_id`",
-                "source.`title`",
-                "source.`slug`",
-                "source.`featuring`",
-                "source.`cover_url`",
-                "source.`copyright_image`",
-                "source.`description`",
-                "source.`released_year`",
-                "source.`released_date`",
-                "source.`sort_order`",
-                "source.`album_type`",
-                "source.`is_published`",
-                "source.`is_popular`",
-                "source.`posted_by`",
-                "source.`user_id`",
-                "source.`show_ads`",
-                "source.`created_at`",
-                "source.`updated_at`",
-                "
-                    CASE WHEN source.is_published = 1
-                        THEN 'YES' ELSE 'NO'
-                    END AS `IsPublished`
-                ",
-                "source.album_type AS `category_id`",
-            ]],
-
-            'dj' => ['djs', [
-                "source.`id`",
-                "source.`slug`",
-                "source.`name`",
-                "source.`full_name`",
-                "source.`place_of_birth`",
-                "source.`profile_img`",
-                "source.`award`",
-                "source.`endorsement`",
-                "source.`is_published`",
-                "source.`networth_id`",
-                "source.`posted_by`",
-                "source.`user_id`",
-                "source.`order_id`",
-                "source.`created_at`",
-                "source.`updated_at`",
-                "source.name AS `dj_name`",
-                "source.full_name AS `fullname`",
-                "source.profile_img AS `photo`",
-                "
-                    CASE WHEN source.is_published = 1
-                        THEN 'YES' ELSE 'NO'
-                    END AS `IsPublished`
-                ",
-                "
-                    CASE source.country_id
-                        WHEN '1' THEN 'naija'
-                        WHEN '2' THEN 'ghana'
-                        WHEN '3' THEN 'african'
-                        ELSE source.country_id
-                    END AS `country_id`
-                ",
-            ]],
-
-            'dj_mixs' => ['dj_mixs', [
-                "source.`id`",
-                "source.`dj_id`",
-                "source.`title`",
-                "source.`introduction`",
-                "source.`details`",
-                "source.`details2`",
-                "source.`cover_url`",
-                "source.`back_cover`",
-                "source.`copyright_image`",
-                "source.`track_url`",
-                "source.`mix_count`",
-                "source.`description1`",
-                "source.`description2`",
-                "source.`posted_by`",
-                "source.`user_id`",
-                "source.`is_published`",
-                "source.`sort_order`",
-                "source.`is_popular`",
-                "source.`released_year`",
-                "source.`stream_count`",
-                "source.`slug`",
-                "source.`created_at`",
-                "source.`updated_at`",
-                "source.title AS `mix_title`",
-                "
-                    CASE WHEN source.is_published = 1
-                        THEN 'YES' ELSE 'NO'
-                    END AS `IsPublished`
-                ",
-            ]],
-
-            'blogs' => ['blogs', [
-                "source.`id`",
-                "source.`blog_type`",
-                "source.`posted_by`",
-                "source.`title`",
-                "source.`intro`",
-                "source.`photo`",
-                "source.`description`",
-                "source.`desc2`",
-                "source.`desc3`",
-                "source.`photo2`",
-                "source.`desc4`",
-                "source.`desc5`",
-                "source.`desc6`",
-                "source.`photo3`",
-                "source.`desc7`",
-                "source.`desc8`",
-                "source.`desc9`",
-                "source.`photo4`",
-                "source.`desc10`",
-                "source.`Desc11`",
-                "source.`Desc12`",
-                "source.`Desc13`",
-                "source.`photo5`",
-                "source.`Desc14`",
-                "source.`Desc15`",
-                "source.`Desc16`",
-                "source.`photo6`",
-                "source.`Desc17`",
-                "source.`Desc18`",
-                "source.`Desc19`",
-                "source.`photo7`",
-                "source.`Desc20`",
-                "source.`Desc21`",
-                "source.`Desc22`",
-                "source.`Desc23`",
-                "source.`photo8`",
-                "source.`Desc24`",
-                "source.`Desc25`",
-                "source.`Desc26`",
-                "source.`photo9`",
-                "source.`Desc27`",
-                "source.`Desc28`",
-                "source.`Desc29`",
-                "source.`photo10`",
-                "source.`Desc30`",
-                "source.`track_url`",
-                "source.`file_extension`",
-                "source.`created_at`",
-                "source.`updated_at`",
-                "source.`related_news_link`",
-                "source.`related_news_title`",
-                "source.`script_url`",
-                "source.`Is_published`",
-                "source.`blog_album_id`",
-                "source.`slug`",
-                "source.`user_id`",
-                "source.blog_type AS `category_id`",
-                "source.track_url AS `TrackUrl`",
-                "source.script_url AS `scriptUrl`",
-                "
-                    CASE WHEN source.Is_published = 1
-                        THEN 'YES' ELSE 'NO'
-                    END AS `IsPublished`
-                ",
-                "source.blog_album_id AS `album_id`",
-            ]],
-
-            'featured_rated' => ['listing_features', [
-                "source.`id`",
-                "source.`listing_id`",
-                "source.`listing_feature_type`",
-                "source.`rating`",
-                "source.`posted_by`",
-                "source.`user_id`",
-                "source.`created_at`",
-                "source.`updated_at`",
-                "source.rating AS `rate_no`",
-            ]],
-
-            'song_of_the_week' => ['listing_features', [
-                "source.`id`",
-                "source.`listing_id`",
-                "source.`listing_feature_type`",
-                "source.`rating`",
-                "source.`posted_by`",
-                "source.`user_id`",
-                "source.`created_at`",
-                "source.`updated_at`",
-                "source.rating AS `rate_no`",
-            ]],
-
-            'album_of_the_day' => ['album_populars', [
-                "source.`id`",
-                "source.`album_id`",
-                "source.`rate_no`",
-                "source.`created_at`",
-                "source.`updated_at`",
-            ]],
-
-            default => throw new \InvalidArgumentException(
-                'Unsupported recovery table: ' . $table
-            ),
-        };
-
-        $query = DB::table($physicalTable . ' as source')
-            ->selectRaw(implode(', ', $columns));
-
-        if ($table === 'featured_rated') {
-            $query->where('source.listing_feature_type', 1);
-        } elseif ($table === 'song_of_the_week') {
-            $query->where('source.listing_feature_type', 2);
-        }
-
-        return $query;
-    }
+    
+    
 }

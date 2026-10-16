@@ -15,9 +15,11 @@
         ));
     };
 
+    $hideDescriptionFromSource = (int) ($post->hide_from_source ?? 0) === 1;
+
     $pageDescription = collect([
         $post->intro ?? '',
-        $post->description ?? '',
+        $hideDescriptionFromSource ? '' : ($post->description ?? ''),
     ])
         ->map($cleanMetaText)
         ->filter(fn ($text) => $text !== '')
@@ -49,30 +51,50 @@
 
     $cover = trim((string) ($post->photo ?? ''));
 
-    if ($cover === '') {
-        $socialImage = '';
-    } elseif (preg_match('~^https?://~i', $cover)) {
-        $socialImage = $cover;
-    } else {
-        $coverPath = ltrim($cover, '/');
+    $socialImage = '';
+    $socialImageSize = null;
 
-        $socialImage = asset(
-            str_starts_with($coverPath, 'images/blog/')
+    if ($cover !== '') {
+        if (preg_match('~^https?://~i', $cover)) {
+            $socialImage = $cover;
+        } else {
+            $coverPath = ltrim($cover, '/');
+
+            $coverPath = str_starts_with($coverPath, 'images/blog/')
                 ? $coverPath
-                : 'images/blog/' . basename($coverPath)
-        );
+                : 'images/blog/' . basename($coverPath);
+
+            $socialImage = asset($coverPath);
+
+            $localCoverPath = public_path($coverPath);
+
+            if (is_file($localCoverPath)) {
+                $socialImageSize = @getimagesize($localCoverPath);
+            }
+        }
     }
 @endphp
+
+    
+
+
 
 @section('title', $pageTitle)
 @section('meta_description', $pageDescription)
 @section('meta_keywords', $metaKeywords)
 @section('canonical', $canonicalUrl)
+
+@section('social_type', 'article')
 @section('social_title', $post->title)
 @section('social_description', $pageDescription)
 
 @if ($socialImage !== '')
     @section('social_image', $socialImage)
+
+    @if ($socialImageSize)
+        @section('social_image_width', (string) $socialImageSize[0])
+        @section('social_image_height', (string) $socialImageSize[1])
+    @endif
 @endif
 
 
@@ -333,9 +355,20 @@
                                 </figure>
                             @endif
                         @else
-                            <div class="tb-article-rich-text">
-                                {!! $value !!}
-                            </div>
+                            @if ($loop->first && $hideDescriptionFromSource)
+                                <div
+                                    class="tb-article-rich-text"
+                                    data-blog-description
+                                    data-content-url="{{ route('blogs.description', ['id' => $post->id]) }}"
+                                    aria-busy="true"
+                                >
+                                    <p role="status">Loading...</p>
+                                </div>                                
+                            @else
+                                <div class="tb-article-rich-text">
+                                    {!! $value !!}
+                                </div>
+                            @endif
                         @endif
                     @endif
                 @endforeach
@@ -567,4 +600,61 @@
         'postId' => $post->id,
         'postTitle' => $post->title,
     ])
+
+
+    <script>
+        (() => {
+            const container = document.querySelector('[data-blog-description]');
+
+            if (!container) return;
+
+            async function loadDescription() {
+                container.setAttribute('aria-busy', 'true');
+                container.replaceChildren();
+
+                const status = document.createElement('p');
+                status.setAttribute('role', 'status');
+                status.textContent = 'Loading...';
+                container.appendChild(status);
+
+                try {
+                    const response = await fetch(container.dataset.contentUrl, {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        headers: {
+                            'Accept': 'text/html'
+                        },
+                        signal: AbortSignal.timeout(15000)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Description could not be loaded.');
+                    }
+
+                    const html = await response.text();
+
+                    // Render the saved rich text, as the existing Blade does.
+                    container.innerHTML = html;
+                } catch (error) {
+                    container.replaceChildren();
+
+                    const message = document.createElement('p');
+                    message.setAttribute('role', 'status');
+                    message.textContent = 'The article could not be loaded.';
+
+                    const retry = document.createElement('button');
+                    retry.type = 'button';
+                    retry.textContent = 'Try again';
+                    retry.addEventListener('click', loadDescription);
+
+                    container.append(message, retry);
+                } finally {
+                    container.setAttribute('aria-busy', 'false');
+                }
+            }
+
+            loadDescription();
+        })();
+    </script>
 @endsection
