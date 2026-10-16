@@ -21,6 +21,19 @@
         </time>
     </p>
     
+    <!--<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6353967042876840"
+     crossorigin="anonymous"></script>
+<!-- TB Auto Ads Size -->
+<!--<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-6353967042876840"
+     data-ad-slot="4526497895"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>-->
+
   <!--  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6353967042876840"
      crossorigin="anonymous"></script>
      

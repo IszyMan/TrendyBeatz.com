@@ -193,6 +193,9 @@ class ListingController extends Controller
 
         $newCover = null;
 
+        $newCopyright = null;
+        $insert['copyright_image'] = null;
+
         try {
             if ($request->hasFile('cover_image')) {
                 $newCover = $this->saveCover(
@@ -200,6 +203,14 @@ class ListingController extends Controller
                 );
 
                 $insert['cover_url'] = $newCover;
+            }
+
+            if ($request->hasFile('copyright_image')) {
+                $newCopyright = $this->saveCopyrightImage(
+                    $request->file('copyright_image')
+                );
+
+                $insert['copyright_image'] = $newCopyright;
             }
 
             $id = DB::transaction(function () use ($insert) {
@@ -221,6 +232,10 @@ class ListingController extends Controller
         } catch (\Throwable $exception) {
             if ($newCover !== null) {
                 File::delete(public_path('images/' . $newCover));
+            }
+
+            if ($newCopyright !== null) {
+                File::delete(public_path('images/copyright/' . $newCopyright));
             }
 
             throw $exception;
@@ -257,6 +272,8 @@ class ListingController extends Controller
 
         $newCover = null;
 
+        $newCopyright = null;
+
         try {
             if ($request->hasFile('cover_image')) {
                 $newCover = $this->saveCover(
@@ -264,6 +281,16 @@ class ListingController extends Controller
                 );
 
                 $values['cover_url'] = $newCover;
+            }
+
+            if ($request->hasFile('copyright_image')) {
+                $newCopyright = $this->saveCopyrightImage(
+                    $request->file('copyright_image')
+                );
+
+                $values['copyright_image'] = $newCopyright;
+            } elseif ($request->boolean('remove_copyright_image')) {
+                $values['copyright_image'] = null;
             }
 
             // Keep the original user_id, posted_by and created_at.
@@ -316,6 +343,10 @@ class ListingController extends Controller
         } catch (\Throwable $exception) {
             if ($newCover !== null) {
                 File::delete(public_path('images/' . $newCover));
+            }
+
+            if ($newCopyright !== null) {
+                File::delete(public_path('images/copyright/' . $newCopyright));
             }
 
             throw $exception;
@@ -448,6 +479,14 @@ class ListingController extends Controller
                 'mimes:jpg,jpeg,png,webp,gif',
                 'max:5120',
             ],
+            'copyright_image' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+
+            'remove_copyright_image' => ['nullable', 'boolean'],
             'media_url' => ['nullable', 'string', 'max:2000'],
             'buy_song' => ['nullable', 'string', 'max:191'],
             'introduction' => ['nullable', 'string'],
@@ -635,6 +674,39 @@ class ListingController extends Controller
                     . 'The filename must not exceed 191 characters.',
             ]);
         }
+
+        return $filename;
+    }
+
+
+    private function saveCopyrightImage(UploadedFile $file): string
+    {
+        $directory = public_path('images/copyright');
+
+        File::ensureDirectoryExists($directory);
+
+        $originalName = pathinfo(
+            $file->getClientOriginalName(),
+            PATHINFO_FILENAME
+        );
+
+        $baseName = Str::limit(
+            Str::slug($originalName) ?: 'copyright-permission',
+            140,
+            ''
+        );
+
+        $extension = $file->extension();
+        $filename = $baseName . '.' . $extension;
+        $counter = 1;
+
+        // Avoid overwriting another listing's permission image.
+        while (File::exists($directory . DIRECTORY_SEPARATOR . $filename)) {
+            $filename = $baseName . '-' . $counter . '.' . $extension;
+            $counter++;
+        }
+
+        $file->move($directory, $filename);
 
         return $filename;
     }

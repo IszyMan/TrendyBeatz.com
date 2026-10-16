@@ -1589,6 +1589,7 @@ class PageController extends Controller
             ->select(
                 'other.id',
                 'other.title',
+                'other.cover_url',
                 'other.released_year'
             )
             ->where('other.artist_id', $album->artist_id)
@@ -2474,6 +2475,7 @@ class PageController extends Controller
                 "source.`track_url`",
                 "source.`buy_song`",
                 "source.`cover_url`",
+                "source.`copyright_image`",
                 "source.`listing_type`",
                 "source.`track_info`",
                 "source.`track_page`",
@@ -2601,6 +2603,7 @@ class PageController extends Controller
                 "source.`slug`",
                 "source.`featuring`",
                 "source.`cover_url`",
+                "source.`copyright_image`",
                 "source.`description`",
                 "source.`released_year`",
                 "source.`released_date`",
@@ -2664,6 +2667,7 @@ class PageController extends Controller
                 "source.`details2`",
                 "source.`cover_url`",
                 "source.`back_cover`",
+                "source.`copyright_image`",
                 "source.`track_url`",
                 "source.`mix_count`",
                 "source.`description1`",

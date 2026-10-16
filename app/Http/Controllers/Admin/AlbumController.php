@@ -102,6 +102,8 @@ class AlbumController extends Controller
 
         $filename = null;
 
+        $newCopyright = null;
+
         try {
             if ($request->hasFile('cover_image')) {
                 $filename = $this->saveImage(
@@ -121,6 +123,15 @@ class AlbumController extends Controller
             $values['created_at'] = now();
             $values['updated_at'] = now();
 
+            $values['copyright_image'] = null;
+            if ($request->hasFile('copyright_image')) {
+                $newCopyright = $this->saveCopyrightImage(
+                    $request->file('copyright_image')
+                );
+
+                $values['copyright_image'] = $newCopyright;
+            }
+
             $albumId = DB::transaction(function () use ($values) {
                 $albumId = DB::table('albums')->insertGetId($values);
             
@@ -136,6 +147,12 @@ class AlbumController extends Controller
                 return $albumId;
             });
         } catch (\Throwable $exception) {
+            if ($newCopyright !== null) {
+                File::delete(
+                    public_path('images/copyright/' . $newCopyright)
+                );
+            }
+            
             if ($filename !== null) {
                 File::delete(public_path('images/' . $filename));
             }
@@ -208,6 +225,8 @@ class AlbumController extends Controller
 
         $filename = null;
 
+        $newCopyright = null;
+
         try {
             if ($request->hasFile('cover_image')) {
                 $filename = $this->saveImage(
@@ -215,6 +234,17 @@ class AlbumController extends Controller
                 );
 
                 $values['cover_url'] = $filename;
+            }
+
+
+            if ($request->hasFile('copyright_image')) {
+                $newCopyright = $this->saveCopyrightImage(
+                    $request->file('copyright_image')
+                );
+
+                $values['copyright_image'] = $newCopyright;
+            } elseif ($request->boolean('remove_copyright_image')) {
+                $values['copyright_image'] = null;
             }
 
             // Preserve user_id, posted_by and created_at.
@@ -256,6 +286,11 @@ class AlbumController extends Controller
                 }
             });
         } catch (\Throwable $exception) {
+            if ($newCopyright !== null) {
+                File::delete(
+                    public_path('images/copyright/' . $newCopyright)
+                );
+            }
             if ($filename !== null) {
                 File::delete(public_path('images/' . $filename));
             }
@@ -374,6 +409,15 @@ class AlbumController extends Controller
                 'mimes:jpg,jpeg,png,webp,gif',
                 'max:5120',
             ],
+
+            'copyright_image' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+
+            'remove_copyright_image' => ['nullable', 'boolean'],
         ]);
 
         $data['title'] = trim($data['title']);
@@ -473,5 +517,36 @@ class AlbumController extends Controller
         }
 
         File::delete(public_path('images/' . $filename));
+    }
+
+    private function saveCopyrightImage(UploadedFile $file): string
+    {
+        $directory = public_path('images/copyright');
+
+        File::ensureDirectoryExists($directory);
+
+        $originalName = pathinfo(
+            $file->getClientOriginalName(),
+            PATHINFO_FILENAME
+        );
+
+        $baseName = Str::limit(
+            Str::slug($originalName) ?: 'copyright-permission',
+            140,
+            ''
+        );
+
+        $extension = $file->extension();
+        $filename = $baseName . '.' . $extension;
+        $counter = 1;
+
+        while (File::exists($directory . DIRECTORY_SEPARATOR . $filename)) {
+            $filename = $baseName . '-' . $counter . '.' . $extension;
+            $counter++;
+        }
+
+        $file->move($directory, $filename);
+
+        return $filename;
     }
 }

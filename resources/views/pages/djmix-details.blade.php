@@ -210,6 +210,80 @@
                         Latest DJ Mix
                     </a>
                 </p>
+
+
+                @php
+                    $copyrightFilename = basename(
+                        trim((string) ($mix->copyright_image ?? ''))
+                    );
+
+                    $hasCopyrightPermission = $copyrightFilename !== '';
+
+                    $copyrightLabel = $hasCopyrightPermission
+                        ? 'Direct Copyright Permission'
+                        : 'Fair Use';
+
+                    $copyrightImageUrl = $hasCopyrightPermission
+                        ? asset('images/copyright/' . $copyrightFilename)
+                        : asset('images/copyright/djmix-fair-use.jpg');
+                @endphp
+
+                <p class="tb-copyright-row">
+                    <strong>Copyright License:</strong>
+
+                    <button
+                        type="button"
+                        class="tb-copyright-link"
+                        data-copyright-open
+                        aria-haspopup="dialog"
+                        aria-controls="tb-copyright-dialog"
+                    >
+                        {{ $copyrightLabel }}
+                    </button>
+                </p>
+
+                <dialog
+                    id="tb-copyright-dialog"
+                    class="tb-copyright-dialog"
+                    aria-labelledby="tb-copyright-title"
+                >
+                    <div class="tb-copyright-header">
+                        <h2 id="tb-copyright-title">
+                            {{ $copyrightLabel }}
+                        </h2>
+
+                        <button
+                            type="button"
+                            class="tb-copyright-close"
+                            data-copyright-close
+                            aria-label="Close copyright notice"
+                            autofocus
+                        >
+                            &times;
+                        </button>
+                    </div>
+
+                    <div class="tb-copyright-body">
+                        <img
+                            class="tb-copyright-image"
+                            src="{{ $copyrightImageUrl }}"
+                            alt="{{ $copyrightLabel }} notice for {{ $displayTitle }}"
+                        >
+
+                        <p class="tb-copyright-image-error" hidden>
+                            The notice image is currently unavailable.
+                        </p>
+
+                        @unless ($hasCopyrightPermission)
+                            <div class="tb-copyright-dmca">
+                                Do you want a DMCA removal? Send a removal email to
+                                <a href="mailto:DMCA@Trendybeatz.com">
+                                    DMCA@Trendybeatz.com
+                                </a>.
+                            </div>
+                        @endunless
+                    </div>
+                </dialog>
             </div>
         </section>
 
@@ -237,18 +311,18 @@
                     @endforeach
                     
                     
-                    <p class="tb-artist-discovery-note">
+                    <!--<p class="tb-artist-discovery-note">
                         <em>
                             Discover and Stream Latest {{ $djName }} Mixtapes here On TrendyBeatz.
                         </em>
-                    </p>
+                    </p>-->
                 </div>
             </section>
         @endif
         
       
         
-        <div class="tb-green-button-group">
+        <!--<div class="tb-green-button-group">
         <a
             class="tb-green-button"
             href="https://t.me/+TodwxcYXdmu-P5Mh"
@@ -265,7 +339,7 @@
         >
             Read: Why You Should Stop Downloading Music and Start Streaming Instead
         </a>
-    </div>
+    </div>-->
     
     
     @if ($backCoverUrl)
@@ -285,7 +359,7 @@
         </section>
     @endif
         
-        @if (filled($mix->audiomack_embed_url ?? null))
+        <!--@if (filled($mix->audiomack_embed_url ?? null))
             <section class="tb-music-detail-section">
                 <h3 style="color:green; text-align:center">
                     Stream {{ $displayTitle }} Legally on TrendyBeatz Below:
@@ -328,7 +402,7 @@
                     Download {{ $displayTitle }} Mix mp3 Legally
                 </a>
             </section>
-        @endif
+        @endif-->
     </article>
 
 

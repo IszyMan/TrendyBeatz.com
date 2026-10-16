@@ -1464,6 +1464,139 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     color: rgb(0, 117, 6);
 }
 
+.tb-copyright-link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #0066cc;
+    font: inherit;
+    cursor: pointer;
+}
+
+.tb-copyright-link,
+.tb-copyright-link:hover,
+.tb-copyright-link:focus,
+.tb-copyright-link:active {
+    text-decoration: none !important;
+}
+
+.tb-copyright-link:hover {
+    color: #008000;
+}
+
+.tb-copyright-link:focus-visible {
+    outline: 3px solid #16a34a;
+    outline-offset: 3px;
+}
+
+.tb-copyright-dialog {
+    box-sizing: border-box;
+    width: min(620px, calc(100vw - 24px));
+    max-height: 90vh;
+    max-height: 90dvh;
+    margin: auto;
+    padding: 0;
+    overflow: auto;
+    border: 0;
+    border-radius: 12px;
+    background: #fff;
+    color: #222;
+    box-shadow: 0 20px 70px rgb(0 0 0 / 40%);
+}
+
+.tb-copyright-dialog::backdrop {
+    background: rgb(0 0 0 / 75%);
+}
+
+.tb-copyright-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+.tb-copyright-header h2 {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.4;
+}
+
+.tb-copyright-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 50px;
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #dc2626;
+    color: #fff;
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.tb-copyright-close:hover {
+    background: #b91c1c;
+}
+
+.tb-copyright-close:active {
+    background: #991b1b;
+}
+
+.tb-copyright-close:focus-visible {
+    outline: 3px solid #dc2626;
+    outline-offset: 3px;
+}
+
+.tb-copyright-body {
+    padding: 16px;
+}
+
+.tb-copyright-image {
+    display: block;
+    width: auto;
+    max-width: 90%;
+    max-height: 65vh;
+    height: auto;
+    object-fit: contain;
+    margin: 0 auto;
+}
+
+.tb-copyright-image-error {
+    padding: 20px;
+    text-align: center;
+}
+
+.tb-copyright-dmca {
+    margin-top: 16px;
+    padding: 14px;
+    border-left: 3px solid green;
+    background: #f0f8f2;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.tb-copyright-dmca a {
+    color: #0066cc;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+html.tb-copyright-is-open {
+    overflow: hidden;
+}
+
 
 /* About This Song */
 
@@ -5022,6 +5155,30 @@ a.tb-pagination-link:hover {
 })();
 </script>
 
+<script data-cfasync="false" type="text/javascript" id="clever-core">
+    /* <![CDATA[ */
+    (function (document, window) {
+        var a, c = document.createElement("script"), f = window.frameElement;
+
+        c.id= "CleverCoreLoader107791";
+        c.src = "https://scripts.cleverwebserver.com/a25d2cf952aaed65f0c9bf09a2924f24.js";
+        c.async = !0;
+        c.type = "text/javascript";
+        c.setAttribute("data-target",window.name|| (f && f.getAttribute("id")));
+        c.setAttribute("data-callback", "put-your-callback-function-here");
+        c.setAttribute("data-callback-url-click", "put-your-click-macro-here");
+        c.setAttribute("data-callback-url-view", "put-your-view-macro-here");
+        try {
+            a = parent.document.getElementsByTagName("script")[0] || document.getElementsByTagName("script")[0];
+        } catch (e) {
+            a = !1;
+        }
+        a || (a = document.getElementsByTagName("head")[0] || document.getElementsByTagName("body")[0]);
+        a.parentNode.insertBefore(c, a);
+    })(document, window);
+    /* ]]> */
+</script>
+
 </head>
 <body>
     <header class="site-logo-bar"><a class="site-logo" href="{{ route('home') }}">Trendy<span>Beatz</span></a></header>
@@ -5039,6 +5196,67 @@ a.tb-pagination-link:hover {
     </div>
 
     @include('layouts.footer')
+
+    
+    
+    <!--POPUP JAVASCRIPT-->
+
+    <script>
+        (() => {
+            const dialog = document.getElementById('tb-copyright-dialog');
+            const opener = document.querySelector('[data-copyright-open]');
+
+            if (!dialog || !opener) return;
+
+            const closeButton = dialog.querySelector('[data-copyright-close]');
+            const image = dialog.querySelector('.tb-copyright-image');
+            const imageError = dialog.querySelector('.tb-copyright-image-error');
+
+            opener.addEventListener('click', () => {
+                if (dialog.open) return;
+
+                dialog.showModal();
+                document.documentElement.classList.add('tb-copyright-is-open');
+            });
+
+            closeButton.addEventListener('click', () => {
+                dialog.close();
+            });
+
+            dialog.addEventListener('close', () => {
+                document.documentElement.classList.remove('tb-copyright-is-open');
+                opener.focus();
+            });
+
+            // Close when the shaded area outside the popup is clicked.
+            dialog.addEventListener('click', (event) => {
+                if (event.target !== dialog) return;
+
+                const bounds = dialog.getBoundingClientRect();
+
+                if (
+                    event.clientX < bounds.left ||
+                    event.clientX > bounds.right ||
+                    event.clientY < bounds.top ||
+                    event.clientY > bounds.bottom
+                ) {
+                    dialog.close();
+                }
+            });
+
+            function showImageError() {
+                image.hidden = true;
+                image.style.display = 'none';
+                imageError.hidden = false;
+            }
+
+            image.addEventListener('error', showImageError);
+
+            if (image.complete && image.naturalWidth === 0) {
+                showImageError();
+            }
+        })();
+        </script>
     
     
    <!-- COMMENTS  SCRIPT LIKE-->
@@ -5179,30 +5397,6 @@ a.tb-pagination-link:hover {
     /* ]]> */
     </script>
     
-<script data-cfasync="false" type="text/javascript" id="clever-core">
-    /* <![CDATA[ */
-    (function (document, window) {
-        var a, c = document.createElement("script"), f = window.frameElement;
-
-        c.id= "CleverCoreLoader107791";
-        c.src = "https://scripts.cleverwebserver.com/a25d2cf952aaed65f0c9bf09a2924f24.js";
-        c.async = !0;
-        c.type = "text/javascript";
-        c.setAttribute("data-target",window.name|| (f && f.getAttribute("id")));
-        c.setAttribute("data-callback", "put-your-callback-function-here");
-        c.setAttribute("data-callback-url-click", "put-your-click-macro-here");
-        c.setAttribute("data-callback-url-view", "put-your-view-macro-here");
-        try {
-            a = parent.document.getElementsByTagName("script")[0] || document.getElementsByTagName("script")[0];
-        } catch (e) {
-            a = !1;
-        }
-        a || (a = document.getElementsByTagName("head")[0] || document.getElementsByTagName("body")[0]);
-        a.parentNode.insertBefore(c, a);
-    })(document, window);
-    /* ]]> */
-</script>
-<div class="clever-core-ads"></div>
 
     <script type="text/javascript">
   window._taboola = window._taboola || [];
@@ -5213,6 +5407,7 @@ a.tb-pagination-link:hover {
 <script type="text/javascript" src="https://www.statcounter.com/counter/counter.js" async></script>
 <noscript><div class="statcounter"><a title="Web Analytics" href="https://statcounter.com/" target="_blank"><img class="statcounter" src="https://c.statcounter.com/12888478/0/bc3f4f7d/1/" alt="Web Analytics" referrerPolicy="no-referrer-when-downgrade"></a></div></noscript>
 
+<div class="clever-core-ads"></div>
 
 </body>
 </html>

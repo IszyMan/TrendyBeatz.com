@@ -216,7 +216,49 @@
             </small>
         @endif
     </label>
-    
+
+
+
+    <label class="admin-field admin-field-wide">
+       <span style="color:red"> COPYRIGHT PERMISSION IMAGE </span>
+
+        <input
+            type="file"
+            name="copyright_image"
+            accept="image/jpeg,image/png,image/webp"
+        >
+
+        <small>
+            Optional. JPG, PNG or WebP.
+            Without a permission image, the Fair Use notice is displayed.
+        </small>
+
+        @error('copyright_image')
+            <span style="color: #b91c1c;">{{ $message }}</span>
+        @enderror
+    </label>
+
+    @if (filled($mix->copyright_image ?? null))
+        <div class="admin-field admin-field-wide">
+            <img
+                src="{{ asset('images/copyright/' . basename($mix->copyright_image)) }}"
+                alt="Current copyright permission"
+                style="display: block; max-width: 220px; max-height: 220px; object-fit: contain;"
+            >
+        </div>
+
+        <label class="admin-field admin-field-wide">
+            <input
+                type="checkbox"
+                name="remove_copyright_image"
+                value="1"
+                @checked(old('remove_copyright_image'))
+            >
+
+            Remove this permission image and use the Fair Use notice
+        </label>
+    @endif
+        
     
    
    

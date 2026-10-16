@@ -262,6 +262,80 @@
                     </a>
                 @endif
             </p>
+
+
+            @php
+                $copyrightFilename = basename(
+                    trim((string) ($song->copyright_image ?? ''))
+                );
+
+                $hasCopyrightPermission = $copyrightFilename !== '';
+
+                $copyrightLabel = $hasCopyrightPermission
+                    ? 'Direct Copyright Permission'
+                    : 'Fair Use';
+
+                $copyrightImageUrl = $hasCopyrightPermission
+                    ? asset('images/copyright/' . $copyrightFilename)
+                    : asset('images/copyright/audio-fair-use.jpg');
+            @endphp
+
+            <p class="tb-copyright-row">
+                <strong>Copyright License:</strong>
+
+                <button
+                    type="button"
+                    class="tb-copyright-link"
+                    data-copyright-open
+                    aria-haspopup="dialog"
+                    aria-controls="tb-copyright-dialog"
+                >
+                    {{ $copyrightLabel }}
+                </button>
+            </p>
+
+            <dialog
+                id="tb-copyright-dialog"
+                class="tb-copyright-dialog"
+                aria-labelledby="tb-copyright-title"
+            >
+                <div class="tb-copyright-header">
+                    <h2 id="tb-copyright-title">
+                        {{ $copyrightLabel }}
+                    </h2>
+
+                    <button
+                        type="button"
+                        class="tb-copyright-close"
+                        data-copyright-close
+                        aria-label="Close copyright notice"
+                        autofocus
+                    >
+                        &times;
+                    </button>
+                </div>
+
+                <div class="tb-copyright-body">
+                    <img
+                        class="tb-copyright-image"
+                        src="{{ $copyrightImageUrl }}"
+                        alt="{{ $copyrightLabel }} notice for {{ $fullTitle }}"
+                    >
+
+                    <p class="tb-copyright-image-error" hidden>
+                        The notice image is currently unavailable.
+                    </p>
+
+                    @unless ($hasCopyrightPermission)
+                        <div class="tb-copyright-dmca">
+                            Do you want a DMCA removal? Send a removal email to
+                            <a href="mailto:DMCA@Trendybeatz.com">
+                                DMCA@Trendybeatz.com
+                            </a>.
+                        </div>
+                    @endunless
+                </div>
+            </dialog>
         </div>
     </section>
 
@@ -314,12 +388,12 @@
                 @endforeach
                 
                 
-                <p class="tb-artist-discovery-note">
+                <!--<p class="tb-artist-discovery-note">
                 <em>
                     Discover Latest {{ $artistName }} Songs / Music,
                     Videos &amp; Albums/EP's here On TrendyBeatz.
                 </em>
-            </p>
+            </p>-->
             </div>
             
             
@@ -328,7 +402,7 @@
     @endif
     
     
-    <div class="tb-green-button-group">
+    <!--<div class="tb-green-button-group">
         <a
             class="tb-green-button"
             href="https://t.me/+TodwxcYXdmu-P5Mh"
@@ -345,7 +419,7 @@
         >
             Read: Why You Should Stop Downloading Music and Start Streaming Instead
         </a>
-    </div>
+    </div>-->
     
 
     @php
@@ -388,7 +462,7 @@
         @if ($youtubeEmbed || $audiomackEmbed || $digitalStoreUrl || $hasAudioFile)
             <section class="tb-music-detail-listening">
 
-                {{-- YouTube and Audiomack --}}
+              <!--  {{-- YouTube and Audiomack --}}
                 @if ($youtubeEmbed || $audiomackEmbed)
                     <h2>
                         Stream {{ $fullTitle }} Legally on TrendyBeatz Below:
@@ -409,7 +483,7 @@
                       <br>
                     <!--<h2>Stream {{ $fullTitle }} on Audiomack</h2>-->
 
-                    @if ($audiomackEmbed)
+                    <!--@if ($audiomackEmbed)
                         <div class="tb-music-detail-audiomack">
                             <iframe
                                 src="{{ $audiomackEmbed }}"
@@ -428,7 +502,7 @@
                             Stream {{ $fullTitle }} on Digital Store
                         </h2>-->
 
-                        <a
+                       <!-- <a
                             class="tb-music-detail-store"
                             href="{{ $digitalStoreUrl }}"
                             target="_blank"
@@ -436,10 +510,10 @@
                         >
                             Stream {{ $fullTitle }} on Digital Store
                         </a>
-                    </div>
+                    </div>-->
                 @endif
 
-                {{-- MP3 playback and download --}}
+                <!--{{-- MP3 playback and download --}}
                 @if ($hasAudioFile)
                     <div class="tb-music-detail-audio">
                         <h2>Listen and Download {{ $fullTitle }} Legal Mp3</h2>
@@ -464,7 +538,7 @@
                             Download {{ $fullTitle }} Mp3 Music Legally
                         </a>
                     </div>
-                @endif
+                @endif-->
             </section>
         @endif
   <br>

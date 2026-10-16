@@ -122,6 +122,19 @@ class DjMixController extends Controller
                 $values['back_cover'] = $filename;
             }
 
+            $values['copyright_image'] = null;
+
+            if ($request->hasFile('copyright_image')) {
+                $filename = $this->saveCopyrightImage(
+                    $request->file('copyright_image')
+                );
+
+                $values['copyright_image'] = $filename;
+
+                // The existing catch block deletes uploads relative to images/.
+                $uploaded[] = 'copyright/' . $filename;
+            }
+
             // Numeric ID and counters use their database defaults.
             $mixId = DB::transaction(function () use ($values) {
                 $id = DB::table('dj_mixs')->insertGetId($values);
@@ -213,6 +226,17 @@ class DjMixController extends Controller
 
                 $uploaded[] = $filename;
                 $values['back_cover'] = $filename;
+            }
+
+            if ($request->hasFile('copyright_image')) {
+                $filename = $this->saveCopyrightImage(
+                    $request->file('copyright_image')
+                );
+
+                $values['copyright_image'] = $filename;
+                $uploaded[] = 'copyright/' . $filename;
+            } elseif ($request->boolean('remove_copyright_image')) {
+                $values['copyright_image'] = null;
             }
 
             // Preserve user_id, posted_by, created_at and counters.
@@ -358,6 +382,15 @@ class DjMixController extends Controller
                 'mimes:jpg,jpeg,png,webp,gif',
                 'max:5120',
             ],
+
+            'copyright_image' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+
+            'remove_copyright_image' => ['nullable', 'boolean'],
         ]);
 
         $data['mix_title'] = trim($data['mix_title']);
@@ -511,6 +544,38 @@ class DjMixController extends Controller
         }
 
         File::delete(public_path('images/' . $filename));
+    }
+
+
+    private function saveCopyrightImage(UploadedFile $file): string
+    {
+        $directory = public_path('images/copyright');
+
+        File::ensureDirectoryExists($directory);
+
+        $originalName = pathinfo(
+            $file->getClientOriginalName(),
+            PATHINFO_FILENAME
+        );
+
+        $baseName = Str::limit(
+            Str::slug($originalName) ?: 'copyright-permission',
+            140,
+            ''
+        );
+
+        $extension = $file->extension();
+        $filename = $baseName . '.' . $extension;
+        $counter = 1;
+
+        while (File::exists($directory . DIRECTORY_SEPARATOR . $filename)) {
+            $filename = $baseName . '-' . $counter . '.' . $extension;
+            $counter++;
+        }
+
+        $file->move($directory, $filename);
+
+        return $filename;
     }
     
     
