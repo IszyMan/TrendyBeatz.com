@@ -1632,6 +1632,63 @@ html.tb-copyright-is-open {
 }
 
 
+/* Text-only Fair Use popup */
+.tb-copyright-dialog.tb-copyright-dialog--fair-use {
+    width: min(560px, calc(100vw - 24px));
+    height: auto;
+    max-height: 85vh;
+    max-height: 85dvh;
+}
+
+.tb-copyright-dialog--fair-use .tb-copyright-body {
+    padding: 20px;
+}
+
+.tb-copyright-fair-use {
+    width: 100%;
+    min-width: 0;
+    font-size: 15px;
+    line-height: 1.75;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.tb-copyright-fair-use p {
+    margin: 0 0 14px;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.tb-copyright-fair-use p:last-child {
+    margin-bottom: 0;
+}
+
+.tb-copyright-fair-use strong {
+    font-weight: 700;
+}
+
+.tb-copyright-fair-use .tb-copyright-full-title {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #ecfdf3;
+    color: #166534;
+    font-weight: 700;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+@media (max-width: 480px) {
+    .tb-copyright-dialog--fair-use .tb-copyright-body {
+        padding: 16px;
+    }
+
+    .tb-copyright-fair-use {
+        font-size: 14px;
+        line-height: 1.7;
+    }
+}
+
+
 /* About This Song */
 
 .tb-music-detail-description {
@@ -3736,6 +3793,20 @@ a.tb-pagination-link:hover {
     background: #000;
 }
 
+/* Video details: wide cover with square corners */
+.tb-video-detail .tb-music-detail-cover {
+    width: min(100%, 420px);
+    aspect-ratio: 16 / 9;
+    border-radius: 0;
+}
+
+.tb-video-detail .tb-music-detail-cover img {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    object-fit: cover;
+}
+
 
 /* Artists directory */
 
@@ -5234,8 +5305,7 @@ a.tb-pagination-link:hover {
 
     
     
-    <!--POPUP JAVASCRIPT-->
-
+    <!--POPUP JAVASCRIPT FOR COPYRIGHT-->       
     <script>
         (() => {
             const dialog = document.getElementById('tb-copyright-dialog');
@@ -5254,7 +5324,7 @@ a.tb-pagination-link:hover {
                 document.documentElement.classList.add('tb-copyright-is-open');
             });
 
-            closeButton.addEventListener('click', () => {
+            closeButton?.addEventListener('click', () => {
                 dialog.close();
             });
 
@@ -5279,19 +5349,22 @@ a.tb-pagination-link:hover {
                 }
             });
 
-            function showImageError() {
-                image.hidden = true;
-                image.style.display = 'none';
-                imageError.hidden = false;
-            }
+            // Only check the image when a permission image exists.
+            if (image && imageError) {
+                function showImageError() {
+                    image.hidden = true;
+                    image.style.display = 'none';
+                    imageError.hidden = false;
+                }
 
-            image.addEventListener('error', showImageError);
+                image.addEventListener('error', showImageError);
 
-            if (image.complete && image.naturalWidth === 0) {
-                showImageError();
+                if (image.complete && image.naturalWidth === 0) {
+                    showImageError();
+                }
             }
         })();
-        </script>
+    </script>
     
     
    <!-- COMMENTS  SCRIPT LIKE-->

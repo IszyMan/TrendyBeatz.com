@@ -233,7 +233,18 @@
 
                     $copyrightImageUrl = $hasCopyrightPermission
                         ? asset('images/copyright/' . $copyrightFilename)
-                        : asset('images/copyright/album-fair-use.jpg');
+                        : null;
+
+                    $copyrightFeaturing = trim((string) ($album->featuring ?? ''));
+
+                    $copyrightAlbumTitle = $artistName . ' - ' . $albumTitle;
+
+                    if (
+                        $copyrightFeaturing !== ''
+                        && !preg_match('/\b(?:ft|feat|featuring)\.?\s/i', $albumTitle)
+                    ) {
+                        $copyrightAlbumTitle .= ' ft. ' . $copyrightFeaturing;
+                    }
                 @endphp
 
                 <p class="tb-copyright-row">
@@ -252,7 +263,7 @@
 
                 <dialog
                     id="tb-copyright-dialog"
-                    class="tb-copyright-dialog"
+                    class="tb-copyright-dialog{{ $hasCopyrightPermission ? '' : ' tb-copyright-dialog--fair-use' }}"
                     aria-labelledby="tb-copyright-title"
                 >
                     <div class="tb-copyright-header">
@@ -272,24 +283,45 @@
                     </div>
 
                     <div class="tb-copyright-body">
-                        <img
-                            class="tb-copyright-image"
-                            src="{{ $copyrightImageUrl }}"
-                            alt="{{ $copyrightLabel }} notice for {{ $displayTitle }}"
-                        >
+                        @if ($hasCopyrightPermission)
+                            <img
+                                class="tb-copyright-image"
+                                src="{{ $copyrightImageUrl }}"
+                                alt="{{ $copyrightLabel }} notice for {{ $displayTitle }}"
+                            >
 
-                        <p class="tb-copyright-image-error" hidden>
-                            The notice image is currently unavailable.
-                        </p>
+                            <p class="tb-copyright-image-error" hidden>
+                                The notice image is currently unavailable.
+                            </p>
+                        @else
+                            <div class="tb-copyright-fair-use">
+                                <p>
+                                    <strong>Fair Use Notice</strong>
+                                </p>
 
-                        @unless ($hasCopyrightPermission)
+                                <p>
+                                    This album notice relates to 
+                                    <strong class="tb-copyright-full-title">{{ $copyrightAlbumTitle }}</strong>.
+                                    All copyrights in this album, its individual songs,
+                                    sound recordings and associated artwork belong
+                                    to their respective copyright holders.
+                                </p>
+
+                                <p>
+                                    TrendyBeatz presents this page for music discovery,
+                                    information and commentary. No ownership of the
+                                    album or its associated materials is claimed.
+                                </p>
+                                
+                            </div>
+
                             <div class="tb-copyright-dmca">
                                 Do you want a DMCA removal? Send a removal email to
                                 <a href="mailto:DMCA@Trendybeatz.com">
                                     DMCA@Trendybeatz.com
                                 </a>.
                             </div>
-                        @endunless
+                        @endif
                     </div>
                 </dialog>
             </div>
